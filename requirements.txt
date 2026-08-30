@@ -3,3 +3,4 @@ SpeechRecognition
 wikipedia
 pywhatkit
 PyAudio
+ddgs

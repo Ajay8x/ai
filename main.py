@@ -8,7 +8,9 @@ import wikipedia
 import pywhatkit
 import os
 import webbrowser
+import webbrowser
 from sites import sites
+import wikipedia
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
@@ -54,18 +56,23 @@ def take_command():
     return query.lower()
 
 
-def search_wikipedia(query):
-    speak(f"Searching Wikipedia for {query}...")
+def search_web(query):
+    speak(f"Searching for {query}...")
     try:
-        results = wikipedia.summary(query, sentences=2)
-        speak("According to Wikipedia")
-        speak(results)
-    except wikipedia.exceptions.DisambiguationError:
-        speak("There are multiple results for this topic. Please be more specific.")
-    except wikipedia.exceptions.PageError:
-        speak("Sorry, I couldn't find any information on that topic.")
+        # Use wikipedia for accurate spoken answers
+        search_results = wikipedia.search(query)
+        if search_results:
+            # Get summary of the most relevant page
+            summary = wikipedia.summary(search_results[0], sentences=2)
+            speak("Here is the answer:")
+            speak(summary)
+        else:
+            speak("I couldn't find a direct answer.")
     except Exception:
-        speak("Sorry, I couldn't fetch data from Wikipedia.")
+        speak("Sorry, I couldn't fetch the spoken answer.")
+
+    # Open Google Search so the user can see the actual web results
+    pywhatkit.search(query)
 
 
 def run_jarvis():
@@ -77,9 +84,9 @@ def run_jarvis():
         if query == "none":
             continue
 
-        elif 'wikipedia' in query:
-            query = query.replace("wikipedia", "").strip()
-            search_wikipedia(query)
+        elif 'search' in query or 'google' in query or 'wikipedia' in query:
+            query = query.replace("search", "").replace("google", "").replace("wikipedia", "").strip()
+            search_web(query)
 
         elif 'play' in query:
             song = query.replace('play', '')
@@ -116,7 +123,7 @@ def run_jarvis():
                     speak("Goodbye! Have a great day.")
                     break
                 else:
-                    search_wikipedia(query)
+                    search_web(query)
 
 
 # Start JARVIS
