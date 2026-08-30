@@ -8,9 +8,9 @@ import wikipedia
 import pywhatkit
 import os
 import webbrowser
-import webbrowser
 from sites import sites
 import wikipedia
+import re
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
@@ -59,12 +59,15 @@ def take_command():
 def search_web(query):
     speak(f"Searching for {query}...")
     try:
+        # Clean the query for better search results
+        clean_query = re.sub(r'^(what is a|what is|who is|who was|where is|tell me about|define)\s+', '', query, flags=re.IGNORECASE).strip()
+        
         # Use wikipedia for accurate spoken answers
-        search_results = wikipedia.search(query)
+        search_results = wikipedia.search(clean_query)
         if search_results:
-            # Get summary of the most relevant page
-            summary = wikipedia.summary(search_results[0], sentences=2)
-            speak("Here is the answer:")
+            # Get summary of the most relevant page with auto_suggest=False to prevent PageError crashes
+            summary = wikipedia.summary(search_results[0], sentences=2, auto_suggest=False)
+            speak("According to Google")
             speak(summary)
         else:
             speak("I couldn't find a direct answer.")
