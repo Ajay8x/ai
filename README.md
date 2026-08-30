@@ -23,3 +23,5 @@ Run the main Python file to start the assistant:
 ```bash
 python main.py
 ```
+
+<!-- Update 1 for PR -->
