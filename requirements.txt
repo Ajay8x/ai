@@ -4,3 +4,5 @@ wikipedia
 pywhatkit
 PyAudio
 ddgs
+pyautogui
+requests

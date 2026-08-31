@@ -1,0 +1,20 @@
+close_commands = {
+    "notepad": "notepad.exe",
+    "calculator": "calculatorApp.exe",
+    "calc": "calculatorApp.exe",
+    "command prompt": "cmd.exe",
+    "cmd": "cmd.exe",
+    "paint": "mspaint.exe",
+    "word": "winword.exe",
+    "excel": "excel.exe",
+    "powerpoint": "powerpnt.exe",
+    "file explorer": "explorer.exe",
+    "task manager": "Taskmgr.exe",
+    "chrome": "chrome.exe",
+    "google chrome": "chrome.exe",
+    "edge": "msedge.exe",
+    "microsoft edge": "msedge.exe",
+    "settings": "SystemSettings.exe",
+    "setting": "SystemSettings.exe",
+    "camera": "WindowsCamera.exe"
+}

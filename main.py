@@ -17,6 +17,14 @@ import re
 # sites.py se websites ki list import kar rahe hain
 from sites import sites
 
+# app_cmd.py se windows apps ki dictionary import kar rahe hain
+from app_cmd import app_commands
+
+# Naye features ke liye imports
+from close_cmd import close_commands
+import pyautogui
+import requests
+from weather import get_weather
 
 # ============================================================
 # TEXT-TO-SPEECH ENGINE INITIALIZE
@@ -28,7 +36,7 @@ engine = pyttsx3.init()
 # JARVIS ki speaking speed set kar rahe hain
 # Value kam = speech slow
 # Value zyada = speech fast
-engine.setProperty('rate', 130)
+engine.setProperty('rate', 110)
 
 
 # ============================================================
@@ -385,24 +393,6 @@ def run_jarvis():
                     
                     app_name = query.replace('open ', '').strip()
                     
-                    # Common Windows apps ki list aur unke commands
-                    app_commands = {
-                        "setting": "ms-settings:",
-                        "settings": "ms-settings:",
-                        "calculator": "calc",
-                        "calc": "calc",
-                        "command prompt": "cmd",
-                        "cmd": "cmd",
-                        "notepad": "notepad",
-                        "paint": "mspaint",
-                        "word": "winword",
-                        "excel": "excel",
-                        "powerpoint": "powerpnt",
-                        "file explorer": "explorer",
-                        "control panel": "control",
-                        "task manager": "taskmgr"
-                    }
-                    
                     # Agar app dictionary mein hai, to uski correct command lenge
                     # Varna user ne jo bola wahi command mein daal denge
                     command_to_run = app_commands.get(app_name, app_name)
@@ -411,6 +401,93 @@ def run_jarvis():
                     
                     # Windows ki start command use karke app open karenge
                     os.system(f"start {command_to_run}")
+
+                # ----------------------------------------------------
+                # CLOSE APP COMMAND
+                # ----------------------------------------------------
+                elif query.startswith('close '):
+                    app_name = query.replace('close ', '').strip()
+                    process_name = close_commands.get(app_name)
+                    if process_name:
+                        speak(f"Closing {app_name}")
+                        os.system(f"taskkill /f /im {process_name}")
+                    else:
+                        speak(f"Sorry, I don't know how to close {app_name}.")
+
+                # ----------------------------------------------------
+                # SYSTEM COMMANDS
+                # ----------------------------------------------------
+                elif 'shutdown' in query:
+                    speak("Shutting down the computer.")
+                    os.system("shutdown /s /t 5")
+                    break
+                elif 'restart' in query:
+                    speak("Restarting the computer.")
+                    os.system("shutdown /r /t 5")
+                    break
+                elif 'sleep' in query:
+                    speak("Going to sleep mode.")
+                    os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+                    break
+
+                # ----------------------------------------------------
+                # VOLUME CONTROL
+                # ----------------------------------------------------
+                elif 'volume up' in query:
+                    speak("Increasing volume.")
+                    pyautogui.press("volumeup", presses=5)
+                elif 'volume down' in query:
+                    speak("Decreasing volume.")
+                    pyautogui.press("volumedown", presses=5)
+                elif 'mute' in query:
+                    speak("Muting volume.")
+                    pyautogui.press("volumemute")
+
+                # ----------------------------------------------------
+                # SCREENSHOT
+                # ----------------------------------------------------
+                elif 'screenshot' in query:
+                    speak("Taking a screenshot.")
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"screenshot_{timestamp}.png"
+                    pyautogui.screenshot(filename)
+                    speak(f"Screenshot saved as {filename}")
+
+                # ----------------------------------------------------
+                # MEMORY (REMEMBER)
+                # ----------------------------------------------------
+                elif 'remember that' in query:
+                    memory_text = query.replace('remember that', '').strip()
+                    speak("Got it. I will remember that.")
+                    with open("memory.txt", "w") as f:
+                        f.write(memory_text)
+                elif 'what do you remember' in query:
+                    try:
+                        with open("memory.txt", "r") as f:
+                            memory_text = f.read()
+                            speak(f"You asked me to remember that: {memory_text}")
+                    except FileNotFoundError:
+                        speak("I don't remember anything yet.")
+
+                # ----------------------------------------------------
+                # WEATHER & NEWS
+                # ----------------------------------------------------
+                elif 'weather' in query:
+                    speak("Fetching the latest weather.")
+                    weather_info = get_weather(query)
+                    speak(weather_info)
+                        
+                elif 'news' in query:
+                    speak("Fetching the top news headlines.")
+                    try:
+                        import xml.etree.ElementTree as ET
+                        url = "https://news.google.com/rss"
+                        resp = requests.get(url)
+                        root = ET.fromstring(resp.content)
+                        for item in root.findall('.//item')[:3]:
+                            speak(item.find('title').text)
+                    except Exception:
+                        speak("Sorry, I couldn't fetch the news.")
 
                 else:
 
