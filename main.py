@@ -384,10 +384,33 @@ def run_jarvis():
                 elif query.startswith('open '):
                     
                     app_name = query.replace('open ', '').strip()
+                    
+                    # Common Windows apps ki list aur unke commands
+                    app_commands = {
+                        "setting": "ms-settings:",
+                        "settings": "ms-settings:",
+                        "calculator": "calc",
+                        "calc": "calc",
+                        "command prompt": "cmd",
+                        "cmd": "cmd",
+                        "notepad": "notepad",
+                        "paint": "mspaint",
+                        "word": "winword",
+                        "excel": "excel",
+                        "powerpoint": "powerpnt",
+                        "file explorer": "explorer",
+                        "control panel": "control",
+                        "task manager": "taskmgr"
+                    }
+                    
+                    # Agar app dictionary mein hai, to uski correct command lenge
+                    # Varna user ne jo bola wahi command mein daal denge
+                    command_to_run = app_commands.get(app_name, app_name)
+                    
                     speak(f"Opening {app_name}")
                     
                     # Windows ki start command use karke app open karenge
-                    os.system(f"start {app_name}")
+                    os.system(f"start {command_to_run}")
 
                 else:
 
