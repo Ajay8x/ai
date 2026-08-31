@@ -3,9 +3,9 @@ import datetime
 import pyautogui
 import webbrowser
 import psutil
-from sites import sites
-from app_cmd import app_commands
-from close_cmd import close_commands
+from config.sites import sites
+from commands.app_cmd import app_commands
+from commands.close_cmd import close_commands
 
 def check_battery(speak_func):
     battery = psutil.sensors_battery()

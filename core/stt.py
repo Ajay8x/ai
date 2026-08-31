@@ -14,7 +14,7 @@ def take_command():
     try:
         print("Recognizing...")
         query = listener.recognize_google(audio)
-        print("You said:", query)
+        print(f"You said: {query}")
     except Exception as e:
         print("Error:", e)
         print("Sorry, I didn't catch that. Say again.")
@@ -23,7 +23,7 @@ def take_command():
     query = query.lower()
     
     # Save the query to query.txt
-    with open("query.txt", "a", encoding="utf-8") as f:
+    with open("data/query.txt", "a", encoding="utf-8") as f:
         f.write(query + "\n")
         
     return query
