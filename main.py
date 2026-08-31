@@ -408,11 +408,23 @@ def run_jarvis():
                 elif query.startswith('close '):
                     app_name = query.replace('close ', '').strip()
                     process_name = close_commands.get(app_name)
+                    
                     if process_name:
                         speak(f"Closing {app_name}")
                         os.system(f"taskkill /f /im {process_name}")
                     else:
-                        speak(f"Sorry, I don't know how to close {app_name}.")
+                        # Check in sites.py
+                        is_site = False
+                        for site in sites:
+                            if app_name == site[0]:
+                                is_site = True
+                                break
+                        
+                        if is_site or app_name in ['tab', 'browser', 'window']:
+                            speak(f"Closing {app_name}.")
+                            pyautogui.hotkey('ctrl', 'w')
+                        else:
+                            speak(f"Sorry, I don't know how to close {app_name}.")
 
                 # ----------------------------------------------------
                 # SYSTEM COMMANDS
@@ -442,6 +454,9 @@ def run_jarvis():
                 elif 'mute' in query:
                     speak("Muting volume.")
                     pyautogui.press("volumemute")
+                elif 'pause' in query or 'resume' in query:
+                    speak("Toggling media.")
+                    pyautogui.press("playpause")
 
                 # ----------------------------------------------------
                 # SCREENSHOT
@@ -492,8 +507,8 @@ def run_jarvis():
                 else:
 
                     # Agar command kisi known function se match nahi hui
-                    # to usko web par search karenge
-                    search_web(query)
+                    # to hum usko ignore karenge ya user ko bataenge
+                    speak("Sorry, I didn't understand that command. Please say 'search' if you want me to search the web.")
 
 
 # ============================================================
