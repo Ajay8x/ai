@@ -380,6 +380,15 @@ def run_jarvis():
                     # Main loop se bahar aa jao
                     break
 
+                # Agar query "open" se start hoti hai aur koi website match nahi hui
+                elif query.startswith('open '):
+                    
+                    app_name = query.replace('open ', '').strip()
+                    speak(f"Opening {app_name}")
+                    
+                    # Windows ki start command use karke app open karenge
+                    os.system(f"start {app_name}")
+
                 else:
 
                     # Agar command kisi known function se match nahi hui
