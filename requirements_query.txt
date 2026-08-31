@@ -1,0 +1,44 @@
+# JARVIS AI - SUPPORTED VOICE COMMANDS
+# Aap Jarvis se ye sabhi sawal/commands pooch sakte hain:
+
+--- 🌐 INTERNET & SEARCH ---
+- "Search what is Python" (Wikipedia/Google par search karega)
+- "Google Elon Musk" 
+- "Play Arijit Singh" (YouTube par gaana/video chalayega)
+- "Weather" ya "Weather in Mumbai" (Mausam batayega)
+- "News" (Top 3 taaza khabrein batayega)
+
+--- 💻 SYSTEM & APPS ---
+- "Open Chrome" (Google Chrome khulega)
+- "Open YouTube" (Website khulegi)
+- "Open Settings" (PC ki settings khulegi)
+- "Close Chrome" (App band karega)
+- "Close Tab" ya "Close window" (Samne khula tab band karega)
+- "Take a screenshot" (Screen ki photo lega)
+
+--- 🔊 MEDIA & VOLUME ---
+- "Volume up" (Awaaz badhayega)
+- "Volume down" (Awaaz kam karega)
+- "Mute" (Awaaz band karega)
+- "Pause" (Chal raha gaana/video rokega)
+- "Resume" (Ruka hua gaana/video wapas chalayega)
+
+--- 🔋 PC CONTROL & INFO ---
+- "Shutdown" (PC band karega)
+- "Restart" (PC restart karega)
+- "Sleep" (PC ko sleep mode me dalega)
+- "Check Battery" (Battery kitni hai aur charge ho rahi hai ya nahi, batayega)
+- "Check CPU" (CPU par kitna load hai, batayega)
+- "Time" (Abhi ka time batayega)
+- "Date" (Aaj ki date batayega)
+
+--- ⏰ ALARMS & TIMERS ---
+- "Set a timer for 10 minutes" (10 minute ka timer lagayega)
+- "Set an alarm for 7 AM" (Subah 7 baje ka alarm lagayega)
+
+--- 🧠 MEMORY ---
+- "Remember that my keys are on the table" (Aapki baat yaad rakhega)
+- "What do you remember?" (Jo yaad rakhne ko kaha tha, wo batayega)
+
+--- ❌ EXIT ---
+- "Stop" ya "Exit" (Jarvis ko band kar dega)

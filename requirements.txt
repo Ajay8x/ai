@@ -6,3 +6,4 @@ PyAudio
 ddgs
 pyautogui
 requests
+psutil

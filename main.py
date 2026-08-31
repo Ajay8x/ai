@@ -1,8 +1,9 @@
 from tts import speak, wish_user
 from stt import take_command
 from web_ops import search_web, play_youtube, get_news
-from system_ops import get_time, get_date, system_power, volume_control, take_screenshot, open_app, close_app
+from system_ops import get_time, get_date, system_power, volume_control, take_screenshot, open_app, close_app, check_battery, check_cpu
 from memory_ops import remember_data, fetch_memory
+from timer_ops import set_timer, set_alarm
 from weather import get_weather
 
 def run_jarvis():
@@ -60,6 +61,20 @@ def run_jarvis():
         # Screenshots
         elif 'screenshot' in query:
             take_screenshot(speak)
+            
+        # Battery & CPU
+        elif 'battery' in query:
+            check_battery(speak)
+            
+        elif 'cpu' in query:
+            check_cpu(speak)
+            
+        # Timers & Alarms
+        elif 'timer' in query:
+            set_timer(query, speak)
+            
+        elif 'alarm' in query:
+            set_alarm(query, speak)
             
         # Memory
         elif 'remember that' in query:

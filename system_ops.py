@@ -2,9 +2,23 @@ import os
 import datetime
 import pyautogui
 import webbrowser
+import psutil
 from sites import sites
 from app_cmd import app_commands
 from close_cmd import close_commands
+
+def check_battery(speak_func):
+    battery = psutil.sensors_battery()
+    if battery:
+        percent = battery.percent
+        plugged = "and plugged in" if battery.power_plugged else "and not plugged in"
+        speak_func(f"Sir, your battery is at {percent} percent {plugged}.")
+    else:
+        speak_func("I cannot detect a battery on this system.")
+
+def check_cpu(speak_func):
+    usage = psutil.cpu_percent(interval=1)
+    speak_func(f"The CPU usage is at {usage} percent.")
 
 def get_time(speak_func):
     current_time = datetime.datetime.now().strftime('%I:%M %p')

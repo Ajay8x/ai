@@ -1,0 +1,11 @@
+time
+vedar
+open youtube
+close tab
+1 minute
+set a timer
+set a timer 1 minut
+set a timer for
+check cpu
+check battery
+sleep

@@ -20,4 +20,10 @@ def take_command():
         print("Sorry, I didn't catch that. Say again.")
         return "none"
 
-    return query.lower()
+    query = query.lower()
+    
+    # Save the query to query.txt
+    with open("query.txt", "a", encoding="utf-8") as f:
+        f.write(query + "\n")
+        
+    return query
