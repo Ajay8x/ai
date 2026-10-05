@@ -72,3 +72,24 @@
 2026-10-05 14:35:00 [INFO] [ajax]: Intent Predicted: SYSTEM_INFO (Confidence: 0.71)
 2026-10-05 14:35:08 [INFO] [ajax]: Incoming Request [cli]: 'cpu'
 2026-10-05 14:35:08 [INFO] [ajax]: Intent Predicted: SYSTEM_INFO (Confidence: 0.71)
+2026-10-05 14:40:29 [INFO] [ajax]: Loaded 18 intents into IntentClassifier.
+2026-10-05 14:40:29 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:40:37 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:40:37 [INFO] [ajax]: Database initialized successfully with all tables.
+2026-10-05 14:40:37 [INFO] [ajax]: Incoming Request [text]: 'what time is it'
+2026-10-05 14:40:37 [INFO] [ajax]: Intent Predicted: TIME (Confidence: 1.0)
+2026-10-05 14:40:37 [INFO] [ajax]: Executing Direct Tool: 'get_system_time' with entities: {}
+2026-10-05 14:43:07 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:43:07 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:43:14 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:43:14 [INFO] [ajax]: Database initialized successfully with all tables.
+2026-10-05 14:43:14 [INFO] [ajax]: Incoming Request [text]: 'what time is it'
+2026-10-05 14:43:14 [INFO] [ajax]: Intent Predicted: TIME (Confidence: 1.0)
+2026-10-05 14:43:14 [INFO] [ajax]: Executing Direct Tool: 'get_system_time' with entities: {}
+2026-10-05 14:46:20 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:46:20 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:46:28 [INFO] [ajax]: Loaded 20 intents into IntentClassifier.
+2026-10-05 14:46:28 [INFO] [ajax]: Database initialized successfully with all tables.
+2026-10-05 14:46:28 [INFO] [ajax]: Incoming Request [text]: 'what time is it'
+2026-10-05 14:46:28 [INFO] [ajax]: Intent Predicted: TIME (Confidence: 1.0)
+2026-10-05 14:46:28 [INFO] [ajax]: Executing Direct Tool: 'get_system_time' with entities: {}
