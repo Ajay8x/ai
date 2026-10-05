@@ -1,74 +1,135 @@
-# Jarvis AI (2.0) 🤖
+# AJAX AI ⚡
+## Adaptive Intelligence & Autonomous eXecution
+### Production-Grade Multilingual Voice & Chat AI Operating Layer
 
-Jarvis is a modular, voice-controlled personal assistant built in Python. It can listen to your voice commands, control your computer, perform web searches, open websites and applications, manage media, and more.
-
-## ✨ Features
-
-*   **🎙️ Voice Interaction**: Listens to commands via the microphone and speaks back using `pyttsx3`.
-*   **🌐 Web Searches**: Searches Wikipedia and Google for answers.
-*   **▶️ YouTube Playback**: Plays requested songs/videos directly on YouTube.
-*   **💻 System Controls**:
-    *   **Power**: Shutdown, Restart, and Sleep PC.
-    *   **Volume**: Increase, Decrease, or Mute system volume.
-    *   **Media**: Play or Pause background media.
-*   **📸 Screenshots**: Take screenshots of your screen instantly.
-*   **📂 App Management**: Open and forcefully close Windows applications and websites.
-*   **🧠 Memory**: Remember notes and recall them later.
-*   **🌤️ Live Data**: Fetch live weather updates (via OpenWeatherMap) and top news headlines.
+AJAX AI is a modular, high-performance personal AI assistant built in Python. It blends deep LLM reasoning, neural-network intent classification, PC automation, continuous learning, and multi-tier memory into a unified interface operating across **Chat, Voice, CLI, Local REST API, and Web UI**.
 
 ---
 
-## 🛠️ Project Structure
+## ✨ Key Capabilities
 
-The project has been refactored into a modular structure to keep the code clean and maintainable:
-
-*   `main.py`: The entry point. It contains the main routing loop for voice commands.
-*   `core/`: Contains core intelligence (`tts.py`, `stt.py`, `memory_ops.py`).
-*   `commands/`: Contains specific action handlers (`system_ops.py`, `web_ops.py`, `timer_ops.py`, `app_cmd.py`, `close_cmd.py`).
-*   `services/`: Contains external API integrations (`weather.py`).
-*   `config/`: Contains configuration files (`sites.py`).
-*   `data/`: Contains persistent data like `query.txt` and `memory.txt`.
-
----
-
-## 🚀 Installation & Setup
-
-1. **Clone or Download** the repository to your local machine.
-2. **Install Requirements**: Ensure you have Python installed, then run the following command to install all necessary libraries:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Run the Assistant**:
-   ```bash
-   python main.py
-   ```
-
-### 📋 Prerequisites (Libraries Used)
-- `pyttsx3`
-- `SpeechRecognition`
-- `wikipedia`
-- `pywhatkit`
-- `PyAudio` (required for microphone input)
-- `pyautogui` (required for media/volume control and screenshots)
-- `requests` (required for API calls)
-- `psutil` (required for battery and CPU monitoring)
+1. **🧠 Multi-Provider AI Brain**: Seamless support for OpenAI, Groq, DeepSeek, OpenRouter, and local Ollama with zero-crash offline fallbacks.
+2. **🎯 Neural Intent Engine**: 40+ default intents with Hindi, English, and Hinglish semantic understanding and confidence scoring.
+3. **🎙️ Unified Voice Pipeline**: Wake word detection ("AJAX", "Jarvis"), VAD noise calibration, Google STT, and thread-safe interruptible TTS.
+4. **💾 Multi-Tier Memory Engine**: Short-term session buffer, long-term SQLite persistent facts, episodic task logs, and built-in privacy filtering.
+5. **🛡️ Safety & Guardrails**: Path traversal protection, strict shell command allowlisting, and user confirmation for destructive actions.
+6. **💻 Safe PC Automation**: Hardware telemetry (CPU, RAM, GPU, Disk, Battery, Top Processes), App Launcher, Volume/Brightness, and Power management.
+7. **📚 RAG Subsystem**: Parse, chunk, and index local documents (PDF, TXT, MD, Code) with cited retrieval.
+8. **🌐 Web Intelligence**: DuckDuckGo search, Wikipedia knowledge extraction, YouTube playback, and quick-launch for 100+ recognized websites.
+9. **🖥️ Modern Glassmorphic Web Dashboard**: Real-time live hardware graphs, chat streaming, and tool activity monitor.
 
 ---
 
-## 🗣️ Example Commands
+## 🚀 Quick Start
 
-*   *"Jarvis, what is Python?"* (Searches Wikipedia)
-*   *"Jarvis, play Arijit Singh on YouTube"*
-*   *"Jarvis, open Chrome"* / *"Jarvis, close Chrome"*
-*   *"Jarvis, what's the weather in Mumbai?"*
-*   *"Jarvis, take a screenshot"*
-*   *"Jarvis, volume up"* / *"Jarvis, mute"*
-*   *"Jarvis, check battery"* / *"Jarvis, check CPU"*
-*   *"Jarvis, set a timer for 10 minutes"*
-*   *"Jarvis, set an alarm for 7 AM"*
-*   *"Jarvis, remember that I have a meeting at 5 PM"*
-*   *"Jarvis, what do you remember?"*
-*   *"Jarvis, shutdown my computer"*
+### 1. Requirements Setup
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Configuration (`.env`)
+Copy `.env.example` to `.env` and set your desired LLM API key (optional — works offline by default!):
+```bash
+cp .env.example .env
+```
+
+### 3. Launching AJAX AI
+
+- **Interactive CLI Mode** (Default with slash commands):
+  ```bash
+  python main.py
+  ```
+
+- **Web Dashboard & GUI Mode**:
+  ```bash
+  python main.py --gui
+  ```
+
+- **Voice Assistant Mode**:
+  ```bash
+  python main.py --voice
+  ```
+
+- **Local REST API Server**:
+  ```bash
+  python main.py --server --port 8000
+  ```
+
+- **System Diagnostics & Health Check**:
+  ```bash
+  python main.py --diagnostics
+  ```
 
 ---
-*Created as a modular AI assistant project.*
+
+## 💬 CLI Slash Commands
+
+| Command | Action |
+| :--- | :--- |
+| `/chat <query>` | Send a direct text message |
+| `/voice` | Switch into voice assistant mode |
+| `/tools` | List all 20+ registered tools and permissions |
+| `/status` | View real-time CPU, RAM, Disk, and Battery diagnostics |
+| `/diagnostics`| Run full self-health checks |
+| `/memory` | Inspect saved long-term user facts |
+| `/settings` | View active configuration |
+| `/clear` | Start a new conversation session |
+| `/help` | View help menu |
+| `/exit` | Exit AJAX AI |
+
+---
+
+## 🧪 Testing & Evaluation
+
+Run unit and integration test suite:
+```bash
+python tests/test_ajax.py
+```
+
+Run Intent Classification benchmark:
+```bash
+python training/evaluate.py
+```
+
+Retrain intent model on approved interaction samples:
+```bash
+python training/train.py
+```
+
+---
+
+## 📂 Project Architecture
+
+```text
+Ai 3.0/
+├── main.py                     # Unified multi-mode entry point
+├── requirements.txt            # Dependency manifest
+├── .env.example                # Configuration template
+├── config/
+│   ├── config_loader.py        # Typed configuration manager
+│   └── sites.py                # Comprehensive web targets
+├── core/
+│   ├── logger.py               # Rotating structured log sinks
+│   ├── safety.py               # Safety engine & path guardrails
+│   ├── permissions.py          # SAFE, CONFIRM_REQUIRED, BLOCKED
+│   ├── prompts.py              # Bilingual persona prompts
+│   ├── context.py              # Context & memory assembly
+│   ├── router.py               # Intent, tool & LLM router
+│   ├── planner.py              # Multi-step ReAct agent planner
+│   ├── diagnostics.py          # Self-healing diagnostics
+│   ├── tts.py & stt.py         # Backward compatibility wrappers
+├── ai/
+│   ├── llm/                    # Base, OpenAI, Ollama & Factory fallback
+│   ├── neural/                 # Semantic intent classifier
+│   ├── rag/                    # Loader, chunker, vector store
+│   └── vision/                 # Screen & OCR analyzer
+├── tools/                      # Central Tool Registry & 20+ tools
+├── voice/                      # TTS, STT, Wake word & Session manager
+├── memory/                     # Multi-tier memory & privacy filter
+├── system/                     # Telemetry monitor & background scheduler
+├── database/                   # SQLite engine, models & CRUD
+├── training/                   # Model trainer & benchmark evaluators
+├── data/                       # Database, screenshots & intent datasets
+├── tests/                      # Full test suite
+└── logs/                       # Specialized rotating audit logs
+```

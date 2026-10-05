@@ -1,0 +1,4 @@
+2026-10-05 14:09:29 [WARNING] [security]: BLOCKED: Attempt to access protected path: C:\Windows\System32
+2026-10-05 14:09:29 [WARNING] [security]: BLOCKED: Dangerous command pattern detected: del /f /s /q C:\Windows
+2026-10-05 14:12:34 [WARNING] [security]: BLOCKED: Attempt to access protected path: C:\Windows\System32
+2026-10-05 14:12:34 [WARNING] [security]: BLOCKED: Dangerous command pattern detected: del /f /s /q C:\Windows

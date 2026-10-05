@@ -1,96 +1,54 @@
-from core.tts import speak, wish_user
-from core.stt import take_command
-from commands.web_ops import search_web, play_youtube, get_news
-from commands.system_ops import get_time, get_date, system_power, volume_control, take_screenshot, open_app, close_app, check_battery, check_cpu
-from core.memory_ops import remember_data, fetch_memory
-from commands.timer_ops import set_timer, set_alarm
-from services.weather import get_weather
+"""
+AJAX AI - Master Application Entry Point
+Adaptive Intelligence & Autonomous eXecution
+"""
 
-def run_jarvis():
-    """
-    Ye JARVIS ka minimal main function hai.
-    """
-    wish_user()
+import sys
+import argparse
+import webbrowser
+from database.db import init_db
+import tools # Auto-registers all system, app, web, scheduler, and memory tools
+from core.diagnostics import diagnostics
+from core.logger import ajax_logger
+from ui.cli import cli
+from voice.manager import voice_manager
+from api.server import start_server
+from config.config_loader import config
 
-    while True:
-        query = take_command()
+def main():
+    parser = argparse.ArgumentParser(description="AJAX AI - Autonomous Personal Assistant")
+    parser.add_argument("--voice", action="store_true", help="Start in Voice Assistant Mode")
+    parser.add_argument("--server", action="store_true", help="Start Local REST API & Web Dashboard Server")
+    parser.add_argument("--gui", action="store_true", help="Start Web UI and open in browser")
+    parser.add_argument("--diagnostics", action="store_true", help="Run System Health Check and exit")
+    parser.add_argument("--port", type=int, default=8000, help="Port for REST server / GUI")
 
-        if query == "none":
-            continue
-        
-        # Web Searches
-        elif 'search' in query or 'google' in query or 'wikipedia' in query:
-            search_web(query, speak)
-        
-        # YouTube
-        elif 'play' in query:
-            play_youtube(query, speak)
-        
-        # Time & Date
-        elif 'time' in query:
-            get_time(speak)
-            
-        elif 'date' in query:
-            get_date(speak)
-            
-        # Weather & News
-        elif 'weather' in query:
-            speak("Fetching the latest weather.")
-            weather_info = get_weather(query)
-            speak(weather_info)
-            
-        elif 'news' in query:
-            get_news(speak)
-            
-        # App Controls
-        elif query.startswith('open '):
-            open_app(query, speak)
-            
-        elif query.startswith('close '):
-            close_app(query, speak)
-            
-        # System Power
-        elif 'shutdown' in query or 'restart' in query or 'sleep' in query:
-            system_power(query, speak)
-            break
-            
-        # Volume & Media Control
-        elif 'volume' in query or 'mute' in query or 'pause' in query or 'resume' in query:
-            volume_control(query, speak)
-            
-        # Screenshots
-        elif 'screenshot' in query:
-            take_screenshot(speak)
-            
-        # Battery & CPU
-        elif 'battery' in query:
-            check_battery(speak)
-            
-        elif 'cpu' in query:
-            check_cpu(speak)
-            
-        # Timers & Alarms
-        elif 'timer' in query:
-            set_timer(query, speak)
-            
-        elif 'alarm' in query:
-            set_alarm(query, speak)
-            
-        # Memory
-        elif 'remember that' in query:
-            remember_data(query, speak)
-            
-        elif 'what do you remember' in query:
-            fetch_memory(speak)
-            
-        # Exit
-        elif 'exit' in query or 'stop' in query:
-            speak("Goodbye! Have a great day.")
-            break
-            
-        # Unrecognized Commands
-        else:
-            speak("Sorry, I didn't understand that command. Please say 'search' if you want me to search the web.")
+    args = parser.parse_args()
+
+    # Step 1: Initialize Database & Core subsystems
+    init_db()
+
+    if args.diagnostics:
+        report = diagnostics.run_health_check()
+        print("\n=== AJAX AI DIAGNOSTIC REPORT ===")
+        print(f"Overall Status: {report['overall_status']}")
+        for k, v in report['subsystems'].items():
+            print(f" • {k.upper()}: {v}")
+        return
+
+    if args.voice:
+        ajax_logger.info("Starting AJAX AI in Voice Mode...")
+        voice_manager.run_loop()
+    elif args.gui:
+        ajax_logger.info(f"Starting AJAX AI GUI on port {args.port}...")
+        webbrowser.open(f"http://127.0.0.1:{args.port}")
+        start_server(port=args.port)
+    elif args.server:
+        ajax_logger.info(f"Starting AJAX AI Server on port {args.port}...")
+        start_server(port=args.port)
+    else:
+        # Default: Interactive CLI with full natural language, tools, memory, and slash commands
+        cli.run()
 
 if __name__ == "__main__":
-    run_jarvis()
+    main()

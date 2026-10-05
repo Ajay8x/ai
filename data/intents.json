@@ -1,0 +1,244 @@
+{
+  "intents": [
+    {
+      "intent": "GREETING",
+      "patterns": [
+        "hello",
+        "hi",
+        "hey",
+        "namaste",
+        "kem cho",
+        "kaise ho",
+        "good morning",
+        "good evening",
+        "ajax hello",
+        "hey buddy",
+        "ram ram",
+        "kya haal hai"
+      ],
+      "tool": null,
+      "response": "Hello! How can I assist you today?"
+    },
+    {
+      "intent": "OPEN_APPLICATION",
+      "patterns": [
+        "open chrome",
+        "launch chrome",
+        "chrome kholo",
+        "chrome chala do",
+        "open notepad",
+        "notepad start karo",
+        "open calculator",
+        "calc kholo",
+        "open vscode",
+        "open code",
+        "open terminal",
+        "open powershell",
+        "open paint",
+        "open task manager",
+        "open settings",
+        "bhai chrome open kar"
+      ],
+      "tool": "open_application"
+    },
+    {
+      "intent": "CLOSE_APPLICATION",
+      "patterns": [
+        "close chrome",
+        "exit chrome",
+        "chrome band karo",
+        "close notepad",
+        "notepad band kar do",
+        "close calc",
+        "close calculator",
+        "terminate app",
+        "band kar do"
+      ],
+      "tool": "close_application"
+    },
+    {
+      "intent": "SYSTEM_INFO",
+      "patterns": [
+        "system status",
+        "pc status",
+        "cpu status",
+        "ram status",
+        "battery status",
+        "check battery",
+        "check cpu",
+        "system info",
+        "pc ki health batao",
+        "battery kitni hai",
+        "cpu kitna use ho raha hai",
+        "disk space kitna hai"
+      ],
+      "tool": "get_system_status"
+    },
+    {
+      "intent": "TIME",
+      "patterns": [
+        "what time is it",
+        "tell me time",
+        "current time",
+        "time kya hua hai",
+        "kitne baje hain",
+        "time batao",
+        "date and time"
+      ],
+      "tool": "get_system_time"
+    },
+    {
+      "intent": "SEARCH_WEB",
+      "patterns": [
+        "search on google",
+        "search web for",
+        "google par search karo",
+        "search karo",
+        "find on internet",
+        "search"
+      ],
+      "tool": "search_web"
+    },
+    {
+      "intent": "SEARCH_WIKIPEDIA",
+      "patterns": [
+        "wikipedia search",
+        "search wikipedia for",
+        "who is",
+        "what is wikipedia",
+        "batao wikipedia par"
+      ],
+      "tool": "search_wikipedia"
+    },
+    {
+      "intent": "PLAY_YOUTUBE",
+      "patterns": [
+        "play on youtube",
+        "play song",
+        "youtube par chalao",
+        "play video",
+        "gana sunao",
+        "play"
+      ],
+      "tool": "play_youtube"
+    },
+    {
+      "intent": "OPEN_WEBSITE",
+      "patterns": [
+        "open youtube",
+        "open github",
+        "open chatgpt",
+        "open instagram",
+        "open facebook",
+        "open website",
+        "website kholo"
+      ],
+      "tool": "open_website"
+    },
+    {
+      "intent": "SCREENSHOT",
+      "patterns": [
+        "take a screenshot",
+        "capture screen",
+        "screenshot le lo",
+        "screen capture karo",
+        "screenshot"
+      ],
+      "tool": "take_screenshot"
+    },
+    {
+      "intent": "VOLUME_CONTROL",
+      "patterns": [
+        "increase volume",
+        "volume up",
+        "volume down",
+        "decrease volume",
+        "mute volume",
+        "unmute",
+        "aawaz badhao",
+        "aawaz kam karo",
+        "mute karo"
+      ],
+      "tool": "control_volume"
+    },
+    {
+      "intent": "WEATHER",
+      "patterns": [
+        "what is the weather",
+        "weather today",
+        "mausam kaisa hai",
+        "weather forecast",
+        "aaj barish hogi kya",
+        "temperature kitna hai"
+      ],
+      "tool": "get_weather"
+    },
+    {
+      "intent": "SET_TIMER",
+      "patterns": [
+        "set a timer",
+        "timer lagao",
+        "set timer for",
+        "5 minute ka timer",
+        "timer set karo"
+      ],
+      "tool": "set_timer"
+    },
+    {
+      "intent": "SET_ALARM",
+      "patterns": [
+        "set an alarm",
+        "alarm lagao",
+        "alarm set karo",
+        "wake me up at"
+      ],
+      "tool": "set_alarm"
+    },
+    {
+      "intent": "SYSTEM_POWER",
+      "patterns": [
+        "shutdown pc",
+        "restart pc",
+        "lock pc",
+        "sleep pc",
+        "pc band karo",
+        "pc restart kar do",
+        "computer lock karo"
+      ],
+      "tool": "system_power"
+    },
+    {
+      "intent": "SEARCH_FILE",
+      "patterns": [
+        "search file",
+        "find file",
+        "file dhundo",
+        "look for document"
+      ],
+      "tool": "search_files"
+    },
+    {
+      "intent": "READ_FILE",
+      "patterns": [
+        "read file",
+        "open file content",
+        "file padho",
+        "show file content"
+      ],
+      "tool": "read_file"
+    },
+    {
+      "intent": "HELP",
+      "patterns": [
+        "help",
+        "what can you do",
+        "commands list",
+        "madad",
+        "features batao",
+        "help me"
+      ],
+      "tool": null,
+      "response": "I can assist with: Opening apps, system metrics, web searches, YouTube playback, file management, taking screenshots, volume control, weather, timers, and multi-turn conversations!"
+    }
+  ]
+}

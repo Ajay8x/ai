@@ -1,9 +1,17 @@
-pyttsx3
-SpeechRecognition
-wikipedia
-pywhatkit
-PyAudio
-ddgs
+# Core & System Automation
+psutil
 pyautogui
 requests
-psutil
+
+# Audio & Voice AI
+pyttsx3
+SpeechRecognition
+PyAudio
+
+# Web & Knowledge
+wikipedia
+pywhatkit
+duckduckgo-search
+
+# Optional: Document & PDF Parsing for RAG
+pypdf
