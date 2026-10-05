@@ -1,0 +1,2 @@
+2026-10-05 14:18:40 [ERROR] [error]: Exception executing tool 'open_website': OpenWebsiteTool.execute() missing 1 required positional argument: 'site_name_or_url'
+2026-10-05 14:29:20 [ERROR] [error]: Exception executing tool 'open_application': OpenApplicationTool.execute() missing 1 required positional argument: 'app_name'

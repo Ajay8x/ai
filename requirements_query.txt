@@ -1,5 +1,5 @@
-# JARVIS AI - SUPPORTED VOICE COMMANDS
-# Aap Jarvis se ye sabhi sawal/commands pooch sakte hain:
+# AJAX AI - SUPPORTED VOICE COMMANDS
+# Aap AJAX AI se ye sabhi sawal/commands pooch sakte hain:
 
 --- 🌐 INTERNET & SEARCH ---
 - "Search what is Python" (Wikipedia/Google par search karega)

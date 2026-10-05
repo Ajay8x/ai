@@ -37,7 +37,8 @@
         "open paint",
         "open task manager",
         "open settings",
-        "bhai chrome open kar"
+        "bhai chrome open kar",
+        "open youtube"
       ],
       "tool": "open_application"
     },
@@ -52,7 +53,9 @@
         "close calc",
         "close calculator",
         "terminate app",
-        "band kar do"
+        "band kar do",
+        "close tab",
+        "close window"
       ],
       "tool": "close_application"
     },
@@ -83,7 +86,10 @@
         "time kya hua hai",
         "kitne baje hain",
         "time batao",
-        "date and time"
+        "date and time",
+        "time",
+        "date",
+        "set a timer for 10 minutes"
       ],
       "tool": "get_system_time"
     },
@@ -95,7 +101,10 @@
         "google par search karo",
         "search karo",
         "find on internet",
-        "search"
+        "search",
+        "search what is python",
+        "google elon musk",
+        "news"
       ],
       "tool": "search_web"
     },
@@ -118,7 +127,8 @@
         "youtube par chalao",
         "play video",
         "gana sunao",
-        "play"
+        "play",
+        "play arijit singh"
       ],
       "tool": "play_youtube"
     },
@@ -157,7 +167,10 @@
         "unmute",
         "aawaz badhao",
         "aawaz kam karo",
-        "mute karo"
+        "mute karo",
+        "mute",
+        "pause",
+        "resume"
       ],
       "tool": "control_volume"
     },
@@ -169,7 +182,9 @@
         "mausam kaisa hai",
         "weather forecast",
         "aaj barish hogi kya",
-        "temperature kitna hai"
+        "temperature kitna hai",
+        "weather",
+        "weather in mumbai"
       ],
       "tool": "get_weather"
     },
@@ -190,7 +205,8 @@
         "set an alarm",
         "alarm lagao",
         "alarm set karo",
-        "wake me up at"
+        "wake me up at",
+        "set an alarm for 7 am"
       ],
       "tool": "set_alarm"
     },
@@ -203,7 +219,10 @@
         "sleep pc",
         "pc band karo",
         "pc restart kar do",
-        "computer lock karo"
+        "computer lock karo",
+        "shutdown",
+        "restart",
+        "sleep"
       ],
       "tool": "system_power"
     },
