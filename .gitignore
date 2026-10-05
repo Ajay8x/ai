@@ -28,8 +28,6 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -52,8 +50,9 @@ coverage.xml
 .pytest_cache/
 pytestdebug.log
 
-# Environments
+# Environment & Secrets
 .env
+.env.local
 .venv
 env/
 venv/
@@ -66,10 +65,21 @@ venv.bak/
 .idea/
 *.swp
 *.swo
+.gemini/
 
 # OS generated files
 .DS_Store
 Thumbs.db
+ehthumbs.db
 
+# AJAX AI - Data, Database & Logs
+logs/
+*.log
+data/*.db
+data/ajax.db
+data/screenshots/
+data/vector_store/
+data/query.txt
 query.txt
 memory.txt
+backups/
