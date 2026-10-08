@@ -52,6 +52,22 @@ class IntentClassifier:
         Predict intent with confidence score (0.0 to 1.0) and extracted entities.
         """
         text_clean = text.lower().strip()
+        
+        # Fast arithmetic & percentage detection (e.g. '2+2', '15 * 4', '100 ka 10%', '10% of 200', 'calculate 500/2')
+        is_math = bool(
+            re.match(r'^(\s*calculate\s+)?(\d+(\.\d+)?\s*[\+\-\*\/\%\^xX÷]\s*\d+(\.\d+)?(\s*[\+\-\*\/\%\^xX÷]\s*\d+(\.\d+)?)*|\d+(\.\d+)?\s*%\s*(of|ka\s*)?\d+(\.\d+)?|\d+(\.\d+)?\s*(ka|of)\s*\d+(\.\d+)?\s*%|sqrt\(\d+(\.\d+)?\))\s*$', text_clean)
+            or re.search(r'\d+\s*(?:ka|of)\s*\d+\s*%', text_clean)
+            or re.search(r'\d+\s*%\s*(?:of|ka)\s*\d+', text_clean)
+        )
+        if is_math:
+            return {
+                "intent": "CALCULATE",
+                "confidence": 1.0,
+                "tool": "calculate",
+                "entities": {"expression": text_clean},
+                "predefined_response": None
+            }
+
         tokens = tokenize(text_clean)
         vec = text_to_vector(tokens)
 

@@ -16,6 +16,7 @@ from tools.scheduler_tools import SetTimerTool, SetAlarmTool
 from tools.memory_tools import RememberTool, RecallMemoryTool
 from tools.rag_tools import QueryDocumentsTool
 from tools.vision_tools import AnalyzeScreenTool
+from tools.calculator_tool import CalculatorTool
 
 def register_all_tools():
     """Register all default tools with the singleton registry."""
@@ -40,7 +41,8 @@ def register_all_tools():
         RememberTool(),
         RecallMemoryTool(),
         QueryDocumentsTool(),
-        AnalyzeScreenTool()
+        AnalyzeScreenTool(),
+        CalculatorTool()
     ]
     for t in tools:
         registry.register(t)

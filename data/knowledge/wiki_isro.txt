@@ -1,0 +1,4 @@
+# ISRO
+URL: https://en.wikipedia.org/wiki/ISRO
+
+The Indian Space Research Organisation is the national space agency of India, headquartered in Bengaluru, Karnataka. It serves as the principal research and development arm of the Department of Space (DoS), overseen by the Prime Minister of India, with the Chairman of ISRO also working as the chief executive of the DoS. It is primarily responsible for space-based operations, space exploration, international space cooperation and the development of related technologies. The agency maintains a constellation of imaging, communications and remote sensing satellites. It operates the GAGAN and IRNSS satellite navigation systems. It has sent three missions to the Moon and one mission to Mars.

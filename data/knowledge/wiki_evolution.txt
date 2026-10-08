@@ -1,0 +1,4 @@
+# Evolution
+URL: https://en.wikipedia.org/wiki/Evolution
+
+Evolution is the change in the heritable characteristics of biological populations over successive generations. It happens when individuals in a population vary in their genetic characteristics and in the numbers of their surviving offspring. Mutation introduces new genetic variation, and processes such as genetic drift, gene flow, and natural selection result in some genetic variants becoming more or less common over time. Evolution is often defined as a change in the frequency of alleles in a population.

@@ -1,0 +1,4 @@
+# Microsoft Windows
+URL: https://en.wikipedia.org/wiki/Microsoft_Windows
+
+Windows is a proprietary operating system developed by Microsoft. Windows is grouped into families that cater to particular sectors of the computing industry – Windows for personal computers, Windows Server for servers, and Windows IoT for embedded systems. Windows itself is further grouped into editions that cater to different users – Home for home users, Professional for advanced users, Education for schools, and Enterprise for corporations. Windows is sold both as a consumer retail product and to computer manufacturers, who bundle and distribute it with their systems.

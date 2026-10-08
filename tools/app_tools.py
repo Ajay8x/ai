@@ -52,7 +52,29 @@ class OpenApplicationTool(BaseTool):
     }
 
     def execute(self, app_name: str, **kwargs) -> ToolResult:
+        import webbrowser
         app_clean = app_name.lower().strip()
+        
+        # Check known web portals
+        web_sites = {
+            "youtube": "https://www.youtube.com",
+            "google": "https://www.google.com",
+            "github": "https://github.com",
+            "chatgpt": "https://chatgpt.com",
+            "instagram": "https://www.instagram.com",
+            "facebook": "https://www.facebook.com",
+            "twitter": "https://twitter.com",
+            "x": "https://x.com",
+            "linkedin": "https://www.linkedin.com",
+            "gmail": "https://mail.google.com",
+            "maps": "https://maps.google.com"
+        }
+        
+        if app_clean in web_sites or app_clean.endswith(".com") or app_clean.endswith(".org") or app_clean.endswith(".in"):
+            url = web_sites.get(app_clean, f"https://{app_clean}" if not app_clean.startswith("http") else app_clean)
+            webbrowser.open(url)
+            return ToolResult(success=True, output=f"Opened {app_name} ({url}) in browser.")
+
         target = COMMON_APPS.get(app_clean, app_clean)
         
         try:
@@ -67,12 +89,13 @@ class OpenApplicationTool(BaseTool):
                     
             return ToolResult(success=True, output=f"Launched {app_name} successfully.")
         except Exception as e:
-            # Fallback to direct shell execution of the query
+            # Fallback to direct shell execution of the query or web browser
             try:
                 os.system(f"start {app_name}")
                 return ToolResult(success=True, output=f"Launched {app_name}.")
-            except Exception as ex:
-                return ToolResult(success=False, output=None, error=f"Could not open application '{app_name}': {str(e)}")
+            except Exception:
+                webbrowser.open(f"https://www.google.com/search?q={app_name}")
+                return ToolResult(success=True, output=f"Searched and opened {app_name} in browser.")
 
 class CloseApplicationTool(BaseTool):
     name = "close_application"

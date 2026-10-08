@@ -1,0 +1,4 @@
+# Robotics
+URL: https://en.wikipedia.org/wiki/Robotics
+
+Robotics is the interdisciplinary study and practice of the design, construction, operation, and use of robots. A roboticist is someone who specializes in robotics. Robotics usually combines four aspects of design work: a power source, mechanical construction, a control system, and software.

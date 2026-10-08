@@ -1,15 +1,73 @@
+# ==============================================================================
+# AJAX AI - Comprehensive .gitignore
+# ==============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
+*.dylib
+*.dll
 
-# Distribution / packaging
-.Python
+# Heavy LLM Model Weights & Large Checkpoints (>100MB Git Limits)
+*.gguf
+*.safetensors
+*.bin
+*.onnx
+models/qwen3.5-9b/
+models/qwen*/
+qwen3-4b-thinking-*.gguf
+
+# Standalone Executables & Llamafile Engines
+llamafile*.exe
+*.exe
+
+# Environment, Secrets & Local Configs
+.env
+.env.local
+.env.*.local
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+.gemini/
+.agents/
+
+# OS & Office Lock Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+~$*.docx
+~$*.doc
+~$*.xlsx
+~$*.pptx
+*.tmp
+
+# SQLite Database & Runtime Data
+data/*.db
+data/ajax.db
+data/screenshots/
+data/vector_store/
+data/query.txt
+query.txt
+memory.txt
+backups/
+
+# Logs & Telemetry
+logs/
+*.log
+
+# Distribution, Packaging & Build Artifacts
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
@@ -20,66 +78,19 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# PyInstaller
+# PyInstaller & PyTest
 *.manifest
 *.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
 htmlcov/
 .tox/
 .nox/
 .coverage
 .coverage.*
 .cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
 .pytest_cache/
 pytestdebug.log
-
-# Environment & Secrets
-.env
-.env.local
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE and Editor configurations
-.vscode/
-.idea/
-*.swp
-*.swo
-.gemini/
-
-# OS generated files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-
-# AJAX AI - Data, Database & Logs
-logs/
-*.log
-data/*.db
-data/ajax.db
-data/screenshots/
-data/vector_store/
-data/query.txt
-query.txt
-memory.txt
-backups/

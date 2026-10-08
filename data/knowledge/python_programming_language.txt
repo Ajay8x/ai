@@ -1,0 +1,8 @@
+# Python Programming Language
+Category: Computer Science
+
+Python is a high-level, interpreted programming language created by Guido van Rossum and released in 1991.
+It emphasizes code readability with its notable use of significant indentation.
+Python supports multiple programming paradigms including structured, object-oriented, and functional programming.
+Key standard libraries include sqlite3, threading, subprocess, json, and urllib.
+Popular machine learning packages include PyTorch, TensorFlow, Scikit-learn, and Transformers.

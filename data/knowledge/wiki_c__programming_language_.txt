@@ -1,0 +1,4 @@
+# C (programming language)
+URL: https://en.wikipedia.org/wiki/C_(programming_language)
+
+C is a general-purpose programming language created in 1972 by Dennis Ritchie. By design, C gives programmers relatively direct access to the features of typical CPU architectures, customized for the target instruction set. It has been and continues to be used to implement operating systems, device drivers, and protocol stacks, though its use in application software is decreasing. C is used on computers ranging from supercomputers to microcontrollers and embedded systems.

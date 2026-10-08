@@ -1,0 +1,4 @@
+# Mars Orbiter Mission
+URL: https://en.wikipedia.org/wiki/Mars_Orbiter_Mission
+
+Mars Orbiter Mission (MOM), unofficially known as Mangalyaan, is a space probe orbiting Mars since 24 September 2014. It was launched on 5 November 2013 by the Indian Space Research Organisation (ISRO). It was India's first interplanetary mission and it made ISRO the fourth space agency to achieve Mars orbit, after Soviet space program, NASA, and the European Space Agency. It made India the first Asian nation to reach Martian orbit. It also made ISRO the first national space agency in the world to do so with an indigenously developed propulsion system and the second national space agency to succeed on its maiden attempt, after the European Space Agency accomplished this in 2003 using a Roscosmos Soyuz/Fregat rocket.

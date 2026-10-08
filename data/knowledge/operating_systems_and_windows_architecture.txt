@@ -1,0 +1,7 @@
+# Operating Systems & Windows Architecture
+Category: Systems
+
+Microsoft Windows is a widely used graphical operating system developed by Microsoft.
+Windows utilizes the NT kernel (New Technology) with Win32 and Windows APIs.
+System telemetry monitors CPU virtualization, RAM allocation through virtual memory managers, disk I/O, and ACPI battery controllers.
+Security sandboxing isolates processes and controls privileged access to system directories like System32.

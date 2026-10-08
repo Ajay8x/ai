@@ -1,0 +1,8 @@
+# Artificial Intelligence & Large Language Models
+Category: Technology
+
+Artificial Intelligence (AI) refers to the simulation of human intelligence in machines.
+Modern AI uses Deep Neural Networks, Transformers, and Large Language Models (LLMs) like GPT-4, Llama 3, and Claude.
+Transformers use Self-Attention mechanisms introduced in the 2017 paper 'Attention Is All You Need'.
+Retrieval-Augmented Generation (RAG) combines dense vector retrieval with generative LLMs to ground answers in factual documents.
+AJAX AI implements a hybrid architecture consisting of local cosine neural intent matching, multi-tier memory, and pluggable LLMs.
