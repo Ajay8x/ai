@@ -10,7 +10,7 @@ from ai.rag.store import rag_store
 
 class QueryDocumentsTool(BaseTool):
     name = "query_documents"
-    description = "Search and extract answers from indexed local documents, files, and project notes."
+    description = "Search and extract answers ONLY from user-uploaded PDF or custom documents. Do NOT use for general knowledge questions."
     category = ToolCategory.FILESYSTEM
     permission = PermissionLevel.SAFE
     parameters_schema = {

@@ -44,6 +44,8 @@ class LLMConfig:
     model: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+    ollama_num_ctx: int = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
+    cpu_threads: int = int(os.getenv("CPU_THREADS", "12"))
     api_key: str = os.getenv("OPENAI_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
@@ -68,10 +70,21 @@ class SafetyConfig:
     privacy_mode: bool = os.getenv("PRIVACY_MODE", "false").lower() == "true"
 
 @dataclass
+class DatabaseConfig:
+    db_type: str = os.getenv("DATABASE_TYPE", "postgres" if os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PASSWORD") else "sqlite") # postgres, sqlite
+    postgres_url: str = os.getenv("POSTGRES_URL", "")
+    postgres_host: str = os.getenv("POSTGRES_HOST", "localhost")
+    postgres_port: int = int(os.getenv("POSTGRES_PORT", "5432"))
+    postgres_user: str = os.getenv("POSTGRES_USER", "postgres")
+    postgres_password: str = os.getenv("POSTGRES_PASSWORD", "postgres")
+    postgres_db: str = os.getenv("POSTGRES_DB", "ajax_ai")
+
+@dataclass
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     voice: VoiceConfig = field(default_factory=VoiceConfig)
     safety: SafetyConfig = field(default_factory=SafetyConfig)
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
     database_path: str = os.path.join(DATA_DIR, "ajax.db")
     host: str = os.getenv("HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", "8000"))

@@ -1,4 +1,0 @@
-# Cloud computing
-URL: https://en.wikipedia.org/wiki/Cloud_computing
-
-Cloud computing is defined by the International Organization for Standardization (ISO) as "a paradigm for enabling network access to a scalable and elastic pool of shareable physical or virtual resources with self-service provisioning and administration on demand". It is commonly referred to as "the cloud".

@@ -33,8 +33,15 @@ class ToolRegistry:
     def get_schemas(self) -> List[Dict[str, Any]]:
         return [tool.to_schema() for tool in self.tools.values()]
 
-    def execute_tool(self, tool_name: str, parameters: Optional[Dict[str, Any]] = None, confirmed_by_user: bool = False) -> ToolResult:
-        parameters = parameters or {}
+    def execute_tool(self, tool_name: str, parameters: Any = None, confirmed_by_user: bool = False) -> ToolResult:
+        if isinstance(parameters, list):
+            if parameters and isinstance(parameters[0], dict):
+                parameters = parameters[0]
+            else:
+                parameters = {}
+        elif not isinstance(parameters, dict):
+            parameters = {}
+
         tool = self.get_tool(tool_name)
         if not tool:
             error_msg = f"Tool '{tool_name}' not found."

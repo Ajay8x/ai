@@ -1,4 +1,0 @@
-# Algorithm
-URL: https://en.wikipedia.org/wiki/Algorithm
-
-In mathematics and computer science, an algorithm is any well-defined set of instructions that when followed terminates after a finite number of steps that comprise a solution to a given computational problem. Advanced algorithms may utilize loops and involve many conditionals that decide the next step based on the inputs provided, resulting in long sequences of steps before halting, but all algorithms terminate by definition.

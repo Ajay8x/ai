@@ -59,14 +59,14 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
             resp = "I can control your PC (open/close apps, volume, battery, screenshots), solve math, search Wikipedia and web, set timers/alarms, query local knowledge, and remember your preferences."
         else:
             resp = ""
-            # 3. Check RAG vector store for indexed knowledge
+            # Check user uploaded docs in RAG vector store if present
             try:
                 from ai.rag.store import rag_store
-                rag_results = rag_store.query(user_msg, top_k=2)
-                if rag_results:
-                    chunks = [d.get("chunk", "") for d in rag_results]
-                    joined = "\n\n".join(chunks)
-                    resp = f"{joined[:600]}..." if len(joined) > 600 else joined
+                if rag_store.documents:
+                    rag_results = rag_store.query(user_msg, top_k=2)
+                    if rag_results:
+                        chunks = [d.get("chunk", "") for d in rag_results]
+                        resp = "\n\n".join(chunks)
             except Exception:
                 pass
 
@@ -74,16 +74,16 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                 clean_query = re.sub(r'^(what is|who is|explain|tell me about|how does|what are|kya hai|kya hota hai|batao|search for)\s+', '', user_lower).strip()
                 target_search = clean_query or user_msg
 
-                # 4. Try Wikipedia
+                # Try Wikipedia query
                 try:
                     from tools.web_tools import WikipediaTool
-                    wiki_res = WikipediaTool().execute(query=target_search, sentences=3)
+                    wiki_res = WikipediaTool().execute(query=target_search, sentences=4)
                     if wiki_res.success and wiki_res.output:
                         resp = str(wiki_res.output)
                 except Exception:
                     pass
 
-            # 5. Try live DuckDuckGo web search
+            # Try live DuckDuckGo web search
             if not resp:
                 try:
                     from duckduckgo_search import DDGS
@@ -97,46 +97,59 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                     pass
 
             if not resp:
-                resp = f"I am ready to assist with '{user_msg}'. You can ask me to open apps, run calculations, control system volume, check battery/CPU, search Wikipedia, and manage files."
+                resp = f"Main aapki query ('{user_msg}') me madad kar sakta hoon! Main PC apps control, volume, battery status, math calculations, Wikipedia summary aur web search handle kar sakta hoon."
             
         return LLMResponse(
             content=resp,
             tool_calls=[],
-            model="offline_rag_engine",
-            provider="local_rule_engine",
+            model="chat_assistant_engine",
+            provider="conversational_engine",
             tokens_used=len(resp.split())
         )
 
 def get_llm_provider() -> BaseLLMProvider:
-    """Instantiate the primary configured LLM provider."""
+    """Instantiate the primary configured LLM provider with auto-detection."""
     provider_name = config.llm.provider.lower()
     
-    if provider_name == "groq" and config.llm.groq_api_key:
+    # Priority 1: Explicit Groq / Free Fast Cloud LLM
+    if (provider_name == "groq" or (not config.llm.api_key and config.llm.groq_api_key)) and config.llm.groq_api_key:
         return OpenAICompatibleProvider(
             api_key=config.llm.groq_api_key,
             base_url="https://api.groq.com/openai/v1",
             model=config.llm.model or "llama-3.3-70b-versatile",
             provider_name="groq"
         )
-    elif provider_name == "deepseek" and config.llm.deepseek_api_key:
+    # Priority 2: OpenAI
+    elif (provider_name in ["openai", "chatgpt"] or config.llm.api_key) and config.llm.api_key:
+        return OpenAICompatibleProvider(
+            api_key=config.llm.api_key,
+            base_url="https://api.openai.com/v1",
+            model=config.llm.model if config.llm.model and "gpt" in config.llm.model else "gpt-4o-mini",
+            provider_name="openai"
+        )
+    # Priority 3: DeepSeek
+    elif (provider_name == "deepseek" or config.llm.deepseek_api_key) and config.llm.deepseek_api_key:
         return OpenAICompatibleProvider(
             api_key=config.llm.deepseek_api_key,
             base_url="https://api.deepseek.com/v1",
             model=config.llm.model or "deepseek-chat",
             provider_name="deepseek"
         )
-    elif provider_name == "openrouter" and config.llm.openrouter_api_key:
+    # Priority 4: OpenRouter
+    elif (provider_name == "openrouter" or config.llm.openrouter_api_key) and config.llm.openrouter_api_key:
         return OpenAICompatibleProvider(
             api_key=config.llm.openrouter_api_key,
             base_url="https://openrouter.ai/api/v1",
             model=config.llm.model or "meta-llama/llama-3.3-70b-instruct",
             provider_name="openrouter"
         )
+    # Priority 5: Ollama
     elif provider_name == "ollama":
         return OllamaProvider(
             base_url=config.llm.ollama_base_url,
             model=config.llm.model or "llama3:latest"
         )
+    # Priority 6: Local PyTorch / Transformers
     elif provider_name in ["qwen3.5-9b", "qwen3.5", "qwen9b", "qwen-9b", "qwen", "local_hf", "transformers"]:
         base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         model_path = config.llm.local_model_path or os.path.join(base_root, "models", "qwen3.5-9b")
@@ -155,35 +168,15 @@ def get_llm_provider() -> BaseLLMProvider:
         from ai.llm.gguf_provider import GGUFProvider
         model_path = config.llm.local_model_path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "qwen3-4b-thinking-2507.Q4_K_M.gguf")
         return GGUFProvider(model_path=model_path)
-    elif provider_name in ["local"]:
-        base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "qwen3.5-9b")
-        if not os.path.isabs(model_path):
-            model_path = os.path.join(base_root, model_path)
-        if os.path.exists(model_path):
-            from ai.llm.local_hf_provider import LocalHuggingFaceProvider
-            return LocalHuggingFaceProvider(model_path=model_path, device="auto")
-        
-        gguf_candidate = os.path.join(base_root, "qwen3-4b-thinking-2507.Q4_K_M.gguf")
-        if os.path.exists(gguf_candidate):
-            from ai.llm.llamafile_provider import LlamafileProvider
-            return LlamafileProvider(model_path=gguf_candidate)
-    elif config.llm.api_key:
-        return OpenAICompatibleProvider(
-            api_key=config.llm.api_key,
-            base_url="https://api.openai.com/v1",
-            model=config.llm.model or "gpt-4o-mini",
-            provider_name="openai"
-        )
     else:
-        # Check if local GGUF model and llamafile exist before falling back to rule engine
+        # Check if local GGUF model exists
         base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         gguf_path = os.path.join(base_root, "qwen3-4b-thinking-2507.Q4_K_M.gguf")
         if os.path.exists(gguf_path):
             from ai.llm.llamafile_provider import LlamafileProvider
             return LlamafileProvider(model_path=gguf_path)
         
-        # Fallback to offline rule engine
+        # Fallback to conversational response engine
         return LocalRuleBasedFallbackProvider()
 
 class ResilientLLMBrain:

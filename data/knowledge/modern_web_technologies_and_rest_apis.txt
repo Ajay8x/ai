@@ -1,7 +1,0 @@
-# Modern Web Technologies & REST APIs
-Category: Web Architecture
-
-REST (Representational State Transfer) is a software architectural style that uses HTTP methods:
-GET (retrieve data), POST (create or execute action), PUT (update), and DELETE (remove).
-Modern web interfaces utilize responsive styling, CSS glassmorphism, semantic HTML5, and async JavaScript fetch calls.
-WebSockets provide persistent, bidirectional, full-duplex communication channels over a single TCP connection.

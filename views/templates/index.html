@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX AI - Autonomous Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Sidebar (MVC View) -->
+    <div class="sidebar">
+        <div class="logo-row">
+            <div class="logo">⚡ AJAX AI</div>
+            <div class="status-pill"><div class="status-dot"></div> ONLINE</div>
+        </div>
+
+        <!-- New Chat Button -->
+        <button class="new-chat-btn" onclick="startNewChat()">➕ New Conversation</button>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('tools')">⚡ Capabilities</button>
+            <button class="tab-btn" onclick="switchTab('logs')">📜 Activity Logs</button>
+        </div>
+
+        <!-- Tab 1: Capabilities / Tools -->
+        <div class="tab-content active" id="tab-tools">
+            <div class="telemetry-card" style="max-height:480px; overflow-y:auto;">
+                <h4>Capabilities & Actions</h4>
+                <div style="font-size:12px; line-height:1.8; color:var(--text-muted)">
+                    <div>💬 <strong>Conversational AI</strong> - ChatGPT-style reasoning & coding</div>
+                    <div>🎙️ <strong>Voice Assistant</strong> - Real-time STT & speech playback</div>
+                    <div>📄 <strong>Document Q&A (RAG)</strong> - Upload PDF, DOCX, Code & ask anything</div>
+                    <div>⚡ <strong>App Launcher</strong> - Open & close PC applications</div>
+                    <div>🔍 <strong>Web & Wikipedia</strong> - Live search & encyclopedic answers</div>
+                    <div>🎵 <strong>Media Control</strong> - YouTube play & system volume</div>
+                    <div>📸 <strong>Screen Capture</strong> - Instant screenshots</div>
+                    <div>🧮 <strong>Math & Calculation</strong> - Fast math engine</div>
+                    <div>⏰ <strong>Timers & Alarms</strong> - Smart background scheduling</div>
+                    <div>🧠 <strong>Persistent Memory</strong> - Remembers user preferences</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Live Activity & Execution Logs -->
+        <div class="tab-content" id="tab-logs">
+            <div class="logs-controls">
+                <span>Real-Time Log Stream</span>
+                <button class="clear-btn" onclick="clearLogs()">Clear</button>
+            </div>
+            <div class="logs-terminal" id="logsTerminal">
+                <div class="log-entry log-info">[INFO] FastAPI MVC Server online. Listening at http://127.0.0.1:8000</div>
+                <div class="log-entry log-success">[INFO] Voice recognition & PDF RAG loader ready.</div>
+                <div class="log-entry log-tool">[INFO] Intent Classifier loaded 20 neural intents.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Workspace -->
+    <div class="main-content">
+        <!-- Top Header Bar -->
+        <div class="top-header">
+            <div class="header-title">
+                Session: <span id="sessionDisplay">Interactive Web Workspace</span>
+            </div>
+            
+            <div class="header-actions">
+                <button class="voice-toggle-btn" id="ttsToggleBtn" onclick="toggleVoiceSpeech()" title="Toggle Voice Speech Output">
+                    <span id="ttsIcon">🔈</span> Voice Reply: <strong id="ttsStatus">OFF</strong>
+                </button>
+                <div class="user-auth-pill">
+                    <div class="user-avatar">A</div>
+                    <div>
+                        <div class="user-info">Ajay Singh</div>
+                        <div class="user-role">● Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat History -->
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai-msg">
+                👋 Hello! I am <strong>AJAX AI</strong>. You can chat with me, click 🎙️ to talk, or click 📎 to upload any PDF / Document to ask questions!
+            </div>
+        </div>
+        
+        <!-- Attached Document Chips -->
+        <div class="attachment-bar" id="attachmentBar"></div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <!-- Hidden Document Picker -->
+            <input type="file" id="fileUploadInput" accept=".pdf,.docx,.doc,.txt,.md,.py,.json,.csv" style="display:none" onchange="handleFileSelected(this)">
+            
+            <!-- Document Upload Button -->
+            <button class="action-icon-btn" onclick="document.getElementById('fileUploadInput').click()" title="Upload Document (PDF, DOCX, TXT, Code)">📎</button>
+            
+            <!-- Voice Input Mic Button -->
+            <button class="action-icon-btn" id="micBtn" onclick="toggleVoiceRecording()" title="Speak with Voice">🎙️</button>
+
+            <!-- Text Input -->
+            <input type="text" id="userInput" class="input-box" placeholder="Ask anything, talk via 🎙️, or upload a 📎 PDF..." onkeydown="if(event.key==='Enter') sendMessage()">
+            
+            <!-- Send Button -->
+            <button class="send-btn" onclick="sendMessage()">Send ➔</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

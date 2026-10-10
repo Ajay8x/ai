@@ -1,8 +1,0 @@
-# Linear algebra
-URL: https://en.wikipedia.org/wiki/Linear_algebra
-
-Linear algebra is the branch of mathematics concerning linear equations such as
-
-linear maps such as the following:
-
-and their representations in vector spaces and through matrices.

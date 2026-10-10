@@ -1,6 +1,6 @@
 """
 AJAX AI - Master Application Entry Point
-Adaptive Intelligence & Autonomous eXecution
+FastAPI MVC Backend & Standalone Frontend Server
 """
 
 import sys
@@ -10,18 +10,14 @@ from database.db import init_db
 import tools # Auto-registers all system, app, web, scheduler, and memory tools
 from core.diagnostics import diagnostics
 from core.logger import ajax_logger
-from ui.cli import cli
-from voice.manager import voice_manager
 from api.server import start_server
 from config.config_loader import config
 
 def main():
-    parser = argparse.ArgumentParser(description="AJAX AI - Autonomous Personal Assistant")
-    parser.add_argument("--voice", action="store_true", help="Start in Voice Assistant Mode")
-    parser.add_argument("--server", action="store_true", help="Start Local REST API & Web Dashboard Server")
-    parser.add_argument("--gui", action="store_true", help="Start Web UI and open in browser")
+    parser = argparse.ArgumentParser(description="AJAX AI - Autonomous Assistant Backend & Web App")
+    parser.add_argument("--port", type=int, default=8000, help="Port for FastAPI server (default: 8000)")
+    parser.add_argument("--no-browser", action="store_true", help="Do not auto-open browser on startup")
     parser.add_argument("--diagnostics", action="store_true", help="Run System Health Check and exit")
-    parser.add_argument("--port", type=int, default=8000, help="Port for REST server / GUI")
 
     args = parser.parse_args()
 
@@ -36,19 +32,15 @@ def main():
             print(f" • {k.upper()}: {v}")
         return
 
-    if args.voice:
-        ajax_logger.info("Starting AJAX AI in Voice Mode...")
-        voice_manager.run_loop()
-    elif args.gui:
-        ajax_logger.info(f"Starting AJAX AI GUI on port {args.port}...")
-        webbrowser.open(f"http://127.0.0.1:{args.port}")
-        start_server(port=args.port)
-    elif args.server:
-        ajax_logger.info(f"Starting AJAX AI Server on port {args.port}...")
-        start_server(port=args.port)
-    else:
-        # Default: Interactive CLI with full natural language, tools, memory, and slash commands
-        cli.run()
+    # Default: Start FastAPI MVC & Web Application Server
+    ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on port {args.port}...")
+    if not args.no_browser:
+        try:
+            webbrowser.open(f"http://127.0.0.1:{args.port}/frontend/")
+        except Exception:
+            pass
+
+    start_server(port=args.port)
 
 if __name__ == "__main__":
     main()

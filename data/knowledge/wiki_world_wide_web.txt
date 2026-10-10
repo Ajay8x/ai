@@ -1,4 +1,0 @@
-# World Wide Web
-URL: https://en.wikipedia.org/wiki/World_Wide_Web
-
-The World Wide Web is a global interconnected information system that enables content sharing over the Internet. It facilitates access to documents and other web resources according to specific rules of the Hypertext Transfer Protocol (HTTP).

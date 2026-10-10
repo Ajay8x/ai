@@ -1,4 +1,0 @@
-# JavaScript
-URL: https://en.wikipedia.org/wiki/JavaScript
-
-JavaScript (JS) is a programming language and core technology of the Web, alongside HTML and CSS. Created by Brendan Eich in 1995, it is maintained by Ecma International's TC39 technical committee, with related Web APIs maintained by W3C and WHATWG. As of 2025, JavaScript is the most widely used programming language on GitHub. However, TypeScript, which is a version of JavaScript that is strict about types and is statically typed, overtook JavaScript on GitHub by August 2025.
