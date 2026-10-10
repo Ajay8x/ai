@@ -58,7 +58,8 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
         elif any(re.search(r'\b' + re.escape(w) + r'\b', user_lower) for w in ["help", "madad", "kya kar sakte ho", "what can you do"]):
             resp = "I can control your PC (open/close apps, volume, battery, screenshots), solve math, search Wikipedia and web, set timers/alarms, query local knowledge, and remember your preferences."
         else:
-            # 3. Check RAG vector store for offline knowledge
+            resp = ""
+            # 3. Check RAG vector store for indexed knowledge
             try:
                 from ai.rag.store import rag_store
                 rag_results = rag_store.query(user_msg, top_k=2)
@@ -66,20 +67,37 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                     chunks = [d.get("chunk", "") for d in rag_results]
                     joined = "\n\n".join(chunks)
                     resp = f"{joined[:600]}..." if len(joined) > 600 else joined
-                else:
-                    # 4. Try Wikipedia / Web search for encyclopedic / technical questions
-                    clean_query = re.sub(r'^(what is|who is|explain|tell me about|how does|what are|kya hai|batao)\s+', '', user_lower).strip()
-                    try:
-                        from tools.web_tools import WikipediaTool
-                        wiki_res = WikipediaTool().execute(query=clean_query or user_msg, sentences=3)
-                        if wiki_res.success and wiki_res.output:
-                            resp = str(wiki_res.output)
-                        else:
-                            resp = f"I am ready to assist with '{user_msg}'. You can ask me to open apps, run calculations, control system volume, check battery/CPU, search Wikipedia, and manage files."
-                    except Exception:
-                        resp = f"I am ready to assist with '{user_msg}'. You can ask me to open apps, run calculations, control system volume, check battery/CPU, search Wikipedia, and manage files."
             except Exception:
-                resp = f"Processed: '{user_msg}'. Ready to execute PC control, calculations, or system commands."
+                pass
+
+            if not resp:
+                clean_query = re.sub(r'^(what is|who is|explain|tell me about|how does|what are|kya hai|kya hota hai|batao|search for)\s+', '', user_lower).strip()
+                target_search = clean_query or user_msg
+
+                # 4. Try Wikipedia
+                try:
+                    from tools.web_tools import WikipediaTool
+                    wiki_res = WikipediaTool().execute(query=target_search, sentences=3)
+                    if wiki_res.success and wiki_res.output:
+                        resp = str(wiki_res.output)
+                except Exception:
+                    pass
+
+            # 5. Try live DuckDuckGo web search
+            if not resp:
+                try:
+                    from duckduckgo_search import DDGS
+                    with DDGS() as ddgs:
+                        results = list(ddgs.text(user_msg, max_results=2))
+                        if results:
+                            snippets = [r.get("body", "").strip() for r in results if r.get("body")]
+                            if snippets:
+                                resp = "\n\n".join(snippets[:2])
+                except Exception:
+                    pass
+
+            if not resp:
+                resp = f"I am ready to assist with '{user_msg}'. You can ask me to open apps, run calculations, control system volume, check battery/CPU, search Wikipedia, and manage files."
             
         return LLMResponse(
             content=resp,

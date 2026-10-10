@@ -26,8 +26,11 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
 
         try:
             import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer
+            if not torch.cuda.is_available():
+                error_logger.warning("CUDA GPU not detected. Bypassing heavy 9B CPU inference to maintain sub-second response times.")
+                raise RuntimeError("CUDA GPU not available for heavy local 9B model.")
             
+            from transformers import AutoModelForCausalLM, AutoTokenizer
             ajax_logger.info(f"Loading local Qwen model from: {self.model_path}")
             
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -37,28 +40,22 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
 
             kwargs = {
                 "trust_remote_code": True,
-                "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32,
-                "low_cpu_mem_usage": True
+                "torch_dtype": torch.bfloat16,
+                "low_cpu_mem_usage": True,
+                "device_map": "auto"
             }
-
-            if torch.cuda.is_available():
-                kwargs["device_map"] = "auto"
-                if self.load_in_4bit:
-                    kwargs["load_in_4bit"] = True
+            if self.load_in_4bit:
+                kwargs["load_in_4bit"] = True
             
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_path,
                 **kwargs
             )
-            
-            if not torch.cuda.is_available() and self.device != "auto":
-                self.model = self.model.to(self.device)
-
             self.model.eval()
             self._is_loaded = True
-            ajax_logger.info("Local Qwen3.5-9B model loaded successfully into memory.")
+            ajax_logger.info("Local Qwen3.5-9B model loaded successfully into GPU.")
         except Exception as e:
-            error_logger.warning(f"Local Qwen model loading deferred ({e}). Using ultra-fast RAG & Tool engine.")
+            error_logger.warning(f"Local Qwen model loading deferred ({e}). Using ultra-fast response engine.")
             raise RuntimeError(f"Could not load local model from {self.model_path}: {e}")
 
     def generate(

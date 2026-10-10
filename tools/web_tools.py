@@ -66,8 +66,21 @@ class WikipediaTool(BaseTool):
     def execute(self, query: str, sentences: int = 3, **kwargs) -> ToolResult:
         try:
             import wikipedia
-            summary = wikipedia.summary(query, sentences=sentences)
-            return ToolResult(success=True, output=summary)
+            wikipedia.set_user_agent("AjaxAI/3.0 (https://github.com/Ajay8x/ai; contact@ajax.local)")
+            try:
+                summary = wikipedia.summary(query, sentences=sentences, auto_suggest=False)
+                return ToolResult(success=True, output=summary)
+            except (wikipedia.DisambiguationError, wikipedia.PageError):
+                # Try search results
+                search_results = wikipedia.search(query, results=3)
+                if search_results:
+                    for title in search_results:
+                        try:
+                            summary = wikipedia.summary(title, sentences=sentences, auto_suggest=False)
+                            return ToolResult(success=True, output=summary)
+                        except Exception:
+                            continue
+                return ToolResult(success=False, output=None, error="No direct Wikipedia article found.")
         except Exception as e:
             return ToolResult(success=False, output=None, error=f"Wikipedia search error: {str(e)}")
 
