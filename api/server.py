@@ -5,7 +5,7 @@ Coordinates Models, Views, and Controllers into a high-performance REST API & We
 
 import os
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VIEWS_DIR = os.path.join(BASE_DIR, "views")
 STATIC_DIR = os.path.join(VIEWS_DIR, "static")
 TEMPLATES_DIR = os.path.join(VIEWS_DIR, "templates")
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 
 app = FastAPI(
     title="AJAX AI - Autonomous Assistant API ⚡",
@@ -37,14 +38,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
-
-# Mount Static Assets (CSS & JS)
+# Mount Static Assets
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 if os.path.exists(FRONTEND_DIR):
     app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+    css_dir = os.path.join(FRONTEND_DIR, "css")
+    js_dir = os.path.join(FRONTEND_DIR, "js")
+    if os.path.exists(css_dir):
+        app.mount("/css", StaticFiles(directory=css_dir), name="frontend_css")
+    if os.path.exists(js_dir):
+        app.mount("/js", StaticFiles(directory=js_dir), name="frontend_js")
 
 # Register MVC Controller Routers
 app.include_router(chat_router)
@@ -53,28 +58,37 @@ app.include_router(system_router)
 app.include_router(tools_router)
 app.include_router(memory_router)
 
-# Main View Dashboard Route (Serves Decoupled Frontend or MVC Views)
-@app.get("/", response_class=HTMLResponse)
-@app.get("/index.html", response_class=HTMLResponse)
-async def serve_dashboard():
-    # Prioritize standalone frontend if present
+def _get_dashboard_html():
     frontend_index = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(frontend_index):
         with open(frontend_index, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read(), status_code=200)
+            return f.read()
 
     index_path = os.path.join(TEMPLATES_DIR, "index.html")
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read(), status_code=200)
-    return HTMLResponse(content="<h1>AJAX AI Server Online</h1>", status_code=200)
+            return f.read()
+    return "<h1>AJAX AI Server Online</h1>"
+
+# Redirect root to /AJAX
+@app.get("/")
+async def root_redirect():
+    return RedirectResponse(url="/AJAX")
+
+# Main View Dashboard Routes for /AJAX and /ajax
+@app.get("/AJAX", response_class=HTMLResponse)
+@app.get("/ajax", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+async def serve_dashboard():
+    return HTMLResponse(content=_get_dashboard_html(), status_code=200)
 
 def start_server(host: str = "127.0.0.1", port: int = 8000):
-    ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on http://{host}:{port}")
+    ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on http://{host}:{port}/AJAX")
     print(f"\n==================================================================")
-    print(f"  [*] AJAX AI FastAPI MVC Server Online: http://{host}:{port}")
+    print(f"  [*] AJAX AI Web Dashboard:             http://{host}:{port}/AJAX")
     print(f"  [*] Interactive Swagger Docs:          http://{host}:{port}/docs")
     print(f"  [*] Interactive ReDoc:                 http://{host}:{port}/redoc")
     print(f"  [*] Web UI, Voice & Doc Upload Live! Press Ctrl+C to stop.")
     print(f"==================================================================\n")
     uvicorn.run(app, host=host, port=port, log_level="warning")
+

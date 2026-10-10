@@ -36,7 +36,7 @@ def main():
     ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on port {args.port}...")
     if not args.no_browser:
         try:
-            webbrowser.open(f"http://127.0.0.1:{args.port}/frontend/")
+            webbrowser.open(f"http://127.0.0.1:{args.port}/AJAX")
         except Exception:
             pass
 

@@ -1,6 +1,9 @@
 import os
 import datetime
-import pyautogui
+try:
+    import pyautogui
+except ImportError:
+    pyautogui = None
 import webbrowser
 import psutil
 from config.sites import sites

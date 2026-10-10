@@ -304,3 +304,30 @@ A: Action failed: No search snippets found.
 Q: WHAT IS PYTHON
 A: Action failed: No search snippets found.
 --------------------------------------------------
+[2026-10-10 20:53:56] [SEARCH_WIKIPEDIA]
+Q: WHAT IS PEN
+A: **What is a Pen?**
+
+A pen is a writing instrument used to apply ink or other materials to a surface to leave a mark or record. It is a common tool used for various purposes such as signing documents, writing notes, and creating artwork.
+
+**Types of Pens**
+
+There are several types of pens available, including:
+
+* **Ballpoint Pen**: A pen that uses a small metal ball to dispense ink onto a surface.
+* **Rollerball Pen**: A pen that uses a water-based ink and a small metal ball to dispense ink onto a surface.
+* **Fountain Pen**: A pen that uses a refillable ink reservoir and a nib to dispense ink onto a surface.
+* **Felt-Tip Pen**: A pen that uses a felt tip to dispense ink onto a surface.
+* **Gel Pen**: A pen that uses a gel ink cartridge to dispense ink onto a surface.
+
+**Uses of Pens**
+
+Pens are widely used for various purposes, including:
+
+* **Writing**: Pens are used for everyday writing, such as signing documents, taking notes, and writing letters.
+* **Art**: Pens are used by artists to create various types of artwork, such as drawings, paintings, and illustrations
+--------------------------------------------------
+[2026-10-10 20:54:10] [CALCULATE]
+Q: 500000/2000
+A: 500000/2000 = 250
+--------------------------------------------------
