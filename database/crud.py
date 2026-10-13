@@ -367,3 +367,247 @@ def get_training_examples(approved_only: bool = False) -> List[Dict[str, Any]]:
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
     return rows
+
+
+# ----------------- USERS & AUTHENTICATION ----------------- #
+
+import hashlib
+import secrets
+
+def hash_password(password: str) -> str:
+    """Secure PBKDF2-HMAC-SHA256 password hashing with random 16-byte salt."""
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+    return f"{salt}${key}"
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verifies a plain password against the stored salt$hash format using constant-time comparison."""
+    try:
+        if not hashed or "$" not in hashed:
+            return False
+        salt, key = hashed.split("$", 1)
+        new_key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+        return secrets.compare_digest(key, new_key)
+    except Exception as e:
+        error_logger.warning(f"Password verification error: {e}")
+        return False
+
+def create_user(
+    username: str,
+    password: str,
+    full_name: str,
+    email: str = "",
+    role: str = "user"
+) -> Optional[Dict[str, Any]]:
+    """Creates a new user record in MongoDB Atlas or SQLite."""
+    user_id = str(uuid.uuid4())
+    username_clean = username.strip().lower()
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    pwd_hash = hash_password(password)
+
+    # Check if username exists first
+    existing = get_user_by_username(username_clean)
+    if existing:
+        return None
+
+    user_doc = {
+        "id": user_id,
+        "username": username_clean,
+        "email": email.strip() or f"{username_clean}@ajax.ai",
+        "full_name": full_name.strip() or username_clean.title(),
+        "password_hash": pwd_hash,
+        "role": role if role in ["admin", "user"] else "user",
+        "status": "active",
+        "created_at": now_str,
+        "last_login": now_str
+    }
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            db.users.insert_one(user_doc)
+            safe_doc = {k: v for k, v in user_doc.items() if k != "password_hash"}
+            return safe_doc
+        except Exception as e:
+            error_logger.error(f"MongoDB create_user error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO users (id, username, email, full_name, password_hash, role, status, created_at, last_login)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                user_id,
+                username_clean,
+                user_doc["email"],
+                user_doc["full_name"],
+                pwd_hash,
+                user_doc["role"],
+                user_doc["status"],
+                now_str,
+                now_str
+            )
+        )
+        conn.commit()
+        conn.close()
+
+    safe_doc = {k: v for k, v in user_doc.items() if k != "password_hash"}
+    return safe_doc
+
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Retrieves a user by username (including password_hash for authentication)."""
+    username_clean = username.strip().lower()
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            doc = db.users.find_one({"username": username_clean}, {"_id": 0})
+            if doc:
+                return doc
+        except Exception as e:
+            error_logger.error(f"MongoDB get_user_by_username error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ? LIMIT 1", (username_clean,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return dict(row)
+    return None
+
+def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves user by ID without sensitive password hash."""
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            doc = db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+            if doc:
+                return doc
+        except Exception as e:
+            error_logger.error(f"MongoDB get_user_by_id error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username, email, full_name, role, status, created_at, last_login FROM users WHERE id = ? LIMIT 1", (user_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return dict(row)
+    return None
+
+def list_all_users() -> List[Dict[str, Any]]:
+    """Lists all registered users without password hashes (Admin only)."""
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            docs = list(db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1))
+            return docs
+        except Exception as e:
+            error_logger.error(f"MongoDB list_all_users error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username, email, full_name, role, status, created_at, last_login FROM users ORDER BY created_at DESC")
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return rows
+
+def update_user_status(user_id: str, status: str) -> bool:
+    """Toggles user active / blocked status."""
+    if status not in ["active", "blocked"]:
+        return False
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            res = db.users.update_one({"id": user_id}, {"$set": {"status": status}})
+            return res.modified_count > 0
+        except Exception as e:
+            error_logger.error(f"MongoDB update_user_status error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET status = ? WHERE id = ?", (status, user_id))
+        conn.commit()
+        updated = cursor.rowcount > 0
+        conn.close()
+        return updated
+
+def update_user_role(user_id: str, role: str) -> bool:
+    """Changes user role between admin and user."""
+    if role not in ["admin", "user"]:
+        return False
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            res = db.users.update_one({"id": user_id}, {"$set": {"role": role}})
+            return res.modified_count > 0
+        except Exception as e:
+            error_logger.error(f"MongoDB update_user_role error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+        conn.commit()
+        updated = cursor.rowcount > 0
+        conn.close()
+        return updated
+
+def delete_user(user_id: str) -> bool:
+    """Deletes a user account."""
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            res = db.users.delete_one({"id": user_id})
+            return res.deleted_count > 0
+        except Exception as e:
+            error_logger.error(f"MongoDB delete_user error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        deleted = cursor.rowcount > 0
+        conn.close()
+        return deleted
+
+def update_user_last_login(user_id: str) -> bool:
+    """Updates last login timestamp for a user."""
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            db.users.update_one({"id": user_id}, {"$set": {"last_login": now_str}})
+            return True
+        except Exception as e:
+            error_logger.error(f"MongoDB update_user_last_login error: {e}")
+
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET last_login = ? WHERE id = ?", (now_str, user_id))
+        conn.commit()
+        conn.close()
+        return True
+
+def seed_default_admin():
+    """Seeds default administrator account (admin / admin123) if none exists."""
+    admin_user = get_user_by_username("admin")
+    if not admin_user:
+        create_user(
+            username="admin",
+            password="admin123",
+            full_name="Ajay Singh (Administrator)",
+            email="admin@ajax.ai",
+            role="admin"
+        )
+        ajax_logger.info("Default administrator account seeded: 'admin' / 'admin123'")
+
