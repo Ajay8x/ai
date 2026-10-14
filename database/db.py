@@ -605,6 +605,20 @@ def init_db():
                     ip_address VARCHAR(45),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+                """,
+                # 18. Users & Role-Based Authentication
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id VARCHAR(64) PRIMARY KEY,
+                    username VARCHAR(64) UNIQUE NOT NULL,
+                    email VARCHAR(128),
+                    full_name VARCHAR(128),
+                    password_hash TEXT NOT NULL,
+                    role VARCHAR(32) DEFAULT 'user',
+                    status VARCHAR(32) DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
                 """
             ]
 
@@ -621,11 +635,20 @@ def init_db():
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_conn_schemas_prov ON connector_schemas(provider_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_loop_events_created ON loop_detection_events(created_at)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_audit_created ON api_audit_logs(created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
 
             conn.commit()
             conn.close()
             db_name = "PostgreSQL" if is_pg else "SQLite"
             ajax_logger.info(f"{db_name} Database initialized successfully with all tables.")
+
+            # Seed default admin account if not present
+            try:
+                from database.crud import seed_default_admin
+                seed_default_admin()
+            except Exception as se:
+                ajax_logger.warning(f"Default admin seeding check: {se}")
         except Exception as e:
             error_logger.error(f"Failed to initialize database: {e}")
             raise e
