@@ -11,7 +11,7 @@ from typing import Optional, Any, List, Dict
 from core.logger import ajax_logger, error_logger
 from config.config_loader import config
 
-DB_LOCK = threading.Lock()
+DB_LOCK = threading.RLock()
 _IS_POSTGRES = False
 
 try:
