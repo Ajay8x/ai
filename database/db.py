@@ -367,9 +367,21 @@ def init_db():
                 db.audit_logs.create_index("id", unique=True)
                 db.audit_logs.create_index([("created_at", -1)])
 
+                db.users.create_index("id", unique=True)
+                db.users.create_index("username", unique=True)
+                db.users.create_index("role")
+
                 # Auto-migrate SQLite data if MongoDB Atlas collections are empty
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
+
+                # Seed default admin account
+                try:
+                    from database.crud import seed_default_admin
+                    seed_default_admin()
+                except Exception as se:
+                    ajax_logger.warning(f"Default admin seeding notice: {se}")
+
                 return
             except Exception as e:
                 ajax_logger.error(f"Failed to initialize MongoDB Atlas: {e}. Falling back to SQLite.")
