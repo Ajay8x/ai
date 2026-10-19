@@ -22,6 +22,7 @@ from controllers.system_controller import system_router
 from controllers.tools_controller import tools_router
 from controllers.memory_controller import memory_router
 from controllers.pages_controller import pages_router
+from controllers.auth_controller import auth_router
 from database.db import init_db
 from core.logger import ajax_logger
 
