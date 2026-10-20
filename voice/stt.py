@@ -38,10 +38,12 @@ class STTEngine:
 
         query_clean = query.lower().strip()
 
-        # Log query to data/query.txt (Preserving legacy behavior)
+        # Log query to MongoDB Atlas
         try:
-            with open(QUERY_LOG_FILE, "a", encoding="utf-8") as f:
-                f.write(query_clean + "\n")
+            from database.db import is_mongo_active, get_mongo_db
+            if is_mongo_active():
+                db = get_mongo_db()
+                db.voice_queries.insert_one({"query": query_clean})
         except Exception:
             pass
 

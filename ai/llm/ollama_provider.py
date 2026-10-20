@@ -64,9 +64,10 @@ class OllamaProvider(BaseLLMProvider):
             payload["tools"] = tools
 
         try:
-            resp = requests.post(url, json=payload, timeout=60)
+            resp = requests.post(url, json=payload, timeout=(2.0, 45.0))
             if resp.status_code != 200:
                 raise Exception(f"Ollama Error {resp.status_code}: {resp.text}")
+
                 
             data = resp.json()
             msg = data.get("message", {})
@@ -108,4 +109,39 @@ class OllamaProvider(BaseLLMProvider):
         except Exception as e:
             error_logger.error(f"Error calling Ollama: {str(e)}")
             raise e
+
+    def stream_generate(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2048
+    ):
+        """Yield real-time text chunks via Ollama streaming."""
+        url = f"{self.base_url}/api/chat"
+        num_ctx = int(getattr(config.llm, "ollama_num_ctx", 4096))
+        num_thread = int(getattr(config.llm, "cpu_threads", 12))
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+                "num_ctx": num_ctx,
+                "num_thread": num_thread
+            }
+        }
+        resp = requests.post(url, json=payload, stream=True, timeout=(2.0, 45.0))
+        for line in resp.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                    content = data.get("message", {}).get("content", "")
+                    if content:
+                        yield content
+                    if data.get("done", False):
+                        break
+                except Exception:
+                    pass
+
 

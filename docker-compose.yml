@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # ==============================================================================
+  # AJAX AI - Autonomous Assistant Web & API Service
+  # ==============================================================================
+  ajax-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ajax-ai-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-openai}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      # Database Configuration (Connects to postgres container)
+      - DB_TYPE=postgres
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=ajax_user
+      - POSTGRES_PASSWORD=ajax_secure_password
+      - POSTGRES_DB=ajax_db
+    volumes:
+      - ajax_data:/app/data
+      - ajax_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ajax_network
+
+  # ==============================================================================
+  # PostgreSQL Database Service
+  # ==============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: ajax-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=ajax_user
+      - POSTGRES_PASSWORD=ajax_secure_password
+      - POSTGRES_DB=ajax_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ajax_user -d ajax_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ajax_network
+
+# ==============================================================================
+# Persistent Volumes & Networks
+# ==============================================================================
+volumes:
+  ajax_data:
+    driver: local
+  ajax_logs:
+    driver: local
+  pg_data:
+    driver: local
+
+networks:
+  ajax_network:
+    driver: bridge

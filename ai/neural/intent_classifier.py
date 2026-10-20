@@ -71,6 +71,39 @@ class IntentClassifier:
         tokens = tokenize(text_clean)
         vec = text_to_vector(tokens)
 
+        # Fast coding & programming detection (prevents greetings like 'hello world' from being hijacked)
+        is_explicit_app_launch = bool(re.search(r'\b(open|launch|kholo|start)\s+(vs\s*code|vscode|code\s*editor)\b', text_clean))
+        is_coding = not is_explicit_app_launch and bool(
+            re.search(r'\b(code|program|coding|script|class|method|function|syntax|algorithm|hello\s+world|loop|array|pointer|query|snippet)\b', text_clean)
+            or re.search(r'\b(java|python|c\+\+|cpp|c#|javascript|js|html|css|sql|rust|golang|php|swift|kotlin)\b', text_clean)
+        )
+        if is_coding:
+            lang_match = re.search(r'\b(java|python|c\+\+|cpp|c#|javascript|js|html|css|sql|rust|golang|php|swift|kotlin)\b', text_clean)
+            target_lang = lang_match.group(1) if lang_match else "generic"
+            return {
+                "intent": "WRITE_CODE",
+                "confidence": 0.95,
+                "tool": None,
+                "entities": {"language": target_lang, "query": text_clean},
+                "predefined_response": None
+            }
+
+        # Fast math calculation detection
+        is_math = bool(
+            re.search(r'\b(calculate|compute|math|square\s+root|sqrt|factorial)\b', text_clean)
+            or re.search(r'\d+\s*[\+\-\*\/\^%]\s*\d+', text_clean)
+            or re.search(r'\b\d+\s*(?:%|percent)\s*(?:of|ka)\s*\d+\b', text_clean)
+            or re.search(r'\b(?:what\s+is|solve)\s+\d+\b', text_clean)
+        ) and not is_coding
+        if is_math:
+            return {
+                "intent": "CALCULATE",
+                "confidence": 0.95,
+                "tool": "calculate",
+                "entities": {"expression": text_clean},
+                "predefined_response": None
+            }
+
         best_intent = "GENERAL_CHAT"
         best_confidence = 0.0
         best_tool = None
@@ -84,14 +117,24 @@ class IntentClassifier:
 
             for pattern in item.get("patterns", []):
                 pattern_clean = pattern.lower().strip()
+                pat_tokens = tokenize(pattern_clean)
+                pat_len = len(pat_tokens)
+                text_len = len(tokens)
                 
                 # Direct match with word boundaries to avoid substring false positives (e.g. 'hi' in 'delhi')
                 if pattern_clean == text_clean:
                     score = 1.0
                 elif re.search(r'\b' + re.escape(pattern_clean) + r'\b', text_clean):
-                    score = 0.95
+                    coverage = pat_len / max(text_len, 1)
+                    if intent_name in ["GREETING", "FAREWELL", "THANK_YOU", "HELP"]:
+                        if coverage >= 0.5 or text_len <= 2:
+                            score = 0.95
+                        else:
+                            score = 0.15 * coverage
+                    else:
+                        score = 0.60 + (0.35 * coverage)
                 else:
-                    pat_vec = text_to_vector(tokenize(pattern_clean))
+                    pat_vec = text_to_vector(pat_tokens)
                     score = cosine_sim(vec, pat_vec)
 
                 if score > best_confidence:

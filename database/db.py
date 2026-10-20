@@ -22,6 +22,71 @@ try:
 except ImportError:
     HAS_PSYCOPG2 = False
 
+try:
+    import pymongo
+    HAS_PYMONGO = True
+except ImportError:
+    HAS_PYMONGO = False
+
+_MONGO_CLIENT = None
+_MONGO_CHECKED = False
+_MONGO_AVAILABLE = False
+
+def get_mongo_client() -> Optional[Any]:
+    """Establishes or returns cached MongoDB Atlas client connection."""
+    global _MONGO_CLIENT, _MONGO_CHECKED, _MONGO_AVAILABLE
+    if not HAS_PYMONGO:
+        return None
+    if _MONGO_CLIENT is not None and _MONGO_AVAILABLE:
+        return _MONGO_CLIENT
+    
+    uri = config.database.mongodb_uri
+    if not uri:
+        _MONGO_AVAILABLE = False
+        return None
+    
+    try:
+        if "retryWrites" not in uri and "?" not in uri:
+            uri = f"{uri}/?retryWrites=true&w=majority"
+        elif "retryWrites" not in uri and "?" in uri:
+            uri = f"{uri}&retryWrites=true&w=majority"
+
+        client = pymongo.MongoClient(
+            uri,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=10000,
+            maxPoolSize=50
+        )
+        # Test connection ping
+        client.admin.command('ping')
+        _MONGO_CLIENT = client
+        _MONGO_AVAILABLE = True
+        return _MONGO_CLIENT
+    except Exception as e:
+        ajax_logger.warning(f"MongoDB Atlas connection check failed: {e}. Falling back to SQLite.")
+        _MONGO_AVAILABLE = False
+        return None
+    finally:
+        _MONGO_CHECKED = True
+
+def get_mongo_db() -> Optional[Any]:
+    """Returns the MongoDB database instance."""
+    client = get_mongo_client()
+    if client is not None:
+        db_name = config.database.mongodb_db or "ajax_ai"
+        return client[db_name]
+    return None
+
+def is_mongo_active() -> bool:
+    """Returns True if MongoDB is configured and responsive."""
+    global _MONGO_AVAILABLE, _MONGO_CHECKED
+    if config.database.db_type.lower() != "mongodb" and not config.database.mongodb_uri:
+        return False
+    if not _MONGO_CHECKED:
+        get_mongo_client()
+    return _MONGO_AVAILABLE
+
 class UniversalCursorWrapper:
     """Wraps SQLite / PostgreSQL cursor to provide uniform dictionary rows and query adaptation."""
     def __init__(self, cursor, is_postgres: bool = False):
@@ -99,9 +164,21 @@ def _check_and_init_postgres(db_conf) -> bool:
     if not HAS_PSYCOPG2:
         return False
     try:
+        import socket
+        # Ultra-fast socket check before trying heavy psycopg2 connection
+        host = db_conf.postgres_host or "localhost"
+        port = int(db_conf.postgres_port or 5432)
+        try:
+            with socket.create_connection((host, port), timeout=0.3):
+                pass
+        except Exception:
+            ajax_logger.warning(f"PostgreSQL port {port} on {host} is closed. Using high-speed SQLite.")
+            _PG_AVAILABLE = False
+            return False
+
         # Check target database or URL
         if db_conf.postgres_url:
-            test_conn = psycopg2.connect(db_conf.postgres_url, connect_timeout=2)
+            test_conn = psycopg2.connect(db_conf.postgres_url, connect_timeout=1)
             test_conn.close()
             _PG_AVAILABLE = True
             return True
@@ -174,23 +251,130 @@ def get_db_connection() -> UniversalConnectionWrapper:
                 _PG_AVAILABLE = False
                 _IS_POSTGRES = False
 
-    # SQLite fallback
-    os.makedirs(os.path.dirname(config.database_path), exist_ok=True)
-    raw_conn = sqlite3.connect(config.database_path, check_same_thread=False)
+    # SQLite fallback (uses /tmp on Vercel Serverless environment)
+    db_path = config.database_path
+    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        db_path = os.path.join("/tmp", "ajax_ai.db")
+    try:
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    except OSError:
+        pass
+    raw_conn = sqlite3.connect(db_path, check_same_thread=False)
     raw_conn.row_factory = sqlite3.Row
     _IS_POSTGRES = False
     return UniversalConnectionWrapper(raw_conn, is_postgres=False)
 
-    # SQLite fallback
-    os.makedirs(os.path.dirname(config.database_path), exist_ok=True)
-    raw_conn = sqlite3.connect(config.database_path, check_same_thread=False)
-    raw_conn.row_factory = sqlite3.Row
-    _IS_POSTGRES = False
-    return UniversalConnectionWrapper(raw_conn, is_postgres=False)
+
+def _migrate_sqlite_to_mongo_if_needed(db):
+    """Auto-migrates existing SQLite records to MongoDB Atlas if MongoDB collections are empty."""
+    db_path = config.database_path
+    if not os.path.exists(db_path):
+        return
+    try:
+        if db.conversations.count_documents({}) > 0:
+            ajax_logger.info("MongoDB Atlas already contains conversation data. Skipping auto-migration.")
+            return
+
+        ajax_logger.info(f"Found local SQLite database at {db_path}. Auto-migrating data to MongoDB Atlas...")
+        sq_conn = sqlite3.connect(db_path)
+        sq_conn.row_factory = sqlite3.Row
+        cur = sq_conn.cursor()
+
+        # Migrate conversations
+        try:
+            cur.execute("SELECT * FROM conversations")
+            convs = [dict(r) for r in cur.fetchall()]
+            if convs:
+                db.conversations.insert_many(convs)
+                ajax_logger.info(f"Migrated {len(convs)} conversations to MongoDB Atlas.")
+        except Exception as e:
+            ajax_logger.warning(f"Error migrating conversations: {e}")
+
+        # Migrate messages
+        try:
+            cur.execute("SELECT * FROM messages")
+            msgs = [dict(r) for r in cur.fetchall()]
+            if msgs:
+                db.messages.insert_many(msgs)
+                ajax_logger.info(f"Migrated {len(msgs)} messages to MongoDB Atlas.")
+        except Exception as e:
+            ajax_logger.warning(f"Error migrating messages: {e}")
+
+        # Migrate memories
+        try:
+            cur.execute("SELECT * FROM memories")
+            mems = [dict(r) for r in cur.fetchall()]
+            if mems:
+                db.memories.insert_many(mems)
+                ajax_logger.info(f"Migrated {len(mems)} memories to MongoDB Atlas.")
+        except Exception as e:
+            ajax_logger.warning(f"Error migrating memories: {e}")
+
+        # Migrate tool_executions
+        try:
+            cur.execute("SELECT * FROM tool_executions")
+            tools = [dict(r) for r in cur.fetchall()]
+            if tools:
+                db.tool_executions.insert_many(tools)
+                ajax_logger.info(f"Migrated {len(tools)} tool execution logs to MongoDB Atlas.")
+        except Exception as e:
+            ajax_logger.warning(f"Error migrating tool executions: {e}")
+
+        # Migrate training_examples
+        try:
+            cur.execute("SELECT * FROM training_examples")
+            trainings = [dict(r) for r in cur.fetchall()]
+            if trainings:
+                db.training_examples.insert_many(trainings)
+                ajax_logger.info(f"Migrated {len(trainings)} training examples to MongoDB Atlas.")
+        except Exception as e:
+            ajax_logger.warning(f"Error migrating training examples: {e}")
+
+        sq_conn.close()
+        ajax_logger.info("Successfully migrated existing local data into MongoDB Atlas!")
+    except Exception as e:
+        ajax_logger.warning(f"SQLite to MongoDB migration notice: {e}")
+
 
 def init_db():
-    """Initialize all tables with proper schema for both PostgreSQL and SQLite."""
+    """Initialize all tables/collections with proper schema for MongoDB Atlas, PostgreSQL, or SQLite."""
     with DB_LOCK:
+        # 1. Check if MongoDB Atlas is active
+        if is_mongo_active():
+            try:
+                db = get_mongo_db()
+                ajax_logger.info(f"Initializing MongoDB Atlas collections and indexes for database '{db.name}'...")
+                
+                # Indexes
+                db.conversations.create_index("id", unique=True)
+                db.conversations.create_index([("is_pinned", -1), ("updated_at", -1)])
+                
+                db.messages.create_index("id", unique=True)
+                db.messages.create_index([("conversation_id", 1), ("created_at", 1)])
+                
+                db.memories.create_index("id", unique=True)
+                db.memories.create_index([("category", 1), ("key_text", 1)])
+                
+                db.tool_executions.create_index("id", unique=True)
+                db.tool_executions.create_index([("created_at", -1)])
+                
+                db.training_examples.create_index("id", unique=True)
+                db.training_examples.create_index([("created_at", -1)])
+
+                db.scheduled_tasks.create_index("id", unique=True)
+                db.scheduled_tasks.create_index([("status", 1)])
+
+                db.audit_logs.create_index("id", unique=True)
+                db.audit_logs.create_index([("created_at", -1)])
+
+                # Auto-migrate SQLite data if MongoDB Atlas collections are empty
+                _migrate_sqlite_to_mongo_if_needed(db)
+                ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
+                return
+            except Exception as e:
+                ajax_logger.error(f"Failed to initialize MongoDB Atlas: {e}. Falling back to SQLite.")
+
+        # 2. SQLite / PostgreSQL Initialization
         try:
             conn = get_db_connection()
             cursor = conn.cursor()

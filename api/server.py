@@ -15,6 +15,7 @@ from controllers.upload_controller import upload_router
 from controllers.system_controller import system_router
 from controllers.tools_controller import tools_router
 from controllers.memory_controller import memory_router
+from database.db import init_db
 from core.logger import ajax_logger
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -57,6 +58,13 @@ app.include_router(upload_router)
 app.include_router(system_router)
 app.include_router(tools_router)
 app.include_router(memory_router)
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        init_db()
+    except Exception as e:
+        ajax_logger.error(f"Startup database initialization error: {e}")
 
 def _get_dashboard_html():
     frontend_index = os.path.join(FRONTEND_DIR, "index.html")

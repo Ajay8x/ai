@@ -13,7 +13,10 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
-os.makedirs(DATA_DIR, exist_ok=True)
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+except OSError:
+    pass
 
 def load_dotenv_simple(env_path: str):
     """Simple .env parser without external dependencies."""
@@ -71,7 +74,9 @@ class SafetyConfig:
 
 @dataclass
 class DatabaseConfig:
-    db_type: str = os.getenv("DATABASE_TYPE", "postgres" if os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PASSWORD") else "sqlite") # postgres, sqlite
+    db_type: str = os.getenv("DATABASE_TYPE", "mongodb" if os.getenv("MONGODB_URI") else ("postgres" if os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PASSWORD") else "sqlite"))
+    mongodb_uri: str = os.getenv("MONGODB_URI", "")
+    mongodb_db: str = os.getenv("MONGODB_DB", "ajax_ai")
     postgres_url: str = os.getenv("POSTGRES_URL", "")
     postgres_host: str = os.getenv("POSTGRES_HOST", "localhost")
     postgres_port: int = int(os.getenv("POSTGRES_PORT", "5432"))
@@ -89,13 +94,27 @@ class AppConfig:
     host: str = os.getenv("HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", "8000"))
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+    cloud_name: str = os.getenv("CLOUD_NAME", "")
+    cloud_api_key: str = os.getenv("CLOUD_API_KEY", "")
+    cloud_api_secret: str = os.getenv("CLOUD_API_SECRET", "")
+    jwt_secret: str = os.getenv("JWT_SECRET", "")
+    admin_username: str = os.getenv("ADMIN_USERNAME", "admin")
+    admin_password: str = os.getenv("ADMIN_PASSWORD", "admin123")
 
     def save_to_file(self):
+        try:
+            from database.db import is_mongo_active, get_mongo_db
+            if is_mongo_active():
+                db = get_mongo_db()
+                db.system_settings.update_one({"id": "app_config"}, {"$set": asdict(self)}, upsert=True)
+        except Exception:
+            pass
+
         try:
             with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(asdict(self), f, indent=4)
         except Exception as e:
-            print(f"Failed to save settings: {e}")
+            pass
 
     @classmethod
     def load(cls) -> "AppConfig":

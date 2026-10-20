@@ -4,8 +4,13 @@ uvicorn>=0.28.0
 pydantic>=2.6.0
 python-dotenv>=1.0.0
 
-# Database (PostgreSQL Cloud / Local)
+# Database (MongoDB Cloud Atlas / PostgreSQL / SQLite)
+pymongo>=4.6.0
+dnspython>=2.4.0
 psycopg2-binary>=2.9.9
+
+# Cloud Storage
+cloudinary>=1.36.0
 
 # AI, NLP & Search
 requests>=2.31.0
@@ -15,3 +20,8 @@ duckduckgo-search>=5.0.0
 wikipedia>=1.4.0
 pypdf>=4.0.0
 psutil>=5.9.0
+
+# Voice & Audio (Optional local dependencies)
+# SpeechRecognition>=3.10.0
+# pyttsx3>=2.90
+

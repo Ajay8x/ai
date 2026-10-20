@@ -496,7 +496,8 @@
         "edge chalao",
         "bhai edge chalao"
       ],
-      "tool": "open_application"
+      "tool": null,
+      "response": "PC application launching has been disabled."
     },
     {
       "intent": "CLOSE_APPLICATION",
@@ -604,7 +605,8 @@
         "edge band karo",
         "edge ko band kar do"
       ],
-      "tool": "close_application"
+      "tool": null,
+      "response": "PC application closing has been disabled."
     },
     {
       "intent": "SYSTEM_INFO",
@@ -1083,7 +1085,8 @@
         "screenshot capture karo",
         "save current view"
       ],
-      "tool": "take_screenshot"
+      "tool": null,
+      "response": "PC screenshot capture has been disabled."
     },
     {
       "intent": "VOLUME_CONTROL",
@@ -1128,7 +1131,8 @@
         "pause audio",
         "continue playing"
       ],
-      "tool": "control_volume"
+      "tool": null,
+      "response": "PC volume control automation has been disabled."
     },
     {
       "intent": "WEATHER",
@@ -1528,7 +1532,8 @@
         "sleep mode me daal do",
         "power down computer"
       ],
-      "tool": "system_power"
+      "tool": null,
+      "response": "PC power management (shutdown/restart/sleep) has been disabled."
     },
     {
       "intent": "SEARCH_FILE",

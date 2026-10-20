@@ -4,7 +4,7 @@ Validates Database, LLM connectivity, Intent Engine, Tools, and Audio subsystems
 """
 
 from typing import Dict, Any
-from database.db import get_db_connection
+from database.db import get_db_connection, is_mongo_active, get_mongo_db
 from tools.registry import registry
 from ai.neural.intent_classifier import intent_classifier
 from config.config_loader import config
@@ -17,12 +17,22 @@ class HealthDiagnostics:
 
         # 1. Database Check
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT count(*) as count FROM sqlite_master WHERE type='table'")
-            tables_count = cursor.fetchone()["count"]
-            conn.close()
-            report["database"] = {"status": "HEALTHY", "tables_count": tables_count}
+            if is_mongo_active():
+                db = get_mongo_db()
+                colls = db.list_collection_names()
+                report["database"] = {
+                    "status": "HEALTHY",
+                    "type": "MongoDB Atlas Cloud",
+                    "database_name": db.name,
+                    "collections_count": len(colls)
+                }
+            else:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT count(*) as count FROM sqlite_master WHERE type='table'")
+                tables_count = cursor.fetchone()["count"]
+                conn.close()
+                report["database"] = {"status": "HEALTHY", "type": "SQLite", "tables_count": tables_count}
         except Exception as e:
             report["database"] = {"status": "UNHEALTHY", "error": str(e)}
 

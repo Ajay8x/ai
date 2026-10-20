@@ -448,6 +448,81 @@ body {
     animation: micPulse 1.2s infinite;
 }
 
+/* Web Search Toggle & Action Buttons */
+.web-search-btn {
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.web-search-btn.active {
+    background: rgba(0, 242, 254, 0.22) !important;
+    border-color: var(--accent-cyan) !important;
+    color: var(--accent-cyan) !important;
+    box-shadow: 0 0 16px rgba(0, 242, 254, 0.5) !important;
+    animation: webSearchGlow 1.8s infinite alternate;
+}
+
+@keyframes webSearchGlow {
+    from {
+        box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.7);
+    }
+}
+
+.web-search-action-btn {
+    background: rgba(0, 242, 254, 0.12);
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    border-radius: 12px;
+    padding: 0 16px;
+    height: 44px;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.web-search-action-btn:hover {
+    background: rgba(0, 242, 254, 0.25);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 16px rgba(0, 242, 254, 0.4);
+    transform: translateY(-1px);
+}
+
+.search-active-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0, 242, 254, 0.16);
+    border: 1px solid var(--accent-cyan);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+    animation: fadeIn 0.2s ease;
+}
+
+.search-active-pill button {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.search-active-pill button:hover {
+    color: var(--accent-red);
+}
+
 .input-box {
     flex: 1;
     background: rgba(255, 255, 255, 0.04);
@@ -563,3 +638,76 @@ body {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Conversation History Items */
+.chat-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+.chat-history-item:hover, .chat-history-item.active {
+    background: rgba(0, 242, 254, 0.08);
+    border-color: var(--accent-cyan);
+}
+.chat-history-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+}
+.chat-del-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.chat-del-btn:hover {
+    color: var(--accent-red);
+    background: rgba(255, 71, 87, 0.15);
+}
+
+/* Markdown & Code Block Enhancements */
+.message pre {
+    background: #1e1e2e;
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+    position: relative;
+}
+.message code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+}
+.message pre code {
+    color: #f8f8f2;
+}
+.copy-code-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.copy-code-btn:hover {
+    background: var(--accent-cyan);
+    color: #000;
+}
+

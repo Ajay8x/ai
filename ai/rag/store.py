@@ -8,6 +8,7 @@ import re
 import math
 from typing import List, Dict, Any, Tuple
 from ai.rag.loader import doc_loader
+from database.db import is_mongo_active, get_mongo_db
 from core.logger import ajax_logger
 
 def tokenize(text: str) -> List[str]:
@@ -17,7 +18,25 @@ class RAGStore:
     def __init__(self):
         self.documents: List[Dict[str, Any]] = [] # [{ "source": path, "chunk": text, "tokens": [...] }]
         
-        # Automatically index knowledge directories on startup
+        # 1. Load documents from MongoDB Atlas if active
+        if is_mongo_active():
+            try:
+                db = get_mongo_db()
+                mongo_docs = list(db.rag_documents.find({}, {"_id": 0}))
+                for doc in mongo_docs:
+                    chunk = doc.get("chunk", "")
+                    self.documents.append({
+                        "source": doc.get("source", "mongodb_cloud"),
+                        "title": doc.get("title", "Cloud Document"),
+                        "chunk": chunk,
+                        "tokens": set(tokenize(chunk))
+                    })
+                if mongo_docs:
+                    ajax_logger.info(f"Loaded {len(mongo_docs)} RAG document chunks from MongoDB Atlas.")
+            except Exception as e:
+                ajax_logger.warning(f"Failed loading RAG docs from MongoDB: {e}")
+
+        # 2. Automatically index local knowledge directories on startup
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         knowledge_dir = os.path.join(base_dir, "data", "knowledge")
         docs_dir = os.path.join(base_dir, "data", "docs")
@@ -28,8 +47,8 @@ class RAGStore:
         if os.path.exists(docs_dir):
             files_indexed += self.index_directory(docs_dir)
             
-        if files_indexed > 0:
-            ajax_logger.info(f"RAG Knowledge Store initialized: {files_indexed} documents ({len(self.documents)} total chunks) ready for instant retrieval.")
+        if files_indexed > 0 or len(self.documents) > 0:
+            ajax_logger.info(f"RAG Knowledge Store initialized: {len(self.documents)} total chunks ready for instant retrieval.")
 
     def index_directory(self, dir_path: str) -> int:
         if not os.path.exists(dir_path):
@@ -47,36 +66,68 @@ class RAGStore:
         if not content:
             return False
         chunks = doc_loader.chunk_text(content)
+        title = os.path.splitext(os.path.basename(file_path))[0].replace("wiki_", "").replace("_", " ").title()
+        mongo_records = []
         for chunk in chunks:
             self.documents.append({
                 "source": file_path,
-                "title": os.path.splitext(os.path.basename(file_path))[0].replace("wiki_", "").replace("_", " ").title(),
+                "title": title,
                 "chunk": chunk,
                 "tokens": set(tokenize(chunk))
             })
+            mongo_records.append({
+                "source": file_path,
+                "title": title,
+                "chunk": chunk
+            })
+
+        # Save to MongoDB Atlas if active
+        if is_mongo_active() and mongo_records:
+            try:
+                db = get_mongo_db()
+                db.rag_documents.insert_many(mongo_records)
+            except Exception as e:
+                ajax_logger.warning(f"Failed saving RAG chunks to MongoDB: {e}")
+
         return True
 
     def query(self, search_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
         # Exclude common query stop words for cleaner matching
-        stopwords = {"tell", "me", "about", "what", "is", "who", "was", "explain", "the", "a", "an", "of", "in", "and", "kya", "hai", "batao", "ke", "bare", "mein"}
+        stopwords = {"tell", "me", "about", "what", "is", "who", "was", "explain", "the", "a", "an", "of", "in", "and", "kya", "hai", "batao", "ke", "bare", "mein", "aur", "ko"}
         raw_tokens = tokenize(search_text)
-        query_tokens = set([t for t in raw_tokens if t not in stopwords]) or set(raw_tokens)
+        query_tokens = [t for t in raw_tokens if t not in stopwords] or raw_tokens
         
         if not query_tokens or not self.documents:
             return []
 
+        # Document frequency for IDF
+        total_docs = len(self.documents)
+        doc_freq: Dict[str, int] = {}
+        for t in set(query_tokens):
+            doc_freq[t] = sum(1 for d in self.documents if t in d["tokens"])
+
         scored_docs: List[Tuple[float, Dict[str, Any]]] = []
         for doc in self.documents:
-            intersection = query_tokens & doc["tokens"]
-            if intersection:
-                score = len(intersection) / (math.sqrt(len(query_tokens)) * math.sqrt(len(doc["tokens"]) or 1))
-                # Boost if title matches
-                title_tokens = set(tokenize(doc.get("title", "")))
-                if query_tokens & title_tokens:
-                    score += 0.5
-                scored_docs.append((score, doc))
+            score = 0.0
+            doc_tokens = doc["tokens"]
+            title_tokens = set(tokenize(doc.get("title", "")))
+
+            for t in query_tokens:
+                if t in doc_tokens:
+                    df = doc_freq.get(t, 1)
+                    idf = math.log((total_docs + 1) / (df + 0.5)) + 1.0
+                    score += idf
+                if t in title_tokens:
+                    score += 2.0  # Significant boost for exact title/topic match
+
+            if score > 0:
+                # Normalize by chunk length
+                length_norm = math.sqrt(len(doc_tokens) or 1)
+                final_score = score / length_norm
+                scored_docs.append((final_score, doc))
 
         scored_docs.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scored_docs[:top_k]]
+
 
 rag_store = RAGStore()

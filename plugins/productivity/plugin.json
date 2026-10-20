@@ -1,0 +1,9 @@
+{
+  "name": "ProductivitySuite",
+  "version": "1.0.0",
+  "description": "Productivity helpers including quick scratchpad notes and clipboard utilities",
+  "author": "AJAX AI Core Team",
+  "permissions": ["SAFE"],
+  "enabled": true,
+  "entry_point": "productivity_plugin.py"
+}

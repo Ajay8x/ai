@@ -4,30 +4,20 @@ Initializes and registers all built-in tools with ToolRegistry.
 """
 
 from tools.registry import registry
-from tools.system_tools import (
-    GetSystemTimeTool, GetSystemStatusTool, VolumeControlTool, 
-    TakeScreenshotTool, SystemPowerTool
-)
-from tools.app_tools import OpenApplicationTool, CloseApplicationTool
+from tools.system_tools import GetSystemTimeTool, GetSystemStatusTool
 from tools.web_tools import WebSearchTool, WikipediaTool, YouTubePlayTool, OpenWebsiteTool
 from tools.file_tools import SearchFilesTool, ReadFileTool, DeleteFileTool
 from tools.weather_tool import WeatherTool
 from tools.scheduler_tools import SetTimerTool, SetAlarmTool
 from tools.memory_tools import RememberTool, RecallMemoryTool
 from tools.rag_tools import QueryDocumentsTool
-from tools.vision_tools import AnalyzeScreenTool
 from tools.calculator_tool import CalculatorTool
 
 def register_all_tools():
-    """Register all default tools with the singleton registry."""
+    """Register all default tools with the singleton registry (PC automation excluded)."""
     tools = [
         GetSystemTimeTool(),
         GetSystemStatusTool(),
-        VolumeControlTool(),
-        TakeScreenshotTool(),
-        SystemPowerTool(),
-        OpenApplicationTool(),
-        CloseApplicationTool(),
         WebSearchTool(),
         WikipediaTool(),
         YouTubePlayTool(),
@@ -41,7 +31,6 @@ def register_all_tools():
         RememberTool(),
         RecallMemoryTool(),
         QueryDocumentsTool(),
-        AnalyzeScreenTool(),
         CalculatorTool()
     ]
     for t in tools:

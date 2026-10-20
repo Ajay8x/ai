@@ -115,6 +115,9 @@ class CalculatorTool(BaseTool):
 
         # Sanitize clean arithmetic string
         clean_expr = expr.replace("x", "*").replace("X", "*").replace("^", "**").replace("÷", "/")
+        # Convert natural language square root phrasing
+        clean_expr = re.sub(r"(?i)\bsquare\s+root\s+of\s+(\d+(?:\.\d+)?)\b", r"sqrt(\1)", clean_expr)
+        clean_expr = re.sub(r"(?i)\bsqrt\s+of\s+(\d+(?:\.\d+)?)\b", r"sqrt(\1)", clean_expr)
         # Remove words like 'calculate', 'what is', 'solve'
         clean_expr = re.sub(r"(?i)\b(calculate|what is|solve|math|ans|equal to|equals|\?)\b", "", clean_expr).strip()
 

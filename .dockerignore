@@ -1,0 +1,44 @@
+# ==============================================================================
+# AJAX AI - Docker Ignore Rules
+# Prevents large models, temporary logs, and build artifacts from entering Docker image
+# ==============================================================================
+
+# Git & System
+.git/
+.gitignore
+.gitattributes
+.vercelignore
+.env.local
+.system_generated/
+scratch/
+
+# Python Cache & Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Large Model Weights (Keep image lean under 300MB)
+models/qwen3.5-9b/
+models/*.safetensors*
+models/*.bin
+models/*.gguf
+llamafile*
+
+# Local Runtime Data & Logs
+logs/
+*.log
+data/*.db
+data/screenshots/
+data/vector_store/
+data/quick_notes.txt
+training/*.parquet
+
+# Documentation and Office Files
+*.docx
+plan.md
+generate_dfs_document.py

@@ -37,8 +37,25 @@ class TTSEngine:
             error_logger.warning(f"Failed to initialize pyttsx3 TTS engine: {e}")
             self.engine = None
 
-    def speak(self, text: str):
+    def stop(self):
+        """Interrupt and immediately cancel any currently playing speech."""
+        with self._lock:
+            if self.engine:
+                try:
+                    self.engine.stop()
+                except Exception:
+                    pass
+
+    def speak_async(self, text: str):
+        """Speak asynchronously in background without blocking caller thread."""
+        threading.Thread(target=self.speak, args=(text, False), daemon=True).start()
+
+    def speak(self, text: str, async_mode: bool = False):
         """Speak the provided text aloud in a thread-safe manner."""
+        if async_mode:
+            self.speak_async(text)
+            return
+
         if not text or not config.voice.enabled:
             return
             
@@ -57,6 +74,7 @@ class TTSEngine:
                     self._init_engine()
 
     def wish_user(self):
+
         """Greets the user according to the time of the day."""
         hour = datetime.datetime.now().hour
         if 0 <= hour < 12:

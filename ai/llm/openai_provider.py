@@ -83,3 +83,39 @@ class OpenAICompatibleProvider(BaseLLMProvider):
         except Exception as e:
             error_logger.error(f"Error calling {self.provider_name} LLM: {str(e)}")
             raise e
+
+    def stream_generate(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2048
+    ):
+        """Yield real-time text chunks via streaming endpoint."""
+        url = f"{self.base_url}/chat/completions"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True
+        }
+        resp = requests.post(url, headers=headers, json=payload, stream=True, timeout=45)
+        for line in resp.iter_lines():
+            if line:
+                line_str = line.decode("utf-8").strip()
+                if line_str.startswith("data: "):
+                    data_str = line_str[6:]
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                        delta = chunk["choices"][0].get("delta", {})
+                        if "content" in delta and delta["content"]:
+                            yield delta["content"]
+                    except Exception:
+                        pass
+

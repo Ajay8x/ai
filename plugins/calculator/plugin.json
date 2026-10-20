@@ -1,0 +1,9 @@
+{
+  "name": "ScientificCalculator",
+  "version": "1.0.0",
+  "description": "Advanced algebraic, geometric, and scientific calculation engine",
+  "author": "AJAX AI Core Team",
+  "permissions": ["SAFE"],
+  "enabled": true,
+  "entry_point": "calc_plugin.py"
+}

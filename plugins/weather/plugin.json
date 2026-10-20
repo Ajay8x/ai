@@ -1,0 +1,9 @@
+{
+  "name": "WeatherIntelligence",
+  "version": "1.0.0",
+  "description": "Real-time weather retrieval and forecasting plugin",
+  "author": "AJAX AI Core Team",
+  "permissions": ["SAFE"],
+  "enabled": true,
+  "entry_point": "weather_plugin.py"
+}

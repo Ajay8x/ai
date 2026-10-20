@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     query: str = Field(..., description="User query or instruction")
     conversation_id: Optional[str] = Field(None, description="Active conversation session ID")
     modality: Optional[str] = Field("api", description="Interaction modality: api, text, voice")
+    web_search: Optional[bool] = Field(False, description="Whether to force live web search")
 
 class ChatResponse(BaseModel):
     response: str
