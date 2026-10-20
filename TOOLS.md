@@ -24,4 +24,4 @@ All system tools are registered inside the centralized `ToolRegistry` and strict
 | `remember_fact` | `MEMORY` | `SAFE` | Stores long-term user preferences or notes with privacy checking. |
 | `recall_memory` | `MEMORY` | `SAFE` | Searches stored memories. |
 | `query_documents` | `FILESYSTEM` | `SAFE` | RAG query across indexed local documents and notes. |
-| `analyze_screen` | `SYSTEM` | `SAFE` | Captures and analyzes active screen elements. |
+| `calculate` | `UTILITY` | `SAFE` | Evaluates mathematical expressions and calculations accurately. |

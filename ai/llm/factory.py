@@ -288,7 +288,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                 if core_topic in KNOWLEDGE_BASE:
                     resp = KNOWLEDGE_BASE[core_topic]
                 else:
-                    resp = f"I processed your query ('{user_msg}'). I am AJAX AI, your autonomous assistant capable of answering questions, running PC commands, managing files, setting reminders, and web lookups."
+                    resp = f"I processed your query ('{user_msg}'). I am AJAX AI, your cloud-native autonomous assistant powered by MongoDB Atlas, live web search, document intelligence, and neural NLP."
 
             
         return LLMResponse(
