@@ -517,7 +517,42 @@ function escapeHtml(string) {
     return String(string).replace(/[&<>"']/g, s => entityMap[s]);
 }
 
-// Initial conversations load
+// Attach global action helpers
+window.toggleSidebar = toggleSidebar;
+window.autoCloseSidebarOnMobile = autoCloseSidebarOnMobile;
+window.startNewChat = startNewChat;
+window.sendQuickPrompt = sendQuickPrompt;
+window.loadConversationsList = loadConversationsList;
+window.sendMessage = sendMessage;
+window.toggleWebSearch = toggleWebSearch;
+window.toggleVoiceSpeech = toggleVoiceSpeech;
+window.toggleVoiceRecording = toggleVoiceRecording;
+window.handleFileSelected = handleFileSelected;
+
+// Initial setup and click listeners
 window.addEventListener('DOMContentLoaded', () => {
     loadConversationsList();
+
+    const hamburger = document.querySelector('.hamburger-btn');
+    if (hamburger) {
+        hamburger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar(true);
+        });
+    }
+
+    const closeBtn = document.querySelector('.mobile-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar(false);
+        });
+    }
+
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', () => {
+            toggleSidebar(false);
+        });
+    }
 });

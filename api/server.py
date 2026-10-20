@@ -49,8 +49,12 @@ if os.path.exists(FRONTEND_DIR):
     js_dir = os.path.join(FRONTEND_DIR, "js")
     if os.path.exists(css_dir):
         app.mount("/css", StaticFiles(directory=css_dir), name="frontend_css")
+        app.mount("/AJAX/css", StaticFiles(directory=css_dir), name="ajax_css")
+        app.mount("/ajax/css", StaticFiles(directory=css_dir), name="ajax_lower_css")
     if os.path.exists(js_dir):
         app.mount("/js", StaticFiles(directory=js_dir), name="frontend_js")
+        app.mount("/AJAX/js", StaticFiles(directory=js_dir), name="ajax_js")
+        app.mount("/ajax/js", StaticFiles(directory=js_dir), name="ajax_lower_js")
 
 # Register MVC Controller Routers
 app.include_router(chat_router)
@@ -85,10 +89,16 @@ async def root_redirect():
 
 # Main View Dashboard Routes for /AJAX and /ajax
 @app.get("/AJAX", response_class=HTMLResponse)
+@app.get("/AJAX/", response_class=HTMLResponse)
 @app.get("/ajax", response_class=HTMLResponse)
+@app.get("/ajax/", response_class=HTMLResponse)
 @app.get("/index.html", response_class=HTMLResponse)
 async def serve_dashboard():
-    return HTMLResponse(content=_get_dashboard_html(), status_code=200)
+    response = HTMLResponse(content=_get_dashboard_html(), status_code=200)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 def start_server(host: str = "127.0.0.1", port: int = 8000):
     ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on http://{host}:{port}/AJAX")

@@ -977,7 +977,8 @@ body {
     }
 
     .sidebar.open {
-        transform: translateX(0);
+        transform: translateX(0) !important;
+        display: flex !important;
     }
 
     .sidebar-backdrop {
@@ -987,8 +988,8 @@ body {
     }
 
     .sidebar-backdrop.active {
-        pointer-events: auto;
-        opacity: 1;
+        pointer-events: auto !important;
+        opacity: 1 !important;
     }
 
     .chat-viewport {
