@@ -108,10 +108,10 @@
         <!-- Input Area -->
         <div class="input-area">
             <!-- Hidden Document Picker -->
-            <input type="file" id="fileUploadInput" accept=".pdf,.docx,.doc,.txt,.md,.py,.json,.csv" style="display:none" onchange="handleFileSelected(this)">
+            <input type="file" id="fileUploadInput" accept=".pdf,.docx,.doc,.txt,.md,.py,.json,.csv,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleFileSelected(this)">
             
             <!-- Document Upload Button -->
-            <button class="action-icon-btn" onclick="document.getElementById('fileUploadInput').click()" title="Upload Document (PDF, DOCX, TXT, Code)">📎</button>
+            <button class="action-icon-btn" onclick="document.getElementById('fileUploadInput').click()" title="Upload Document or Media (PDF, DOCX, TXT, Code, Images)">📎</button>
             
             <!-- Voice Input Mic Button -->
             <button class="action-icon-btn" id="micBtn" onclick="toggleVoiceRecording()" title="Speak with Voice">🎙️</button>

@@ -153,8 +153,18 @@ function toggleVoiceRecording() {
 async function handleFileSelected(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    const reader = new FileReader();
 
+    // Enforce 15 MB Upload Limit
+    const MAX_UPLOAD_MB = 15;
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+        const actualMb = (file.size / (1024 * 1024)).toFixed(2);
+        alert(`❌ File Too Large: Maximum upload limit is ${MAX_UPLOAD_MB} MB.\nYour file '${file.name}' is ${actualMb} MB.`);
+        appendLog(`[ERROR] Upload rejected: '${file.name}' (${actualMb} MB) exceeds ${MAX_UPLOAD_MB} MB limit.`);
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
     appendLog(`[UPLOAD] Reading document: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
 
     reader.onload = async (e) => {

@@ -58,6 +58,7 @@ data/ajax.db
 data/screenshots/
 data/vector_store/
 data/query.txt
+data/uploads/
 query.txt
 memory.txt
 backups/

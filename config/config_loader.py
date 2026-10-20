@@ -100,6 +100,7 @@ class AppConfig:
     jwt_secret: str = os.getenv("JWT_SECRET", "")
     admin_username: str = os.getenv("ADMIN_USERNAME", "admin")
     admin_password: str = os.getenv("ADMIN_PASSWORD", "admin123")
+    max_upload_size_mb: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "15"))
 
     def save_to_file(self):
         try:

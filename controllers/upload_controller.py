@@ -28,6 +28,14 @@ async def upload_document(req: UploadRequest):
         raise HTTPException(status_code=400, detail="No base64 file content provided.")
     try:
         file_bytes = base64.b64decode(req.content_base64)
+        max_bytes = config.max_upload_size_mb * 1024 * 1024
+        if len(file_bytes) > max_bytes:
+            actual_mb = len(file_bytes) / (1024 * 1024)
+            raise HTTPException(
+                status_code=413,
+                detail=f"File exceeds maximum upload limit of {config.max_upload_size_mb} MB (Your file is {actual_mb:.2f} MB)."
+            )
+
         file_path = os.path.join(UPLOAD_DIR, req.filename)
         with open(file_path, "wb") as f:
             f.write(file_bytes)
@@ -69,6 +77,8 @@ async def upload_document(req: UploadRequest):
             "chunks": chunks_count,
             "message": msg
         }
+    except HTTPException:
+        raise
     except Exception as e:
         error_logger.error(f"Failed to process file upload: {e}")
         raise HTTPException(status_code=500, detail=str(e))
