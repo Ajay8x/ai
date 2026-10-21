@@ -17,6 +17,12 @@ def tokenize(text: str) -> List[str]:
 class RAGStore:
     def __init__(self):
         self.documents: List[Dict[str, Any]] = [] # [{ "source": path, "chunk": text, "tokens": [...] }]
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        if self._initialized:
+            return
+        self._initialized = True
         
         # 1. Load documents from MongoDB Atlas if active
         if is_mongo_active():
@@ -62,6 +68,7 @@ class RAGStore:
         return count
 
     def index_file(self, file_path: str) -> bool:
+        self._ensure_initialized()
         content = doc_loader.load_file(file_path)
         if not content:
             return False
@@ -92,6 +99,7 @@ class RAGStore:
         return True
 
     def query(self, search_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        self._ensure_initialized()
         # Exclude common query stop words for cleaner matching
         stopwords = {"tell", "me", "about", "what", "is", "who", "was", "explain", "the", "a", "an", "of", "in", "and", "kya", "hai", "batao", "ke", "bare", "mein", "aur", "ko"}
         raw_tokens = tokenize(search_text)
