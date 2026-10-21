@@ -105,6 +105,18 @@
             </div>
 
             <div class="top-right">
+                <!-- Language Toggle Switch (Default: English) -->
+                <div class="lang-toggle-group" id="langToggleGroup" title="Select Language / भाषा चुनें">
+                    <button type="button" class="lang-btn active" id="langBtnEn" onclick="setLanguage('en')" title="English Mode (Default)">
+                        <span class="lang-flag">🇬🇧</span>
+                        <span class="lang-text">English</span>
+                    </button>
+                    <button type="button" class="lang-btn" id="langBtnHi" onclick="setLanguage('hi')" title="हिंदी मोड (Hindi)">
+                        <span class="lang-flag">🇮🇳</span>
+                        <span class="lang-text">हिंदी</span>
+                    </button>
+                </div>
+
                 <!-- Live Web Search Badge Toggle in Header -->
                 <button class="web-search-pill-btn" id="headerWebSearchBtn" onclick="toggleWebSearch()" title="Toggle Live Web Search">
                     <span class="pill-icon">🌐</span>

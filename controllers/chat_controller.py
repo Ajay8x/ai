@@ -22,7 +22,8 @@ async def process_chat_message(req: ChatRequest):
         req.query,
         conv_id,
         modality=req.modality or "api",
-        web_search=bool(req.web_search)
+        web_search=bool(req.web_search),
+        language=req.language or "en"
     )
     return JSONResponse(content=result, status_code=200)
 
@@ -35,7 +36,8 @@ async def process_chat_message_stream(req: ChatRequest):
             req.query,
             conv_id,
             modality=req.modality or "web_stream",
-            web_search=bool(req.web_search)
+            web_search=bool(req.web_search),
+            language=req.language or "en"
         ),
         media_type="text/event-stream"
     )

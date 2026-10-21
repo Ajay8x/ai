@@ -140,7 +140,8 @@ class RequestRouter:
         conversation_id: str,
         modality: str = "text",
         confirmed_by_user: bool = False,
-        web_search: bool = False
+        web_search: bool = False,
+        language: str = "en"
     ) -> Dict[str, Any]:
         """
         Main query orchestration pipeline:
@@ -225,7 +226,7 @@ class RequestRouter:
 
         # Step 3: LLM Brain Reasoning + Tool Calling
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
-        messages = context_manager.build_context(conversation_id, effective_query)
+        messages = context_manager.build_context(conversation_id, effective_query, language=language)
         
         # If user is asking a conversational / factual / wiki question, generate written text directly without tool overhead
         q_lower = query.lower().strip()
@@ -318,7 +319,8 @@ class RequestRouter:
         conversation_id: str,
         modality: str = "text",
         confirmed_by_user: bool = False,
-        web_search: bool = False
+        web_search: bool = False,
+        language: str = "en"
     ):
         """
         Streaming query pipeline:
@@ -391,7 +393,7 @@ class RequestRouter:
 
         # Streaming LLM Response
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
-        messages = context_manager.build_context(conversation_id, effective_query)
+        messages = context_manager.build_context(conversation_id, effective_query, language=language)
 
         full_text = ""
         try:

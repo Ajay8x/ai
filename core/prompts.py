@@ -25,11 +25,18 @@ AJAX_SYSTEM_PROMPT = """You are AJAX AI, an advanced, highly intelligent convers
    - Use Markdown formatting (bold text, bullet points, headers, numbered steps, code blocks) to make responses readable and engaging.
 """
 
-def format_system_prompt(memories_context: str = "", rag_context: str = "") -> str:
+def format_system_prompt(memories_context: str = "", rag_context: str = "", language: str = "en") -> str:
     prompt = AJAX_SYSTEM_PROMPT
     if memories_context:
         prompt += f"\n\n--- RELEVANT USER MEMORIES ---\n{memories_context}"
     if rag_context:
         prompt += f"\n\n--- RETRIEVED USER DOCUMENTS ---\n{rag_context}"
+    
+    if language == "hi":
+        prompt += "\n\n--- TARGET RESPONSE LANGUAGE ---\nUSER PREFERENCE: The user has explicitly selected HINDI language mode. Deliver your entire explanation and answer in natural, fluent, and polite Hindi (Devanagari script, keeping code and technical keywords standard)."
+    else:
+        prompt += "\n\n--- TARGET RESPONSE LANGUAGE ---\nUSER PREFERENCE: The user has explicitly selected ENGLISH language mode. Deliver your entire explanation and answer in fluent, clear, and professional English."
+        
     return prompt
+
 

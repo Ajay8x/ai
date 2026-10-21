@@ -11,6 +11,39 @@ let isRecording = false;
 let recognition = null;
 let attachedDocs = [];
 let webSearchEnabled = false;
+let currentLanguage = 'en'; // Default is English
+
+/* ==============================================================================
+   LANGUAGE TOGGLE (English Default & Hindi Mode)
+   ============================================================================== */
+
+function setLanguage(lang) {
+    currentLanguage = (lang === 'hi') ? 'hi' : 'en';
+
+    const btnEn = document.getElementById('langBtnEn');
+    const btnHi = document.getElementById('langBtnHi');
+    if (btnEn) btnEn.classList.toggle('active', currentLanguage === 'en');
+    if (btnHi) btnHi.classList.toggle('active', currentLanguage === 'hi');
+
+    // Update speech recognition language if initialized
+    if (recognition) {
+        recognition.lang = currentLanguage === 'hi' ? 'hi-IN' : 'en-US';
+    }
+
+    // Dynamic input placeholder
+    const input = document.getElementById('userInput');
+    if (input && !isRecording) {
+        if (currentLanguage === 'hi') {
+            input.placeholder = "कुछ भी पूछें, बोलें 🎙️ या फाइल अपलोड करें 📎...";
+        } else {
+            input.placeholder = "Ask anything, talk via 🎙️, or upload 📎 PDF...";
+        }
+    }
+
+    try {
+        localStorage.setItem('ajax_lang', currentLanguage);
+    } catch (e) {}
+}
 
 /* ==============================================================================
    RESPONSIVE DRAWER & SIDEBAR TOGGLE (Mobile & PC)
@@ -219,6 +252,7 @@ function speakText(text) {
     window.speechSynthesis.cancel();
     const cleanText = text.replace(/<[^>]*>?/gm, '').replace(/[*#`_]/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText.substring(0, 400));
+    utterance.lang = currentLanguage === 'hi' ? 'hi-IN' : 'en-US';
     utterance.rate = 1.05;
     window.speechSynthesis.speak(utterance);
 }
@@ -242,14 +276,14 @@ function toggleVoiceRecording() {
 
     try {
         recognition = new SpeechRec();
-        recognition.lang = 'en-US';
+        recognition.lang = currentLanguage === 'hi' ? 'hi-IN' : 'en-US';
         recognition.continuous = false;
         recognition.interimResults = false;
 
         recognition.onstart = () => {
             isRecording = true;
             if (micBtn) micBtn.classList.add('active');
-            if (input) input.placeholder = "Listening... Speak now...";
+            if (input) input.placeholder = currentLanguage === 'hi' ? "सुन रहा हूँ... बोलिए..." : "Listening... Speak now...";
         };
 
         recognition.onresult = (event) => {
@@ -260,14 +294,14 @@ function toggleVoiceRecording() {
         recognition.onerror = () => {
             isRecording = false;
             if (micBtn) micBtn.classList.remove('active');
-            if (input) input.placeholder = "Ask anything, talk via 🎙️, or upload 📎 PDF...";
+            if (input) input.placeholder = currentLanguage === 'hi' ? "कुछ भी पूछें, बोलें 🎙️ या फाइल अपलोड करें 📎..." : "Ask anything, talk via 🎙️, or upload 📎 PDF...";
         };
 
         recognition.onend = () => {
             isRecording = false;
             if (micBtn) micBtn.classList.remove('active');
             if (input) {
-                input.placeholder = "Ask anything, talk via 🎙️, or upload 📎 PDF...";
+                input.placeholder = currentLanguage === 'hi' ? "कुछ भी पूछें, बोलें 🎙️ या फाइल अपलोड करें 📎..." : "Ask anything, talk via 🎙️, or upload 📎 PDF...";
                 if (input.value.trim()) {
                     sendMessage();
                 }
@@ -384,7 +418,7 @@ async function sendMessage() {
     aiPlaceholder.innerHTML = `
         <div class="loading-phase-container">
             <div class="loading-spinner"></div>
-            <span>${webSearchEnabled ? '🌐 Searching live web & synthesizing sources...' : '⚡ AJAX is thinking...'}</span>
+            <span>${webSearchEnabled ? (currentLanguage === 'hi' ? '🌐 लाइव वेब सर्च और जानकारी जुटाई जा रही है...' : '🌐 Searching live web & synthesizing sources...') : (currentLanguage === 'hi' ? '⚡ AJAX सोच रहा है...' : '⚡ AJAX is thinking...')}</span>
         </div>
     `;
     if (chat) {
@@ -404,7 +438,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 query: text,
                 conversation_id: convId,
-                web_search: webSearchEnabled
+                web_search: webSearchEnabled,
+                language: currentLanguage
             })
         });
 
@@ -528,9 +563,18 @@ window.toggleWebSearch = toggleWebSearch;
 window.toggleVoiceSpeech = toggleVoiceSpeech;
 window.toggleVoiceRecording = toggleVoiceRecording;
 window.handleFileSelected = handleFileSelected;
+window.setLanguage = setLanguage;
 
 // Initial setup and click listeners
 window.addEventListener('DOMContentLoaded', () => {
+    // English is the default language
+    try {
+        const savedLang = localStorage.getItem('ajax_lang');
+        setLanguage(savedLang === 'hi' ? 'hi' : 'en');
+    } catch (e) {
+        setLanguage('en');
+    }
+
     loadConversationsList();
 
     const hamburger = document.querySelector('.hamburger-btn');

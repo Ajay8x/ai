@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="Active conversation session ID")
     modality: Optional[str] = Field("api", description="Interaction modality: api, text, voice")
     web_search: Optional[bool] = Field(False, description="Whether to force live web search")
+    language: Optional[str] = Field("en", description="Preferred response language: 'en' or 'hi'")
 
 class ChatResponse(BaseModel):
     response: str
