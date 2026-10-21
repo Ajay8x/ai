@@ -8,6 +8,7 @@ Guarantees:
 5. Integration with Loop Detector, Rate Limiter, and Circuit Breaker.
 """
 
+import os
 import socket
 import ipaddress
 import urllib.parse
@@ -137,6 +138,47 @@ class SecureAPIProxy:
         request_headers = dict(provider_config.headers)
         request_headers.update(req.headers)
 
+        # Secure server-side credential injection
+        if provider_config.id == "openaq":
+            api_key = os.environ.get("OPENAQ_API_KEY", "").strip()
+            if api_key:
+                request_headers["X-API-Key"] = api_key
+            else:
+                return ConnectorResponse(
+                    success=False,
+                    status_code=401,
+                    error="Missing credential: OPENAQ_API_KEY. Please configure OPENAQ_API_KEY in your .env file to enable live OpenAQ queries.",
+                    data={
+                        "status": "unauthenticated",
+                        "provider": "openaq",
+                        "required_key": "OPENAQ_API_KEY",
+                        "help": "Get a free API key at https://docs.openaq.org/ and configure OPENAQ_API_KEY in your .env file."
+                    },
+                    data_classification=provider_config.data_classification,
+                    attribution=provider_config.attribution,
+                    source_url=full_url
+                )
+
+        if provider_config.id == "windy_webcams":
+            api_key = os.environ.get("WINDY_API_KEY", "").strip()
+            if api_key:
+                request_headers["x-windy-api-key"] = api_key
+            else:
+                return ConnectorResponse(
+                    success=False,
+                    status_code=401,
+                    error="Missing credential: WINDY_API_KEY. Please configure WINDY_API_KEY in your .env file to enable live Windy Webcam queries.",
+                    data={
+                        "status": "unauthenticated",
+                        "provider": "windy_webcams",
+                        "required_key": "WINDY_API_KEY",
+                        "help": "Get a free API key at https://api.windy.com/webcams/docs and configure WINDY_API_KEY in your .env file."
+                    },
+                    data_classification=provider_config.data_classification,
+                    attribution=provider_config.attribution,
+                    source_url=full_url
+                )
+
         if cached_entry:
             if cached_entry.get("etag"):
                 request_headers["If-None-Match"] = cached_entry["etag"]
@@ -211,6 +253,10 @@ class SecureAPIProxy:
                     rate_limiter.quota_tracker.record_usage(req.provider_id)
                     latency = (time.time() - t0) * 1000
 
+                    # Strip sensitive credentials from headers before returning or caching
+                    SENSITIVE_HEADERS = {"x-api-key", "x-windy-api-key", "authorization", "cookie", "set-cookie"}
+                    sanitized_headers = {k: v for k, v in resp_headers.items() if k.lower() not in SENSITIVE_HEADERS}
+
                     if 200 <= response.status_code < 300:
                         cb.record_success()
                         # Cache successful GET
@@ -218,7 +264,7 @@ class SecureAPIProxy:
                             rate_limiter.cache.set(
                                 cache_key=cache_key,
                                 data=parsed_data,
-                                headers=resp_headers,
+                                headers=sanitized_headers,
                                 ttl_sec=provider_config.cache_ttl_sec
                             )
 
@@ -226,7 +272,7 @@ class SecureAPIProxy:
                             success=True,
                             status_code=response.status_code,
                             data=parsed_data,
-                            headers=resp_headers,
+                            headers=sanitized_headers,
                             latency_ms=latency,
                             from_cache=False,
                             etag=resp_headers.get("etag") or resp_headers.get("ETag"),
@@ -240,7 +286,7 @@ class SecureAPIProxy:
                             success=False,
                             status_code=response.status_code,
                             data=parsed_data,
-                            headers=resp_headers,
+                            headers=sanitized_headers,
                             latency_ms=latency,
                             error=f"Upstream error HTTP {response.status_code}",
                             data_classification=provider_config.data_classification,

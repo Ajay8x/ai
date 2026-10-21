@@ -14,11 +14,16 @@ from connectors.loop_detector import loop_manager, LoopDetectionException, Circu
 from connectors.rate_limiter import rate_limiter, RateLimitExceededException
 from connectors.schema_mapper import schema_mapper
 from connectors.health import health_monitor
+from connectors.providers import dispatcher
 from core.logger import ajax_logger, security_logger
 
 connectors_router = APIRouter(prefix="/api/connectors", tags=["Public API Connectors & Loop Subsystem"])
 
 # --- Request / Response DTOs ---
+
+class QueryConnectorRequest(BaseModel):
+    action: Optional[str] = Field("default", description="Provider capability action")
+    params: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Typed query parameters")
 
 class ExecuteConnectorRequest(BaseModel):
     provider_id: str = Field(..., description="Registered provider ID")
@@ -101,6 +106,32 @@ async def execute_connector(req: ExecuteConnectorRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         ajax_logger.error(f"Connector execution error: {e}")
+        raise HTTPException(status_code=500, detail=f"Connector error: {e}")
+
+@connectors_router.post("/{provider_id}/query")
+async def query_provider_capability(provider_id: str, req: QueryConnectorRequest):
+    """Executes a high-level capability query for a specific provider with input validation and normalized response."""
+    provider = connector_registry.get(provider_id)
+    if not provider:
+        raise HTTPException(status_code=404, detail=f"Provider '{provider_id}' not found.")
+    if not provider.enabled:
+        raise HTTPException(status_code=400, detail=f"Provider '{provider_id}' is currently disabled.")
+
+    try:
+        resp = dispatcher.dispatch(provider_id, req.action or "default", req.params or {})
+        return resp.to_dict()
+    except SSRFProtectionException as e:
+        security_logger.error(f"SSRF violation blocked: {e}")
+        raise HTTPException(status_code=403, detail=f"SSRF Protection: {e}")
+    except LoopDetectionException as e:
+        security_logger.error(f"Loop detection tripped: {e}")
+        raise HTTPException(status_code=429, detail=f"Loop Detected: {e}")
+    except RateLimitExceededException as e:
+        raise HTTPException(status_code=429, detail=str(e), headers={"Retry-After": str(int(e.retry_after_seconds))})
+    except CircuitBreakerOpenException as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        ajax_logger.error(f"Provider '{provider_id}' query error: {e}")
         raise HTTPException(status_code=500, detail=f"Connector error: {e}")
 
 @connectors_router.post("/schema/infer")

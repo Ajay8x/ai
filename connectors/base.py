@@ -122,7 +122,7 @@ class ConnectorRequest:
 class ConnectorResponse:
     success: bool
     status_code: int
-    data: Any
+    data: Any = None
     headers: Dict[str, str] = field(default_factory=dict)
     latency_ms: float = 0.0
     from_cache: bool = False

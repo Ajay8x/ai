@@ -82,6 +82,16 @@
         }
 
         /**
+         * Executes a high-level typed capability query via /api/connectors/{providerId}/query
+         */
+        async queryConnectorCapability(providerId, action = 'default', params = {}) {
+            return this.post(`/api/connectors/${providerId}/query`, {
+                action,
+                params
+            }, `Fetching ${providerId} data...`);
+        }
+
+        /**
          * Adds an execution result into active AI conversation and asks AI about it
          */
         askAIAboutData(contextTitle, dataPayload) {

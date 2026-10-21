@@ -311,6 +311,12 @@ async def serve_api_detail_page(request: Request, api_slug: str):
     preset = API_PRESETS.get(p.id, {"endpoint": "/", "params": {}})
     desc = p.metadata.get("description", p.attribution or f"Official public API provider for {p.name}")
 
+    is_auth_configured = True
+    if p.id == "openaq":
+        is_auth_configured = bool(os.environ.get("OPENAQ_API_KEY", "").strip())
+    elif p.id == "windy_webcams":
+        is_auth_configured = bool(os.environ.get("WINDY_API_KEY", "").strip())
+
     api_data = {
         "id": p.id,
         "slug": api_slug,
@@ -325,6 +331,8 @@ async def serve_api_detail_page(request: Request, api_slug: str):
         "data_classification": p.data_classification.value if hasattr(p.data_classification, "value") else str(p.data_classification),
         "auth_type": p.auth_type.value if hasattr(p.auth_type, "value") else str(p.auth_type),
         "circuit_breaker_state": cb_state,
+        "required_credentials": p.required_credentials,
+        "is_auth_configured": is_auth_configured,
         "default_endpoint": preset.get("endpoint", "/"),
         "default_params_json": json.dumps(preset.get("params", {}), indent=2)
     }
