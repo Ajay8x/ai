@@ -104,6 +104,55 @@ class IntentClassifier:
                 "predefined_response": None
             }
 
+        # Fast Public API: ISS Satellite Tracker
+        if re.search(r'\b(iss\b|international\s+space\s+station|space\s+station\s+(location|position|coordinates)|iss\s+kahan\s+hai)', text_clean):
+            return {
+                "intent": "TRACK_ISS",
+                "confidence": 0.96,
+                "tool": "get_iss_coordinates",
+                "entities": {},
+                "predefined_response": None
+            }
+
+        # Fast Public API: Earthquakes Tracker
+        if re.search(r'\b(earthquake|earthquakes|bhookamp|bhukamp|seismic\s+activity)\b', text_clean):
+            return {
+                "intent": "TRACK_EARTHQUAKES",
+                "confidence": 0.95,
+                "tool": "get_recent_earthquakes",
+                "entities": {"limit": 5, "min_magnitude": 4.0},
+                "predefined_response": None
+            }
+
+        # Fast Public API: Currency Exchange
+        curr_match = re.search(r'(\d+(?:\.\d+)?)\s*(usd|dollar|eur|euro|inr|gbp)\s*(?:to|in|me|ka)\s*(inr|usd|eur|gbp|rupee)', text_clean)
+        if curr_match or re.search(r'\b(currency\s+exchange|exchange\s+rate|dollar\s+ka\s+rate|dollar\s+rate|usd\s+to\s+inr|dollar\s+to\s+inr)\b', text_clean):
+            amt = float(curr_match.group(1)) if curr_match else 1.0
+            from_c = "USD"
+            to_c = "INR"
+            if curr_match:
+                fc = curr_match.group(2).upper()
+                tc = curr_match.group(3).upper()
+                from_c = "USD" if "DOLLAR" in fc or "USD" in fc else ("EUR" if "EUR" in fc else fc)
+                to_c = "INR" if "INR" in tc or "RUPEE" in tc else tc
+            return {
+                "intent": "CONVERT_CURRENCY",
+                "confidence": 0.96,
+                "tool": "convert_currency",
+                "entities": {"amount": amt, "from_currency": from_c, "to_currency": to_c},
+                "predefined_response": None
+            }
+
+        # Fast Public API: Public Holidays
+        if re.search(r'\b(public\s+holiday|public\s+holidays|holiday\s+list|chhutti|chhuttiyan|holidays\s+in\s+india)\b', text_clean):
+            return {
+                "intent": "PUBLIC_HOLIDAYS",
+                "confidence": 0.95,
+                "tool": "get_public_holidays",
+                "entities": {"country_code": "IN"},
+                "predefined_response": None
+            }
+
         best_intent = "GENERAL_CHAT"
         best_confidence = 0.0
         best_tool = None

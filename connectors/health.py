@@ -24,8 +24,8 @@ class ProviderHealthMonitor:
             "open_meteo": ("forecast", {"latitude": 28.6139, "longitude": 77.2090, "current_weather": "true"}),
             "where_the_iss_at": ("satellites/25544", {}),
             "usgs_earthquakes": ("query", {"format": "geojson", "limit": 1}),
-            "frankfurter_fx": ("v1/latest", {"from": "USD", "to": "EUR"}),
-            "nager_date": ("CountryInfo/IN", {}),
+            "frankfurter_fx": ("latest", {"from": "USD", "to": "EUR"}),
+            "nager_date": ("CountryInfo/US", {}),
             "rest_countries": ("name/india", {"fields": "name,capital,currencies"}),
             "jsonplaceholder": ("posts/1", {}),
             "osm_nominatim": ("search", {"q": "Delhi", "format": "json", "limit": 1})

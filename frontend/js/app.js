@@ -666,11 +666,64 @@ function renderProvidersUI(providers) {
                     <span><strong>Category:</strong> ${escapeHtml(p.category)}</span>
                     <span><strong>Auth:</strong> ${escapeHtml(p.auth_type)}</span>
                     <span><strong>Limits:</strong> ${escapeHtml(rateLimitText)}</span>
-                    ${p.documentation_url ? `<span><a href="${escapeHtml(p.documentation_url)}" target="_blank" rel="noopener">Docs ↗</a></span>` : ''}
                 </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                    <button class="test-live-btn" onclick="testProviderLive('${escapeHtml(p.provider_id)}')">⚡ Test Live Data</button>
+                    ${p.documentation_url ? `<a href="${escapeHtml(p.documentation_url)}" target="_blank" rel="noopener" style="font-size:11.5px; color:var(--accent-cyan); text-decoration:none;">Docs ↗</a>` : ''}
+                </div>
+                <div id="liveResult_${escapeHtml(p.provider_id)}" class="live-result-drawer" style="display:none; margin-top:8px;"></div>
             </div>
         `;
     }).join('');
+}
+
+async function testProviderLive(providerId) {
+    const box = document.getElementById(`liveResult_${providerId}`);
+    if (!box) return;
+
+    box.style.display = 'block';
+    box.innerHTML = '<div class="api-loading">Executing live request through SSRF proxy...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/connectors/health/check/${encodeURIComponent(providerId)}`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        const isHealthy = data.is_healthy;
+        const latency = data.latency_ms !== null ? `${data.latency_ms.toFixed(1)} ms` : 'N/A';
+        const sample = data.sample_data || { status: data.http_status, message: "Response received" };
+
+        const sampleJsonString = JSON.stringify(sample);
+
+        box.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:600; color:${isHealthy ? '#22c55e' : '#ef4444'};">
+                    ${isHealthy ? '✓ LIVE 200 OK' : '⚠ NOTICE'} (${latency})
+                </span>
+                <button class="schema-primary-btn" style="padding:2px 8px; font-size:10.5px;" onclick='sendLiveToSchema(${escapeHtml(JSON.stringify(sampleJsonString))})'>
+                    📋 Map to Schema
+                </button>
+            </div>
+            <pre style="margin:0; max-height:120px; overflow-y:auto; font-size:10.5px; background:rgba(0,0,0,0.4); padding:6px; border-radius:4px; color:#cbd5e1; font-family:'JetBrains Mono',monospace;">${escapeHtml(JSON.stringify(sample, null, 2))}</pre>
+        `;
+    } catch (err) {
+        box.innerHTML = `<div style="font-size:11px; color:#ef4444;">Live query failed: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function sendLiveToSchema(jsonString) {
+    switchApiTab('schema');
+    const input = document.getElementById('schemaJsonInput');
+    const pathInput = document.getElementById('schemaDataPathInput');
+    if (input) {
+        try {
+            input.value = JSON.stringify(JSON.parse(jsonString), null, 2);
+        } catch (e) {
+            input.value = jsonString;
+        }
+    }
+    if (pathInput) pathInput.value = "";
+    inferSchemaFromUI();
 }
 
 function filterProvidersUI() {
@@ -679,37 +732,123 @@ function filterProvidersUI() {
 
     const filtered = allApiProviders.filter(p => {
         const matchesCategory = !category || p.category === category;
+        const name = (p.provider_name || p.name || '').toLowerCase();
+        const id = (p.provider_id || p.id || '').toLowerCase();
+        const desc = (p.description || p.attribution || '').toLowerCase();
         const matchesSearch = !search || 
-            p.provider_name.toLowerCase().includes(search) || 
-            p.provider_id.toLowerCase().includes(search) || 
-            (p.description && p.description.toLowerCase().includes(search));
+            name.includes(search) || 
+            id.includes(search) || 
+            desc.includes(search);
         return matchesCategory && matchesSearch;
     });
 
     renderProvidersUI(filtered);
 }
 
-function loadSampleWeatherJson() {
-    const sample = {
-        latitude: 28.61,
-        longitude: 77.20,
-        generationtime_ms: 0.12,
-        utc_offset_seconds: 0,
-        timezone: "GMT",
-        elevation: 216.0,
-        current_weather: {
-            temperature: 29.4,
-            windspeed: 12.2,
-            winddirection: 195,
-            weathercode: 1,
-            is_day: 1,
-            time: "2026-10-21T04:00"
+function loadPresetApiSample(presetKey) {
+    const samples = {
+        weather: {
+            path: "current_weather",
+            data: {
+                latitude: 28.61,
+                longitude: 77.20,
+                elevation: 216.0,
+                timezone: "GMT",
+                current_weather: {
+                    temperature: 29.4,
+                    windspeed: 12.2,
+                    winddirection: 195,
+                    weathercode: 1,
+                    is_day: 1,
+                    time: "2026-10-21T04:00"
+                }
+            }
+        },
+        iss: {
+            path: "",
+            data: {
+                name: "iss",
+                id: 25544,
+                latitude: -14.28,
+                longitude: -12.44,
+                altitude: 418.52,
+                velocity: 27612.4,
+                visibility: "daylight",
+                footprint: 4501.2,
+                timestamp: 1761021400
+            }
+        },
+        earthquake: {
+            path: "features[0].properties",
+            data: {
+                type: "FeatureCollection",
+                metadata: { status: 200, count: 1, title: "USGS Earthquakes" },
+                features: [{
+                    type: "Feature",
+                    properties: {
+                        mag: 4.8,
+                        place: "92 km NE of Tokyo, Japan",
+                        time: 1761021200000,
+                        url: "https://earthquake.usgs.gov/earthquakes/event/us7000test",
+                        tsunami: 0,
+                        alert: "green"
+                    }
+                }]
+            }
+        },
+        fx: {
+            path: "rates",
+            data: {
+                amount: 1.0,
+                base: "USD",
+                date: "2026-10-21",
+                rates: { EUR: 0.92, INR: 84.15, GBP: 0.77, JPY: 152.4 }
+            }
+        },
+        holidays: {
+            path: "[0]",
+            data: [{
+                date: "2026-11-08",
+                localName: "Diwali",
+                name: "Deepavali",
+                countryCode: "IN",
+                fixed: false,
+                global: true
+            }]
+        },
+        countries: {
+            path: "[0]",
+            data: [{
+                name: { common: "India", official: "Republic of India" },
+                capital: ["New Delhi"],
+                region: "Asia",
+                population: 1428627663,
+                currencies: { INR: { name: "Indian Rupee", symbol: "₹" } }
+            }]
+        },
+        demo: {
+            path: "",
+            data: {
+                userId: 1,
+                id: 1,
+                title: "Public API Integration Standard",
+                body: "Verified automated schema parsing with loop detection and rate limiting."
+            }
         }
     };
+
+    if (!presetKey || !samples[presetKey]) return;
+
+    const item = samples[presetKey];
     const input = document.getElementById('schemaJsonInput');
     const pathInput = document.getElementById('schemaDataPathInput');
-    if (input) input.value = JSON.stringify(sample, null, 2);
-    if (pathInput) pathInput.value = "current_weather";
+    if (input) input.value = JSON.stringify(item.data, null, 2);
+    if (pathInput) pathInput.value = item.path;
+    inferSchemaFromUI();
+}
+
+function loadSampleWeatherJson() {
+    loadPresetApiSample("weather");
 }
 
 async function inferSchemaFromUI() {
@@ -848,6 +987,36 @@ async function loadHealthChecksUI() {
     }
 }
 
+let healthPollInterval = null;
+
+function toggleHealthAutoPoll() {
+    const btn = document.getElementById('healthPollToggleBtn');
+    const badge = document.getElementById('healthPollBadge');
+    if (healthPollInterval) {
+        clearInterval(healthPollInterval);
+        healthPollInterval = null;
+        if (btn) {
+            btn.innerText = '⚡ Auto-Poll: OFF';
+            btn.classList.remove('active');
+        }
+        if (badge) {
+            badge.innerText = 'IDLE';
+            badge.classList.remove('active');
+        }
+    } else {
+        loadHealthChecksUI();
+        healthPollInterval = setInterval(loadHealthChecksUI, 20000); // Poll every 20 seconds
+        if (btn) {
+            btn.innerText = '● Auto-Poll: ON (20s)';
+            btn.classList.add('active');
+        }
+        if (badge) {
+            badge.innerText = 'POLLING';
+            badge.classList.add('active');
+        }
+    }
+}
+
 // Attach public API studio actions to window
 window.openApiHubModal = openApiHubModal;
 window.closeApiHubModal = closeApiHubModal;
@@ -856,8 +1025,12 @@ window.loadProvidersCatalog = loadProvidersCatalog;
 window.filterProvidersUI = filterProvidersUI;
 window.inferSchemaFromUI = inferSchemaFromUI;
 window.loadSampleWeatherJson = loadSampleWeatherJson;
+window.loadPresetApiSample = loadPresetApiSample;
+window.testProviderLive = testProviderLive;
+window.sendLiveToSchema = sendLiveToSchema;
 window.testWorkflowCycleDetection = testWorkflowCycleDetection;
 window.loadHealthChecksUI = loadHealthChecksUI;
+window.toggleHealthAutoPoll = toggleHealthAutoPoll;
 
 // Initial setup and click listeners
 window.addEventListener('DOMContentLoaded', () => {

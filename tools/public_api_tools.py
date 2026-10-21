@@ -3,6 +3,7 @@ AJAX AI - Public API Connectors Tool Bridge
 Bridges verified public API connectors directly into LLM & Router tool execution.
 """
 
+import json
 from typing import Dict, Any, Optional
 from tools.base import BaseTool, ToolResult
 from core.permissions import PermissionLevel, ToolCategory
@@ -10,6 +11,14 @@ from connectors.providers.weather_service import weather_service
 from connectors.providers.satellite_service import satellite_service
 from connectors.providers.disaster_service import disaster_service
 from connectors.providers.reference_service import reference_service
+
+def _parse_data(raw: Any) -> Any:
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except Exception:
+            return raw
+    return raw
 
 class ISSTrackerTool(BaseTool):
     name = "get_iss_coordinates"
@@ -24,12 +33,13 @@ class ISSTrackerTool(BaseTool):
 
     def execute(self, **kwargs) -> ToolResult:
         resp = satellite_service.get_iss_position()
-        if resp.success and isinstance(resp.data, dict):
-            lat = resp.data.get("latitude")
-            lon = resp.data.get("longitude")
-            alt = resp.data.get("altitude")
-            vel = resp.data.get("velocity")
-            vis = resp.data.get("visibility")
+        data = _parse_data(resp.data)
+        if resp.success and isinstance(data, dict):
+            lat = data.get("latitude")
+            lon = data.get("longitude")
+            alt = data.get("altitude")
+            vel = data.get("velocity")
+            vis = data.get("visibility")
             text = (
                 f"🛰️ **International Space Station (ISS) Telemetry**:\n"
                 f"- **Latitude**: `{lat}°`\n"
@@ -39,7 +49,7 @@ class ISSTrackerTool(BaseTool):
                 f"- **Visibility**: `{vis}`\n"
                 f"*(Source: Where the ISS At? - Data Classification: {resp.data_classification})*"
             )
-            return ToolResult(success=True, output=text, metadata=resp.data)
+            return ToolResult(success=True, output=text, metadata=data)
         return ToolResult(success=False, output="Unable to retrieve ISS coordinates.", error=resp.error)
 
 class EarthquakeTrackerTool(BaseTool):
@@ -57,8 +67,9 @@ class EarthquakeTrackerTool(BaseTool):
 
     def execute(self, min_magnitude: float = 4.0, limit: int = 5, **kwargs) -> ToolResult:
         resp = disaster_service.get_recent_earthquakes(min_magnitude=min_magnitude, limit=min(limit, 10))
-        if resp.success and isinstance(resp.data, dict):
-            features = resp.data.get("features", [])
+        data = _parse_data(resp.data)
+        if resp.success and isinstance(data, dict):
+            features = data.get("features", [])
             if not features:
                 return ToolResult(success=True, output=f"No earthquakes above M{min_magnitude} recorded in the last 24 hours.")
 
@@ -91,8 +102,9 @@ class CurrencyExchangeTool(BaseTool):
 
     def execute(self, from_currency: str = "USD", to_currency: str = "INR", amount: float = 1.0, **kwargs) -> ToolResult:
         resp = reference_service.get_currency_rates(base_currency=from_currency, target_currency=to_currency)
-        if resp.success and isinstance(resp.data, dict):
-            rates = resp.data.get("rates", {})
+        data = _parse_data(resp.data)
+        if resp.success and isinstance(data, dict):
+            rates = data.get("rates", {})
             target_rate = rates.get(to_currency.upper())
             if target_rate:
                 converted = amount * target_rate
@@ -100,10 +112,10 @@ class CurrencyExchangeTool(BaseTool):
                     f"💱 **Currency Exchange (ECB Official Rate)**:\n"
                     f"- **{amount:g} {from_currency.upper()}** = **{converted:,.2f} {to_currency.upper()}**\n"
                     f"- Exchange Rate: `1 {from_currency.upper()} = {target_rate:g} {to_currency.upper()}`\n"
-                    f"- Date: `{resp.data.get('date', 'Today')}`\n"
+                    f"- Date: `{data.get('date', 'Today')}`\n"
                     f"*(Source: Frankfurter / European Central Bank - Data Classification: {resp.data_classification})*"
                 )
-                return ToolResult(success=True, output=text, metadata=resp.data)
+                return ToolResult(success=True, output=text, metadata=data)
         return ToolResult(success=False, output=f"Unable to convert {from_currency} to {to_currency}.", error=resp.error)
 
 class GeocodeTool(BaseTool):
@@ -121,8 +133,9 @@ class GeocodeTool(BaseTool):
 
     def execute(self, query: str = "New Delhi", **kwargs) -> ToolResult:
         resp = reference_service.geocode_address(query)
-        if resp.success and isinstance(resp.data, list) and resp.data:
-            item = resp.data[0]
+        data = _parse_data(resp.data)
+        if resp.success and isinstance(data, list) and data:
+            item = data[0]
             display_name = item.get("display_name", query)
             lat = item.get("lat")
             lon = item.get("lon")
@@ -151,8 +164,9 @@ class PublicHolidayTool(BaseTool):
 
     def execute(self, year: int = 2026, country_code: str = "IN", **kwargs) -> ToolResult:
         resp = reference_service.get_public_holidays(year=year, country_code=country_code)
-        if resp.success and isinstance(resp.data, list):
-            holidays = resp.data[:8]
+        data = _parse_data(resp.data)
+        if resp.success and isinstance(data, list):
+            holidays = data[:8]
             lines = [f"📅 **Upcoming Public Holidays in {country_code.upper()} ({year})**:\n"]
             for h in holidays:
                 date = h.get("date", "")

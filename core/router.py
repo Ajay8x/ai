@@ -232,13 +232,25 @@ class RequestRouter:
         q_lower = query.lower().strip()
         norm_lower = norm_query.lower().strip()
         question_words = ["what is", "what are", "who is", "who was", "where is", "why is", "why do", "how to", "how does", "explain", "define", "tell me about", "kya", "kaun", "kahan", "batao"]
+        
+        realtime_keywords = [
+            "weather", "mausam", "temperature", "forecast", "barish", "rain",
+            "iss", "space station", "satellite",
+            "earthquake", "bhookamp", "bhukamp", "tremor", "seismic",
+            "currency", "exchange rate", "dollar", "rupee", "euro", "inr", "convert",
+            "holiday", "chhutti", "festival",
+            "geocode", "location", "coordinates", "latitude", "longitude",
+            "time", "samay", "status", "system", "alarm", "timer"
+        ]
+        needs_realtime_tools = any(kw in q_lower or kw in norm_lower for kw in realtime_keywords)
+
         is_direct_question = (
             any(q_lower.startswith(qw) or f" {qw} " in f" {q_lower} " for qw in question_words)
             or any(norm_lower.startswith(qw) or f" {qw} " in f" {norm_lower} " for qw in question_words)
             or intent in ["SEARCH_WIKIPEDIA", "GENERAL_CHAT"]
         )
         
-        if is_direct_question:
+        if is_direct_question and not needs_realtime_tools:
             llm_resp = llm_brain.generate(messages, tools=None, max_tokens=250)
         else:
             tool_schemas = registry.get_schemas()

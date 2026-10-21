@@ -79,6 +79,11 @@ class APIProviderConfig:
         d["auth_type"] = self.auth_type.value
         d["cors_status"] = self.cors_status.value
         d["data_classification"] = self.data_classification.value
+        # Compatibility aliases
+        d["provider_id"] = self.id
+        d["provider_name"] = self.name
+        d["documentation_url"] = self.official_docs_url
+        d["rate_limit_per_minute"] = self.rate_limit_rpm
         return d
 
 @dataclass

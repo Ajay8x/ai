@@ -257,8 +257,17 @@
                         <textarea id="schemaJsonInput" class="schema-textarea" placeholder="Paste sample JSON payload here..."></textarea>
                         <div class="schema-actions-row">
                             <input type="text" id="schemaDataPathInput" placeholder="Optional data path (e.g. $.items)" class="path-input">
+                            <select id="presetApiSelect" onchange="loadPresetApiSample(this.value)" class="path-input" style="max-width:200px;">
+                                <option value="">-- Load API Sample --</option>
+                                <option value="weather">Open-Meteo Weather</option>
+                                <option value="iss">Where The ISS At?</option>
+                                <option value="earthquake">USGS Earthquake</option>
+                                <option value="fx">Frankfurter FX Rates</option>
+                                <option value="holidays">Nager.Date Indian Holidays</option>
+                                <option value="countries">REST Countries India</option>
+                                <option value="demo">JSONPlaceholder Post</option>
+                            </select>
                             <button class="schema-primary-btn" onclick="inferSchemaFromUI()">⚡ Infer Schema (14 Types)</button>
-                            <button class="schema-sample-btn" onclick="loadSampleWeatherJson()">Load Sample Weather</button>
                         </div>
                     </div>
                     <div class="schema-output-side">
@@ -298,8 +307,14 @@
             <!-- Tab 4: Health & Circuit Breakers -->
             <div class="api-tab-pane" id="paneHealth">
                 <div class="health-header-bar">
-                    <span>Live Canary Telemetry & Circuit Breaker States</span>
-                    <button class="probe-refresh-btn" onclick="loadHealthChecksUI()">🔄 Run Health Checks</button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>Live Canary Telemetry & Circuit Breaker States</span>
+                        <span id="healthPollBadge" class="health-poll-badge">IDLE</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button id="healthPollToggleBtn" class="probe-refresh-btn" onclick="toggleHealthAutoPoll()">⚡ Auto-Poll: OFF</button>
+                        <button class="probe-refresh-btn" onclick="loadHealthChecksUI()">🔄 Run Probes Now</button>
+                    </div>
                 </div>
                 <div class="health-grid" id="healthGrid">
                     <div class="api-loading">Loading telemetry and latency metrics...</div>
