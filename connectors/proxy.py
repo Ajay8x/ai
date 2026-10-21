@@ -12,6 +12,7 @@ import socket
 import ipaddress
 import urllib.parse
 import time
+import json
 import requests
 from typing import Dict, Any, Optional, List, Tuple
 from connectors.base import ConnectorRequest, ConnectorResponse, DataClassification

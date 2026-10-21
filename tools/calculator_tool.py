@@ -119,7 +119,9 @@ class CalculatorTool(BaseTool):
         clean_expr = re.sub(r"(?i)\bsquare\s+root\s+of\s+(\d+(?:\.\d+)?)\b", r"sqrt(\1)", clean_expr)
         clean_expr = re.sub(r"(?i)\bsqrt\s+of\s+(\d+(?:\.\d+)?)\b", r"sqrt(\1)", clean_expr)
         # Remove words like 'calculate', 'what is', 'solve'
-        clean_expr = re.sub(r"(?i)\b(calculate|what is|solve|math|ans|equal to|equals|\?)\b", "", clean_expr).strip()
+        clean_expr = re.sub(r"(?i)\b(calculate|what is|solve|math|ans|equal to|equals)\b", "", clean_expr).strip()
+        # Strip trailing question marks, equals, and punctuation
+        clean_expr = clean_expr.rstrip("?!. =").strip()
 
         try:
             tree = ast.parse(clean_expr, mode='eval')
