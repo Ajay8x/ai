@@ -565,6 +565,300 @@ window.toggleVoiceRecording = toggleVoiceRecording;
 window.handleFileSelected = handleFileSelected;
 window.setLanguage = setLanguage;
 
+/* ==============================================================================
+   PUBLIC API HUB, SCHEMA STUDIO & LOOP DETECTION MONITOR
+   ============================================================================== */
+
+let allApiProviders = [];
+
+function openApiHubModal() {
+    const modal = document.getElementById('apiHubModal');
+    if (modal) {
+        modal.classList.add('open');
+        if (!allApiProviders || allApiProviders.length === 0) {
+            loadProvidersCatalog();
+        }
+    }
+}
+
+function closeApiHubModal() {
+    const modal = document.getElementById('apiHubModal');
+    if (modal) modal.classList.remove('open');
+}
+
+function switchApiTab(tabKey) {
+    const tabMap = {
+        catalog: { btn: 'tabBtnCatalog', pane: 'paneCatalog' },
+        schema: { btn: 'tabBtnSchema', pane: 'paneSchema' },
+        loops: { btn: 'tabBtnLoops', pane: 'paneLoops' },
+        health: { btn: 'tabBtnHealth', pane: 'paneHealth' }
+    };
+
+    Object.keys(tabMap).forEach(key => {
+        const item = tabMap[key];
+        const btn = document.getElementById(item.btn);
+        const pane = document.getElementById(item.pane);
+        if (btn) btn.classList.toggle('active', key === tabKey);
+        if (pane) pane.classList.toggle('active', key === tabKey);
+    });
+
+    if (tabKey === 'health') {
+        const grid = document.getElementById('healthGrid');
+        if (grid && grid.querySelector('.api-loading')) {
+            loadHealthChecksUI();
+        }
+    }
+}
+
+async function loadProvidersCatalog() {
+    const grid = document.getElementById('providersGrid');
+    const select = document.getElementById('categoryFilterSelect');
+    if (!grid) return;
+
+    grid.innerHTML = '<div class="api-loading">Fetching verified provider registry...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/connectors/providers`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        allApiProviders = data.providers || [];
+
+        // Populate Category Filter dropdown
+        if (select) {
+            const categories = Array.from(new Set(allApiProviders.map(p => p.category))).sort();
+            select.innerHTML = '<option value="">All 11 Categories</option>' + 
+                categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        }
+
+        renderProvidersUI(allApiProviders);
+    } catch (err) {
+        grid.innerHTML = `<div class="api-loading" style="color:#f87171;">Failed to load catalog: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function renderProvidersUI(providers) {
+    const grid = document.getElementById('providersGrid');
+    if (!grid) return;
+
+    if (!providers || providers.length === 0) {
+        grid.innerHTML = '<div class="api-loading">No providers matching query.</div>';
+        return;
+    }
+
+    grid.innerHTML = providers.map(p => {
+        let badgeClass = 'badge-live';
+        if (p.data_classification === 'calculated') badgeClass = 'badge-calc';
+        else if (p.data_classification === 'static_reference') badgeClass = 'badge-static';
+        else if (p.data_classification === 'sample') badgeClass = 'badge-sample';
+
+        const rateLimitText = p.rate_limit_per_minute 
+            ? `${p.rate_limit_per_minute} req/min` 
+            : (p.quota_period || 'Verified safe');
+
+        return `
+            <div class="provider-card">
+                <div class="provider-card-header">
+                    <h4>${escapeHtml(p.provider_name)}</h4>
+                    <span class="badge-tag ${badgeClass}">${escapeHtml(p.data_classification || 'LIVE')}</span>
+                </div>
+                <p class="provider-desc">${escapeHtml(p.description || '')}</p>
+                <div class="provider-meta-row">
+                    <span><strong>Category:</strong> ${escapeHtml(p.category)}</span>
+                    <span><strong>Auth:</strong> ${escapeHtml(p.auth_type)}</span>
+                    <span><strong>Limits:</strong> ${escapeHtml(rateLimitText)}</span>
+                    ${p.documentation_url ? `<span><a href="${escapeHtml(p.documentation_url)}" target="_blank" rel="noopener">Docs ↗</a></span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterProvidersUI() {
+    const search = (document.getElementById('providerSearchInput')?.value || '').toLowerCase().trim();
+    const category = document.getElementById('categoryFilterSelect')?.value || '';
+
+    const filtered = allApiProviders.filter(p => {
+        const matchesCategory = !category || p.category === category;
+        const matchesSearch = !search || 
+            p.provider_name.toLowerCase().includes(search) || 
+            p.provider_id.toLowerCase().includes(search) || 
+            (p.description && p.description.toLowerCase().includes(search));
+        return matchesCategory && matchesSearch;
+    });
+
+    renderProvidersUI(filtered);
+}
+
+function loadSampleWeatherJson() {
+    const sample = {
+        latitude: 28.61,
+        longitude: 77.20,
+        generationtime_ms: 0.12,
+        utc_offset_seconds: 0,
+        timezone: "GMT",
+        elevation: 216.0,
+        current_weather: {
+            temperature: 29.4,
+            windspeed: 12.2,
+            winddirection: 195,
+            weathercode: 1,
+            is_day: 1,
+            time: "2026-10-21T04:00"
+        }
+    };
+    const input = document.getElementById('schemaJsonInput');
+    const pathInput = document.getElementById('schemaDataPathInput');
+    if (input) input.value = JSON.stringify(sample, null, 2);
+    if (pathInput) pathInput.value = "current_weather";
+}
+
+async function inferSchemaFromUI() {
+    const input = document.getElementById('schemaJsonInput');
+    const pathInput = document.getElementById('schemaDataPathInput');
+    const preview = document.getElementById('schemaPreviewBox');
+    if (!preview) return;
+
+    const rawText = (input?.value || '').trim();
+    if (!rawText) {
+        alert("Please enter a sample JSON payload first or click 'Load Sample Weather'");
+        return;
+    }
+
+    let parsed;
+    try {
+        parsed = JSON.parse(rawText);
+    } catch (e) {
+        alert("Invalid JSON format: " + e.message);
+        return;
+    }
+
+    preview.innerHTML = '<div class="api-loading">Analyzing payload & inferring 14 types...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/connectors/schema/infer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sample_json: parsed,
+                data_path: (pathInput?.value || '').trim() || null
+            })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const fields = data.fields || [];
+
+        if (fields.length === 0) {
+            preview.innerHTML = '<div class="schema-placeholder-text">No fields could be extracted at this path.</div>';
+            return;
+        }
+
+        preview.innerHTML = `
+            <div style="font-size:11.5px; color:#22c55e; margin-bottom:10px; font-weight:600;">
+                ✓ Successfully inferred ${fields.length} schema fields (Version: ${escapeHtml(data.schema_version)})
+            </div>
+            ${fields.map(f => `
+                <div class="schema-field-card">
+                    <div>
+                        <div class="field-info-title">${escapeHtml(f.label)}</div>
+                        <div class="field-info-meta">key: <strong>${escapeHtml(f.field_key)}</strong> | path: <code>${escapeHtml(f.json_path)}</code></div>
+                    </div>
+                    <span class="field-type-pill">${escapeHtml(f.field_type)}</span>
+                </div>
+            `).join('')}
+        `;
+    } catch (err) {
+        preview.innerHTML = `<div class="api-loading" style="color:#f87171;">Inference failed: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function testWorkflowCycleDetection(simulateCycle) {
+    const box = document.getElementById('cycleResultBox');
+    if (!box) return;
+
+    box.innerText = "Analyzing directed graph with Tarjan's DFS algorithm...";
+
+    const edges = simulateCycle ? [
+        { from_step: "Weather_Fetch", to_step: "Schema_Generator" },
+        { from_step: "Schema_Generator", to_step: "Refresh_Workflow" },
+        { from_step: "Refresh_Workflow", to_step: "Weather_Fetch" }
+    ] : [
+        { from_step: "Weather_Fetch", to_step: "Schema_Generator" },
+        { from_step: "Schema_Generator", to_step: "Form_Renderer" }
+    ];
+
+    try {
+        const res = await fetch(`${API_BASE}/api/connectors/loop/validate-workflow`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workflow_id: "test_pipeline", edges: edges })
+        });
+
+        const data = await res.json();
+        if (data.is_valid_dag) {
+            box.innerText = `✅ VALID DIRECTED ACYCLIC GRAPH (DAG)\nNo cycles found. Workflow execution is safe to schedule.`;
+            box.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+        } else {
+            const cycles = (data.detected_cycles || []).map(c => c.join(' ➔ ')).join('\n');
+            box.innerText = `🚨 CYCLE REJECTED BY LOOP GUARD:\n${cycles}\nError: ${data.error_message}`;
+            box.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+        }
+    } catch (err) {
+        box.innerText = `Error running cycle check: ${err.message}`;
+    }
+}
+
+async function loadHealthChecksUI() {
+    const grid = document.getElementById('healthGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '<div class="api-loading">Dispatching lightweight canary probes...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/connectors/health`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const checks = data.health_checks || [];
+
+        if (checks.length === 0) {
+            grid.innerHTML = '<div class="api-loading">No health reports available.</div>';
+            return;
+        }
+
+        grid.innerHTML = checks.map(c => {
+            const isUp = c.is_healthy;
+            const latency = c.latency_ms !== null ? `${c.latency_ms.toFixed(1)} ms` : 'N/A';
+            const breakerState = c.circuit_breaker_state || 'CLOSED';
+
+            return `
+                <div class="health-card">
+                    <div class="health-card-top">
+                        <span class="health-provider-name">${escapeHtml(c.provider_id)}</span>
+                        <span class="health-pill ${isUp ? 'up' : 'down'}">${isUp ? 'UP (200)' : 'DOWN'}</span>
+                    </div>
+                    <div class="health-meta">
+                        Latency: <strong>${latency}</strong> | Breaker: <strong>${escapeHtml(breakerState)}</strong>
+                    </div>
+                    ${c.last_error ? `<div style="font-size:10.5px; color:#f87171; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.last_error)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        grid.innerHTML = `<div class="api-loading" style="color:#f87171;">Telemetry failed: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+// Attach public API studio actions to window
+window.openApiHubModal = openApiHubModal;
+window.closeApiHubModal = closeApiHubModal;
+window.switchApiTab = switchApiTab;
+window.loadProvidersCatalog = loadProvidersCatalog;
+window.filterProvidersUI = filterProvidersUI;
+window.inferSchemaFromUI = inferSchemaFromUI;
+window.loadSampleWeatherJson = loadSampleWeatherJson;
+window.testWorkflowCycleDetection = testWorkflowCycleDetection;
+window.loadHealthChecksUI = loadHealthChecksUI;
+
 // Initial setup and click listeners
 window.addEventListener('DOMContentLoaded', () => {
     // English is the default language
@@ -600,3 +894,4 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+

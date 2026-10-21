@@ -12,6 +12,13 @@ from tools.scheduler_tools import SetTimerTool, SetAlarmTool
 from tools.memory_tools import RememberTool, RecallMemoryTool
 from tools.rag_tools import QueryDocumentsTool
 from tools.calculator_tool import CalculatorTool
+from tools.public_api_tools import (
+    ISSTrackerTool,
+    EarthquakeTrackerTool,
+    CurrencyExchangeTool,
+    GeocodeTool,
+    PublicHolidayTool
+)
 
 def register_all_tools():
     """Register all default tools with the singleton registry (PC automation excluded)."""
@@ -31,7 +38,12 @@ def register_all_tools():
         RememberTool(),
         RecallMemoryTool(),
         QueryDocumentsTool(),
-        CalculatorTool()
+        CalculatorTool(),
+        ISSTrackerTool(),
+        EarthquakeTrackerTool(),
+        CurrencyExchangeTool(),
+        GeocodeTool(),
+        PublicHolidayTool()
     ]
     for t in tools:
         registry.register(t)

@@ -367,6 +367,19 @@ def init_db():
                 db.audit_logs.create_index("id", unique=True)
                 db.audit_logs.create_index([("created_at", -1)])
 
+                # Public API Connectors & Loop Subsystem
+                db.api_providers.create_index("id", unique=True)
+                db.api_providers.create_index("category")
+                db.api_usage.create_index([("provider_id", 1), ("timestamp", -1)])
+                db.api_health_checks.create_index([("provider_id", 1), ("checked_at", -1)])
+                db.connector_schemas.create_index("id", unique=True)
+                db.connector_schemas.create_index("provider_id")
+                db.api_cache_metadata.create_index("cache_key", unique=True)
+                db.scheduled_jobs.create_index("id", unique=True)
+                db.workflow_dependencies.create_index([("source_node", 1), ("target_node", 1)])
+                db.loop_detection_events.create_index([("created_at", -1)])
+                db.api_audit_logs.create_index([("created_at", -1)])
+
                 # Auto-migrate SQLite data if MongoDB Atlas collections are empty
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
@@ -464,6 +477,147 @@ def init_db():
                     details_json TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+                """,
+                # 8. API Providers Registry
+                """
+                CREATE TABLE IF NOT EXISTS api_providers (
+                    id VARCHAR(64) PRIMARY KEY,
+                    name VARCHAR(128) NOT NULL,
+                    category VARCHAR(64) NOT NULL,
+                    official_docs_url TEXT,
+                    base_url TEXT NOT NULL,
+                    auth_type VARCHAR(32) DEFAULT 'none',
+                    required_credentials TEXT,
+                    rate_limit_rpm INTEGER DEFAULT 60,
+                    quota_daily INTEGER,
+                    commercial_use VARCHAR(32) DEFAULT 'unknown',
+                    license_url TEXT,
+                    attribution TEXT,
+                    cors_status VARCHAR(32) DEFAULT 'unknown',
+                    backend_proxy_required INTEGER DEFAULT 1,
+                    default_timeout INTEGER DEFAULT 10,
+                    retry_max INTEGER DEFAULT 3,
+                    cache_ttl_sec INTEGER DEFAULT 300,
+                    data_classification VARCHAR(32) DEFAULT 'live',
+                    enabled INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 9. API Credentials (Encrypted/Redacted Store)
+                """
+                CREATE TABLE IF NOT EXISTS api_credentials (
+                    id VARCHAR(64) PRIMARY KEY,
+                    provider_id VARCHAR(64) NOT NULL,
+                    key_name VARCHAR(128) NOT NULL,
+                    encrypted_value TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 10. API Usage Metrics
+                """
+                CREATE TABLE IF NOT EXISTS api_usage (
+                    id VARCHAR(64) PRIMARY KEY,
+                    provider_id VARCHAR(64) NOT NULL,
+                    endpoint TEXT NOT NULL,
+                    status_code INTEGER,
+                    latency_ms REAL,
+                    tokens_or_units INTEGER DEFAULT 1,
+                    caller_id VARCHAR(64),
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 11. API Health Checks & Circuit Breakers
+                """
+                CREATE TABLE IF NOT EXISTS api_health_checks (
+                    id VARCHAR(64) PRIMARY KEY,
+                    provider_id VARCHAR(64) NOT NULL,
+                    status VARCHAR(32) NOT NULL,
+                    latency_ms REAL,
+                    status_code INTEGER,
+                    error_message TEXT,
+                    circuit_breaker_state VARCHAR(32) DEFAULT 'CLOSED',
+                    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 12. Dynamic Connector Schemas
+                """
+                CREATE TABLE IF NOT EXISTS connector_schemas (
+                    id VARCHAR(64) PRIMARY KEY,
+                    provider_id VARCHAR(64) NOT NULL,
+                    schema_name VARCHAR(128) NOT NULL,
+                    endpoint_path TEXT,
+                    data_path TEXT,
+                    fields_json TEXT NOT NULL,
+                    version INTEGER DEFAULT 1,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 13. API Cache Metadata (ETag / Conditional Requests)
+                """
+                CREATE TABLE IF NOT EXISTS api_cache_metadata (
+                    cache_key VARCHAR(128) PRIMARY KEY,
+                    provider_id VARCHAR(64) NOT NULL,
+                    etag VARCHAR(128),
+                    last_modified VARCHAR(128),
+                    response_body TEXT,
+                    content_type VARCHAR(64),
+                    expires_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 14. Scheduled Refresh Jobs
+                """
+                CREATE TABLE IF NOT EXISTS scheduled_jobs (
+                    id VARCHAR(64) PRIMARY KEY,
+                    provider_id VARCHAR(64),
+                    job_name VARCHAR(128) NOT NULL,
+                    cron_expression VARCHAR(64),
+                    interval_seconds INTEGER DEFAULT 300,
+                    last_run TIMESTAMP,
+                    next_run TIMESTAMP,
+                    status VARCHAR(32) DEFAULT 'active',
+                    is_locked INTEGER DEFAULT 0,
+                    locked_until TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 15. Workflow Dependencies (DAG Graph for Cycle Detection)
+                """
+                CREATE TABLE IF NOT EXISTS workflow_dependencies (
+                    id VARCHAR(64) PRIMARY KEY,
+                    workflow_id VARCHAR(64) NOT NULL,
+                    source_node VARCHAR(128) NOT NULL,
+                    target_node VARCHAR(128) NOT NULL,
+                    condition_expr TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 16. Loop Detection Events
+                """
+                CREATE TABLE IF NOT EXISTS loop_detection_events (
+                    id VARCHAR(64) PRIMARY KEY,
+                    loop_type VARCHAR(64) NOT NULL,
+                    identifier VARCHAR(256) NOT NULL,
+                    details_json TEXT,
+                    severity VARCHAR(32) DEFAULT 'HIGH',
+                    action_taken VARCHAR(64) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                # 17. API Audit Logs
+                """
+                CREATE TABLE IF NOT EXISTS api_audit_logs (
+                    id VARCHAR(64) PRIMARY KEY,
+                    action VARCHAR(64) NOT NULL,
+                    actor VARCHAR(64) DEFAULT 'system',
+                    resource_type VARCHAR(64) NOT NULL,
+                    resource_id VARCHAR(128),
+                    sanitized_payload TEXT,
+                    ip_address VARCHAR(45),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
                 """
             ]
 
@@ -474,6 +628,12 @@ def init_db():
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_mem_cat ON memories(category)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON scheduled_tasks(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_prov_cat ON api_providers(category)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_prov ON api_usage(provider_id, timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_health_prov ON api_health_checks(provider_id, checked_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_conn_schemas_prov ON connector_schemas(provider_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_loop_events_created ON loop_detection_events(created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_audit_created ON api_audit_logs(created_at)")
 
             conn.commit()
             conn.close()

@@ -15,6 +15,7 @@ from controllers.upload_controller import upload_router
 from controllers.system_controller import system_router
 from controllers.tools_controller import tools_router
 from controllers.memory_controller import memory_router
+from controllers.connectors_controller import connectors_router
 from database.db import init_db
 from core.logger import ajax_logger
 
@@ -62,6 +63,7 @@ app.include_router(upload_router)
 app.include_router(system_router)
 app.include_router(tools_router)
 app.include_router(memory_router)
+app.include_router(connectors_router)
 
 @app.on_event("startup")
 async def startup_event():
