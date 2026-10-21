@@ -87,9 +87,6 @@ TOOL_PRESETS: Dict[str, List[Dict[str, Any]]] = {
         {"label": "30 Seconds", "params": {"duration": "30s", "label": "Quick Timer"}},
         {"label": "5 Minutes", "params": {"duration": "5m", "label": "Tea Break"}},
     ],
-    "set_alarm": [
-        {"label": "Evening Standup", "params": {"time": "18:00", "label": "Team Standup"}},
-    ],
     "search_web": [
         {"label": "Python 3.12 Features", "params": {"query": "Python 3.12 new features"}},
     ],

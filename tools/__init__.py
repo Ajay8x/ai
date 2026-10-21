@@ -8,7 +8,7 @@ from tools.system_tools import GetSystemTimeTool, GetSystemStatusTool
 from tools.web_tools import WebSearchTool, WikipediaTool, YouTubePlayTool, OpenWebsiteTool
 from tools.file_tools import SearchFilesTool, ReadFileTool, DeleteFileTool
 from tools.weather_tool import WeatherTool
-from tools.scheduler_tools import SetTimerTool, SetAlarmTool
+from tools.scheduler_tools import SetTimerTool
 from tools.memory_tools import RememberTool, RecallMemoryTool
 from tools.rag_tools import QueryDocumentsTool
 from tools.calculator_tool import CalculatorTool
@@ -34,7 +34,6 @@ def register_all_tools():
         DeleteFileTool(),
         WeatherTool(),
         SetTimerTool(),
-        SetAlarmTool(),
         RememberTool(),
         RecallMemoryTool(),
         QueryDocumentsTool(),

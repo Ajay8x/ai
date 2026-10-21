@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}AJAX AI - Scheduler, Timers & Alarms{% endblock %}
-{% block header_title %}Scheduler, Timers & Alarms{% endblock %}
-{% block header_subtitle %}Automated Reminders, Countdown Timers & Timezone Alarms{% endblock %}
+{% block title %}AJAX AI - Scheduler & Countdown Timers{% endblock %}
+{% block header_title %}Scheduler & Countdown Timers{% endblock %}
+{% block header_subtitle %}Automated Non-Blocking Background Timers, Countdown Monitors & Session Alerts{% endblock %}
 
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">⏰ Autonomous Scheduler</h2>
-        <div class="page-subtitle">Schedule time-based triggers, reminders, and background alerts with AJAX AI.</div>
+        <h2 class="page-title-main">⏰ Autonomous Timer Scheduler</h2>
+        <div class="page-subtitle">Schedule non-blocking countdown timers, task reminders, and focus intervals with AJAX AI.</div>
     </div>
 </div>
 
@@ -36,33 +36,41 @@
         </form>
     </div>
 
-    <!-- Alarm Form -->
+    <!-- Quick Timer Presets -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-            <span>🔔</span><span>Set Alarm / Reminder</span>
+            <span>⚡</span><span>Quick 1-Click Presets</span>
         </h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            Click any interval to immediately start a non-blocking background countdown timer:
+        </p>
 
-        <form onsubmit="event.preventDefault(); createAlarm();">
-            <div class="form-group">
-                <label class="form-label" for="alarmTime">Alarm Time (HH:MM / 24h)</label>
-                <input type="time" class="form-input" id="alarmTime" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="alarmLabel">Message / Reminder</label>
-                <input type="text" class="form-input" id="alarmLabel" placeholder="e.g. Daily Standup Meeting">
-            </div>
-
-            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
-                Set Alarm 🔔
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('30s', 'Quick 30s Check')">
+                ⏳ 30 Seconds
             </button>
-        </form>
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('1m', '1 Minute Timer')">
+                ⏱️ 1 Minute
+            </button>
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('5m', '5 Minute Break')">
+                ☕ 5 Min Break
+            </button>
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('15m', '15 Min Interval')">
+                🔔 15 Minutes
+            </button>
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('25m', 'Pomodoro Focus Session')">
+                🍅 25m Pomodoro
+            </button>
+            <button class="btn-secondary" style="justify-content:center; padding:10px 8px;" onclick="startPresetTimer('45m', 'Deep Work Block')">
+                🎯 45m Deep Work
+            </button>
+        </div>
     </div>
 </div>
 
 <div class="glass-panel" style="margin-top:20px;">
     <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-        <span>📋</span><span>Active Local Timers & Reminders</span>
+        <span>📋</span><span>Active Local Countdown Timers</span>
     </h3>
     <div id="timersList" style="display:flex; flex-direction:column; gap:10px;">
         <div style="font-size:13px; color:var(--text-dim); font-style:italic;">No active timers running currently.</div>
@@ -75,31 +83,27 @@
     async function createTimer() {
         const duration = document.getElementById('timerDuration').value.trim();
         const label = document.getElementById('timerLabel').value.trim() || 'Timer';
-
-        try {
-            const res = await window.ajaxClient.executeTool('set_timer', { duration, label });
-            window.showToast(`Timer set for ${duration}`, 'success');
-            addTimerCard(label, duration);
-        } catch (err) {
-            window.showToast(err.message, 'error');
-        }
+        await startPresetTimer(duration, label);
     }
 
-    async function createAlarm() {
-        const time = document.getElementById('alarmTime').value.trim();
-        const label = document.getElementById('alarmLabel').value.trim() || 'Alarm';
-
+    async function startPresetTimer(duration, label) {
         try {
-            const res = await window.ajaxClient.executeTool('set_alarm', { time, label });
-            window.showToast(`Alarm set for ${time}`, 'success');
-            addTimerCard(`Alarm: ${label}`, time);
+            window.showLoader(`Starting timer: ${duration}...`);
+            const res = await window.ajaxClient.executeTool('set_timer', { duration, label });
+            window.hideLoader();
+            window.showToast(`Timer started: ${duration} (${label})`, 'success');
+            addTimerCard(label, duration);
         } catch (err) {
+            window.hideLoader();
             window.showToast(err.message, 'error');
         }
     }
 
     function addTimerCard(label, timeInfo) {
         const list = document.getElementById('timersList');
+        const emptyMsg = list.querySelector('div[style*="font-style:italic"]');
+        if (emptyMsg) emptyMsg.remove();
+
         const card = document.createElement('div');
         card.style.display = 'flex';
         card.style.justifyContent = 'space-between';
@@ -110,9 +114,9 @@
         card.innerHTML = `
             <div>
                 <strong style="color:var(--accent-cyan);">${label}</strong>
-                <span style="margin-left:8px; font-size:12px; color:var(--text-dim);">Trigger: ${timeInfo}</span>
+                <span style="margin-left:8px; font-size:12px; color:var(--text-dim);">Duration: ${timeInfo}</span>
             </div>
-            <span class="badge-safe">ACTIVE</span>
+            <span class="badge-safe">COUNTING DOWN</span>
         `;
         list.prepend(card);
     }

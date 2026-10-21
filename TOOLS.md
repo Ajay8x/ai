@@ -20,7 +20,6 @@ All system tools are registered inside the centralized `ToolRegistry` and strict
 | `delete_file` | `FILESYSTEM` | `CONFIRM_REQUIRED` | Safely removes files outside protected system paths. |
 | `get_weather` | `WEB` | `SAFE` | Retrieves live meteorological data for any city. |
 | `set_timer` | `SCHEDULER` | `SAFE` | Non-blocking countdown timer with audio alert. |
-| `set_alarm` | `SCHEDULER` | `SAFE` | Schedules alarms for specific times. |
 | `remember_fact` | `MEMORY` | `SAFE` | Stores long-term user preferences or notes with privacy checking. |
 | `recall_memory` | `MEMORY` | `SAFE` | Searches stored memories. |
 | `query_documents` | `FILESYSTEM` | `SAFE` | RAG query across indexed local documents and notes. |

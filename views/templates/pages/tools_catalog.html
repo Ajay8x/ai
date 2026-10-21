@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}AJAX AI - 25 Tools Catalog{% endblock %}
-{% block header_title %}25 Dedicated AI Tools Catalog{% endblock %}
+{% block title %}AJAX AI - 24 Tools Catalog{% endblock %}
+{% block header_title %}24 Dedicated AI Tools Catalog{% endblock %}
 {% block header_subtitle %}Zero-Latency Execution, Automated Guardrails & LLM Function Calling{% endblock %}
 
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">🛠️ Comprehensive AI Tool Registry (25 Tools)</h2>
+        <h2 class="page-title-main">🛠️ Comprehensive AI Tool Registry (24 Tools)</h2>
         <div class="page-subtitle">Every tool has a dedicated, individual workspace page with specialized parameter forms and live telemetry.</div>
     </div>
     <div style="display:flex; gap:10px;">
-        <input type="text" id="toolSearchInput" class="form-input" placeholder="🔍 Search 25 tools..." style="width:240px;" oninput="filterTools()">
+        <input type="text" id="toolSearchInput" class="form-input" placeholder="🔍 Search 24 tools..." style="width:240px;" oninput="filterTools()">
     </div>
 </div>
 
 <!-- Category Filters -->
 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
-    <button class="btn-secondary category-filter-btn active" data-cat="all" onclick="selectToolCat(this, 'all')">All (25)</button>
+    <button class="btn-secondary category-filter-btn active" data-cat="all" onclick="selectToolCat(this, 'all')">All (24)</button>
     <button class="btn-secondary category-filter-btn" data-cat="WEB" onclick="selectToolCat(this, 'WEB')">Web & Real-Time (9)</button>
     <button class="btn-secondary category-filter-btn" data-cat="SYSTEM" onclick="selectToolCat(this, 'SYSTEM')">System & Math (3)</button>
     <button class="btn-secondary category-filter-btn" data-cat="FILESYSTEM" onclick="selectToolCat(this, 'FILESYSTEM')">Filesystem & Docs (4)</button>
     <button class="btn-secondary category-filter-btn" data-cat="MEMORY" onclick="selectToolCat(this, 'MEMORY')">Memory (2)</button>
-    <button class="btn-secondary category-filter-btn" data-cat="SCHEDULER" onclick="selectToolCat(this, 'SCHEDULER')">Scheduler (2)</button>
+    <button class="btn-secondary category-filter-btn" data-cat="SCHEDULER" onclick="selectToolCat(this, 'SCHEDULER')">Scheduler (1)</button>
     <button class="btn-secondary category-filter-btn" data-cat="CUSTOM" onclick="selectToolCat(this, 'CUSTOM')">Custom Plugins (5)</button>
 </div>
 
