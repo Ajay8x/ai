@@ -7,49 +7,10 @@
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">💻 Real-Time System Metrics</h2>
-        <div class="page-subtitle">Continuous diagnostic monitoring of hardware, subsystems, and execution logs.</div>
+        <h2 class="page-title-main">💻 Subsystem Diagnostics & Monitoring</h2>
+        <div class="page-subtitle">Continuous diagnostic monitoring of AI subsystems, database, and real-time execution logs.</div>
     </div>
     <button class="btn-primary" onclick="refreshSystemData()">🔄 Refresh Diagnostics</button>
-</div>
-
-<!-- Hardware Telemetry Grid -->
-<div class="dashboard-grid">
-    <div class="metric-card">
-        <div class="metric-header">
-            <span>CPU UTILIZATION</span>
-            <span>⚡</span>
-        </div>
-        <div class="metric-value" id="cpuMetric">--%</div>
-        <div class="metric-sub" id="cpuCores">Cores: Detecting...</div>
-    </div>
-
-    <div class="metric-card">
-        <div class="metric-header">
-            <span>MEMORY (RAM)</span>
-            <span>💾</span>
-        </div>
-        <div class="metric-value" id="ramMetric">--%</div>
-        <div class="metric-sub" id="ramDetails">Used: -- / Total: --</div>
-    </div>
-
-    <div class="metric-card">
-        <div class="metric-header">
-            <span>DISK STORAGE</span>
-            <span>💽</span>
-        </div>
-        <div class="metric-value" id="diskMetric">--%</div>
-        <div class="metric-sub" id="diskDetails">Free: -- GB</div>
-    </div>
-
-    <div class="metric-card">
-        <div class="metric-header">
-            <span>ENVIRONMENT</span>
-            <span>⚙️</span>
-        </div>
-        <div class="metric-value" style="font-size:20px; color:var(--accent-cyan);" id="osMetric">Windows</div>
-        <div class="metric-sub" id="pyMetric">Python Runtime</div>
-    </div>
 </div>
 
 <!-- Diagnostics & Subsystem Status -->
@@ -79,30 +40,8 @@
 {% block extra_scripts %}
 <script>
     async function refreshSystemData() {
-        await Promise.all([loadStatus(), loadDiagnostics(), loadRecentLogs()]);
+        await Promise.all([loadDiagnostics(), loadRecentLogs()]);
         window.showToast('Diagnostics refreshed successfully', 'info');
-    }
-
-    async function loadStatus() {
-        try {
-            const data = await window.ajaxClient.get('/api/status');
-            if (data.cpu) {
-                document.getElementById('cpuMetric').textContent = `${data.cpu.percent || 0}%`;
-                document.getElementById('cpuCores').textContent = `Logical Cores: ${data.cpu.count || '-'}`;
-            }
-            if (data.memory) {
-                document.getElementById('ramMetric').textContent = `${data.memory.percent || 0}%`;
-                document.getElementById('ramDetails').textContent = `Used: ${data.memory.used_gb || 0} GB / ${data.memory.total_gb || 0} GB`;
-            }
-            if (data.disk) {
-                document.getElementById('diskMetric').textContent = `${data.disk.percent || 0}%`;
-                document.getElementById('diskDetails').textContent = `Free: ${data.disk.free_gb || 0} GB`;
-            }
-            if (data.platform) {
-                document.getElementById('osMetric').textContent = `${data.platform.system || 'Windows'} ${data.platform.release || ''}`;
-                document.getElementById('pyMetric').textContent = `Python ${data.platform.python_version || ''}`;
-            }
-        } catch (_) {}
     }
 
     async function loadDiagnostics() {
@@ -131,7 +70,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadStatus();
         loadDiagnostics();
         loadRecentLogs();
     });
