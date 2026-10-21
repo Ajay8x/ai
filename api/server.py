@@ -16,6 +16,7 @@ from controllers.system_controller import system_router
 from controllers.tools_controller import tools_router
 from controllers.memory_controller import memory_router
 from controllers.connectors_controller import connectors_router
+from controllers.pages_controller import pages_router
 from database.db import init_db
 from core.logger import ajax_logger
 
@@ -58,6 +59,7 @@ if os.path.exists(FRONTEND_DIR):
         app.mount("/ajax/js", StaticFiles(directory=js_dir), name="ajax_lower_js")
 
 # Register MVC Controller Routers
+app.include_router(pages_router)
 app.include_router(chat_router)
 app.include_router(upload_router)
 app.include_router(system_router)
@@ -72,35 +74,11 @@ async def startup_event():
     except Exception as e:
         ajax_logger.error(f"Startup database initialization error: {e}")
 
-def _get_dashboard_html():
-    frontend_index = os.path.join(FRONTEND_DIR, "index.html")
-    if os.path.exists(frontend_index):
-        with open(frontend_index, "r", encoding="utf-8") as f:
-            return f.read()
-
-    index_path = os.path.join(TEMPLATES_DIR, "index.html")
-    if os.path.exists(index_path):
-        with open(index_path, "r", encoding="utf-8") as f:
-            return f.read()
-    return "<h1>AJAX AI Server Online</h1>"
-
-# Redirect root to /AJAX
+# Redirect root to /AJAX/dashboard
 @app.get("/")
 async def root_redirect():
-    return RedirectResponse(url="/AJAX")
+    return RedirectResponse(url="/AJAX/dashboard")
 
-# Main View Dashboard Routes for /AJAX and /ajax
-@app.get("/AJAX", response_class=HTMLResponse)
-@app.get("/AJAX/", response_class=HTMLResponse)
-@app.get("/ajax", response_class=HTMLResponse)
-@app.get("/ajax/", response_class=HTMLResponse)
-@app.get("/index.html", response_class=HTMLResponse)
-async def serve_dashboard():
-    response = HTMLResponse(content=_get_dashboard_html(), status_code=200)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
 
 def start_server(host: str = "127.0.0.1", port: int = 8000):
     ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on http://{host}:{port}/AJAX")

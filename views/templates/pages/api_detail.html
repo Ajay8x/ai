@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI API - {{ api.name }}{% endblock %}
+{% block header_title %}API: {{ api.name }}{% endblock %}
+{% block header_subtitle %}{{ api.description }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:18px;">
+    <a href="/AJAX/apis" class="btn-secondary" style="padding:4px 12px; font-size:12.5px;">← Back to 16 APIs Catalog</a>
+</div>
+
+<!-- Provider Metadata Panel -->
+<div class="glass-panel">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <h2 style="font-size:22px; font-weight:800; color:var(--accent-blue);">
+                    {{ api.name }}
+                </h2>
+                <span style="font-size:13px; font-family:var(--font-mono); color:var(--text-dim);">({{ api.id }})</span>
+            </div>
+            <p style="font-size:14px; color:var(--text-muted); line-height:1.5;">
+                {{ api.description }}
+            </p>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span class="badge-category">{{ api.category }}</span>
+            <span class="badge-safe">CLASSIFICATION: {{ api.data_classification }}</span>
+            <span class="badge-healthy" id="cbStateBadge">CIRCUIT BREAKER: CLOSED</span>
+        </div>
+    </div>
+
+    <!-- Provider Telemetry Cards Grid -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; font-size:12.5px;">
+        <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 12px;">
+            <div style="color:var(--text-dim); margin-bottom:2px;">Rate Limit Quota</div>
+            <div style="font-weight:700; color:var(--text-main);">{{ api.rate_limit_per_minute }} RPM / {{ api.daily_quota }} Daily</div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 12px;">
+            <div style="color:var(--text-dim); margin-bottom:2px;">Cache Policy</div>
+            <div style="font-weight:700; color:var(--text-main);">TTL: {{ api.cache_ttl_sec }}s (ETag / If-None-Match)</div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 12px;">
+            <div style="color:var(--text-dim); margin-bottom:2px;">Base URL (SSRF Allowlist)</div>
+            <div style="font-weight:700; color:var(--accent-cyan); font-family:var(--font-mono); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                {{ api.base_url }}
+            </div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 12px;">
+            <div style="color:var(--text-dim); margin-bottom:2px;">Official Documentation</div>
+            <div><a href="{{ api.official_docs_url }}" target="_blank" rel="noopener" style="color:var(--accent-blue); text-decoration:none; font-weight:600;">Visit Docs ↗</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Outbound Request Studio -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
+    <!-- Left: Request Form -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span>⚡</span><span>Outbound Request Parameters</span>
+        </h3>
+
+        <form id="apiReqForm" onsubmit="event.preventDefault(); executeCurrentApi();">
+            <div class="form-group">
+                <label class="form-label" for="apiEndpointInput">Target Endpoint Path</label>
+                <input type="text" class="form-input" id="apiEndpointInput" value="{{ api.default_endpoint or '/' }}" placeholder="e.g. /v1/forecast or /satellites/25544">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="apiMethodSelect">HTTP Method</label>
+                <select class="form-select" id="apiMethodSelect">
+                    <option value="GET" selected>GET (Cached via ETag)</option>
+                    <option value="POST">POST</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="apiParamsInput">Query Parameters (JSON Dict)</label>
+                <textarea class="form-textarea" id="apiParamsInput" rows="4" style="font-family:var(--font-mono); font-size:12.5px;">{{ api.default_params_json or '{}' }}</textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:18px;">
+                <input type="checkbox" id="skipCacheCheckbox" style="accent-color:var(--accent-cyan); width:16px; height:16px;">
+                <label for="skipCacheCheckbox" style="font-size:13px; color:var(--text-muted); cursor:pointer;">
+                    Skip local ETag cache (Force live network request)
+                </label>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-primary" id="executeApiBtn" style="flex:1; justify-content:center;">
+                    <span>⚡</span><span>Execute Safe Query</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="resetApiForm()">Reset</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right: Live Response Panel -->
+    <div class="glass-panel" style="display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <span>📡</span><span>Gateway Live Response</span>
+            </h3>
+            <div style="display:flex; gap:6px;">
+                <span class="badge-safe" id="apiStatusBadge" style="display:none;">READY</span>
+                <span class="badge-category" id="apiCacheBadge" style="display:none;">CACHE</span>
+            </div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; min-height:260px;">
+            <pre class="code-viewer" id="apiResultViewer" style="flex:1; margin-bottom:14px;">// Click 'Execute Safe Query' to initiate secure SSRF-checked API call...</pre>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" id="askAiApiBtn" style="flex:1; justify-content:center; display:none;" onclick="askAiAboutApiResponse()">
+                    <span>💬</span><span>Ask AJAX AI About This Response</span>
+                </button>
+                <button class="btn-secondary" id="copyApiBtn" style="display:none;" onclick="copyApiResultJson()">
+                    📋 Copy JSON
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const PROVIDER_ID = "{{ api.id }}";
+    let lastApiResponse = null;
+
+    async function executeCurrentApi() {
+        const endpoint = document.getElementById('apiEndpointInput').value.trim() || '/';
+        const method = document.getElementById('apiMethodSelect').value;
+        const skipCache = document.getElementById('skipCacheCheckbox').checked;
+
+        let params = {};
+        try {
+            const rawParams = document.getElementById('apiParamsInput').value.trim();
+            if (rawParams) {
+                params = JSON.parse(rawParams);
+            }
+        } catch (e) {
+            window.showToast('Invalid JSON in Query Parameters: ' + e.message, 'error');
+            return;
+        }
+
+        const statusBadge = document.getElementById('apiStatusBadge');
+        const cacheBadge = document.getElementById('apiCacheBadge');
+        const viewer = document.getElementById('apiResultViewer');
+        const askAiBtn = document.getElementById('askAiApiBtn');
+        const copyBtn = document.getElementById('copyApiBtn');
+
+        statusBadge.style.display = 'inline-block';
+        statusBadge.className = 'badge-category';
+        statusBadge.textContent = 'CONNECTING...';
+
+        try {
+            const result = await window.ajaxClient.executeConnector(PROVIDER_ID, endpoint, method, params, {}, null);
+            lastApiResponse = result;
+
+            viewer.textContent = JSON.stringify(result.data !== undefined ? result.data : result, null, 2);
+
+            statusBadge.className = result.success ? 'badge-safe' : 'badge-confirm';
+            statusBadge.textContent = `HTTP ${result.status_code || 200}`;
+
+            if (result.from_cache) {
+                cacheBadge.style.display = 'inline-block';
+                cacheBadge.textContent = 'ETAG CACHE';
+            } else {
+                cacheBadge.style.display = 'inline-block';
+                cacheBadge.textContent = `${Math.round(result.latency_ms || 0)}ms LIVE`;
+            }
+
+            askAiBtn.style.display = 'inline-flex';
+            copyBtn.style.display = 'inline-flex';
+
+            window.showToast(`Provider ${PROVIDER_ID} returned successfully!`, 'success');
+        } catch (err) {
+            viewer.textContent = `API Error:\n${err.message}`;
+            statusBadge.className = 'badge-confirm';
+            statusBadge.textContent = 'FAILED';
+        }
+    }
+
+    function askAiAboutApiResponse() {
+        if (!lastApiResponse) return;
+        const data = lastApiResponse.data !== undefined ? lastApiResponse.data : lastApiResponse;
+        window.ajaxClient.askAIAboutData(`API Response (${PROVIDER_ID})`, data);
+    }
+
+    function copyApiResultJson() {
+        if (!lastApiResponse) return;
+        navigator.clipboard.writeText(JSON.stringify(lastApiResponse, null, 2));
+        window.showToast('Copied JSON to clipboard!', 'success');
+    }
+
+    function resetApiForm() {
+        document.getElementById('apiReqForm').reset();
+    }
+</script>
+{% endblock %}

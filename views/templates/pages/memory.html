@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Memory Manager{% endblock %}
+{% block header_title %}Long-Term Memory & Personalization{% endblock %}
+{% block header_subtitle %}Key-Value Memory Retrieval, Semantic Recall & MongoDB Persistence{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">💾 Memory Subsystem</h2>
+        <div class="page-subtitle">AJAX AI retains long-term personal facts and preferences across sessions.</div>
+    </div>
+    <button class="btn-primary" onclick="openAddMemoryModal()">➕ Store New Fact</button>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:22px;">
+    <!-- Left: Add Memory Form -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>📝</span><span>Store Key-Value Memory</span>
+        </h3>
+
+        <form id="memoryForm" onsubmit="event.preventDefault(); submitNewMemory();">
+            <div class="form-group">
+                <label class="form-label" for="memKey">Memory Key / Subject</label>
+                <input type="text" class="form-input" id="memKey" placeholder="e.g. user_favorite_language or office_location" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="memCategory">Category</label>
+                <select class="form-select" id="memCategory">
+                    <option value="general">General</option>
+                    <option value="preferences">User Preferences</option>
+                    <option value="work">Work & Projects</option>
+                    <option value="system">System Configuration</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="memValue">Memory Value / Fact</label>
+                <textarea class="form-textarea" id="memValue" rows="4" placeholder="e.g. Ajay prefers concise answers and Python for automation." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
+                Save to MongoDB Atlas 💾
+            </button>
+        </form>
+    </div>
+
+    <!-- Right: Recall Tester -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>🔍</span><span>Test Memory Recall</span>
+        </h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Test how the AI retrieves stored memories using the <code>recall_memory</code> tool or semantic search.
+        </p>
+
+        <div class="form-group">
+            <label class="form-label">Search Query</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" class="form-input" id="recallQuery" placeholder="e.g. what is my favorite language?">
+                <button class="btn-primary" onclick="testRecall()" style="white-space:nowrap;">Recall ⚡</button>
+            </div>
+        </div>
+
+        <pre class="code-viewer" id="recallResult" style="min-height:160px;">// Recall output will appear here...</pre>
+    </div>
+</div>
+
+<!-- Memories List Table -->
+<div class="glass-panel" style="margin-top:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+            <span>📋</span><span>Stored Memory Records</span>
+        </h3>
+        <button class="btn-secondary" onclick="loadMemoriesList()">🔄 Refresh List</button>
+    </div>
+
+    <div id="memoriesTableContainer" style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border-card); text-align:left; color:var(--text-dim);">
+                    <th style="padding:10px 12px;">Key</th>
+                    <th style="padding:10px 12px;">Category</th>
+                    <th style="padding:10px 12px;">Stored Fact / Value</th>
+                    <th style="padding:10px 12px;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="memoriesTbody">
+                <tr><td colspan="4" style="padding:16px; text-align:center; color:var(--text-dim);">Loading memories...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function loadMemoriesList() {
+        try {
+            const res = await window.ajaxClient.get('/api/memory');
+            const tbody = document.getElementById('memoriesTbody');
+            const mems = res.memories || [];
+
+            if (mems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="padding:16px; text-align:center; color:var(--text-dim);">No memories stored yet. Add your first memory above!</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = mems.map(m => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:10px 12px; font-family:var(--font-mono); color:var(--accent-cyan);">${m.key || m.key_text || 'untitled'}</td>
+                    <td style="padding:10px 12px;"><span class="badge-category">${m.category || 'general'}</span></td>
+                    <td style="padding:10px 12px; color:var(--text-main);">${m.value || m.value_text || ''}</td>
+                    <td style="padding:10px 12px;">
+                        <button class="btn-secondary" style="font-size:11px; padding:3px 8px;" onclick="window.askAjaxAbout('Memory: ${m.key || ''}', '${m.value || ''}')">Ask AI</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (_) {}
+    }
+
+    async function submitNewMemory() {
+        const key = document.getElementById('memKey').value.trim();
+        const value = document.getElementById('memValue').value.trim();
+        const category = document.getElementById('memCategory').value;
+
+        if (!key || !value) return;
+
+        try {
+            await window.ajaxClient.post('/api/memory', { key, value, category }, 'Saving memory to database...');
+            window.showToast(`Saved fact: ${key}`, 'success');
+            document.getElementById('memoryForm').reset();
+            loadMemoriesList();
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    async function testRecall() {
+        const query = document.getElementById('recallQuery').value.trim();
+        if (!query) return;
+
+        const out = document.getElementById('recallResult');
+        out.textContent = 'Searching memories...';
+
+        try {
+            const res = await window.ajaxClient.executeTool('recall_memory', { query });
+            out.textContent = JSON.stringify(res, null, 2);
+        } catch (err) {
+            out.textContent = `Error: ${err.message}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMemoriesList);
+</script>
+{% endblock %}

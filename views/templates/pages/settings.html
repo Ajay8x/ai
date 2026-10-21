@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Settings & Preferences{% endblock %}
+{% block header_title %}System Settings & Preferences{% endblock %}
+{% block header_subtitle %}Manage Speech Parameters, Default Language, Storage Sessions & API Security Config{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">⚙️ Application Settings</h2>
+        <div class="page-subtitle">Configure your personal assistant preferences and browser session storage.</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
+    <!-- General Preferences -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span>🌐</span><span>Localization & Voice Settings</span>
+        </h3>
+
+        <div class="form-group">
+            <label class="form-label" for="settingLang">Default AI Response Language</label>
+            <select class="form-select" id="settingLang" onchange="updateSettingLang(this.value)">
+                <option value="en">English (Default)</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+            </select>
+            <span style="font-size:11.5px; color:var(--text-dim);">Controls default response language across Chat and Mini-chat.</span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="settingVoice">Voice Audio Output (TTS)</label>
+            <select class="form-select" id="settingVoice" onchange="updateSettingVoice(this.value)">
+                <option value="false">Disabled (Silent Text Only)</option>
+                <option value="true">Enabled (Browser Speech Synthesis)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Speech Rate (Speed)</label>
+            <input type="range" min="0.7" max="1.5" step="0.1" value="1.0" id="speechRateSlider" style="width:100%; accent-color:var(--accent-cyan);">
+        </div>
+    </div>
+
+    <!-- Storage & Session Management -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span>💾</span><span>Session & Cache Storage</span>
+        </h3>
+
+        <div class="form-group">
+            <label class="form-label">Active Conversation Session ID</label>
+            <input type="text" class="form-input" id="settingConvId" readonly style="color:var(--accent-cyan); font-family:var(--font-mono); font-size:12.5px;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+            <button class="btn-secondary" onclick="resetActiveSession()">
+                <span>🔄</span><span>Generate Fresh Conversation Session</span>
+            </button>
+            <button class="btn-danger" onclick="clearAllLocalStorage()">
+                <span>🗑️</span><span>Purge All Local Cache & History</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.ajaxState) {
+            document.getElementById('settingLang').value = window.ajaxState.getLanguage();
+            document.getElementById('settingVoice').value = String(window.ajaxState.isVoiceEnabled());
+            document.getElementById('settingConvId').value = window.ajaxState.getConversationId();
+        }
+    });
+
+    function updateSettingLang(val) {
+        if (window.ajaxState) {
+            window.ajaxState.setLanguage(val);
+            const label = document.getElementById('globalLangLabel');
+            if (label) label.textContent = val.toUpperCase();
+            window.showToast(`Updated language to ${val === 'hi' ? 'Hindi' : 'English'}`, 'info');
+        }
+    }
+
+    function updateSettingVoice(val) {
+        if (window.ajaxState) {
+            window.ajaxState.setVoiceEnabled(val === 'true');
+            const status = document.getElementById('globalVoiceStatus');
+            const icon = document.getElementById('globalVoiceIcon');
+            if (status) status.textContent = val === 'true' ? 'ON' : 'OFF';
+            if (icon) icon.textContent = val === 'true' ? '🔊' : '🔈';
+            window.showToast(`Voice output: ${val === 'true' ? 'Enabled' : 'Disabled'}`, 'info');
+        }
+    }
+
+    function resetActiveSession() {
+        const newId = 'conv_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+        window.ajaxState.setConversationId(newId);
+        document.getElementById('settingConvId').value = newId;
+        window.showToast('Created new conversation session!', 'success');
+    }
+
+    async function clearAllLocalStorage() {
+        const proceed = await window.showConfirmModal({
+            title: 'Purge Local Storage',
+            message: 'Are you sure you want to delete all cached session IDs and local tool history? This cannot be undone.',
+            confirmText: 'Purge Everything',
+            cancelText: 'Cancel'
+        });
+
+        if (proceed) {
+            localStorage.clear();
+            window.showToast('Local storage purged. Reloading...', 'warning');
+            setTimeout(() => location.reload(), 800);
+        }
+    }
+</script>
+{% endblock %}

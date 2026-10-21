@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Documents & RAG Knowledge Store{% endblock %}
+{% block header_title %}Documents & RAG Knowledge Store{% endblock %}
+{% block header_subtitle %}Upload Knowledge Files, Generate Vector Embeddings & Perform Semantic RAG Queries{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">📄 Retrieval-Augmented Generation (RAG)</h2>
+        <div class="page-subtitle">Upload documents to expand AJAX AI's private knowledge base with vector embeddings.</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
+    <!-- Left: File Upload Area -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>📤</span><span>Upload Knowledge Document</span>
+        </h3>
+
+        <div id="dropZone" style="border:2px dashed var(--border-card); border-radius:12px; padding:32px 20px; text-align:center; background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s ease; margin-bottom:16px;" onclick="document.getElementById('fileInput').click()">
+            <div style="font-size:36px; margin-bottom:8px;">📁</div>
+            <div style="font-weight:600; font-size:14px; color:var(--text-main); margin-bottom:4px;">Click or Drag & Drop Document</div>
+            <div style="font-size:12px; color:var(--text-dim);">Supported: PDF, TXT, MD, CSV, DOCX, JSON (Max 25MB)</div>
+            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelected(this.files[0])">
+        </div>
+
+        <div id="selectedFileInfo" style="display:none; padding:10px 14px; background:rgba(0,242,254,0.08); border:1px solid rgba(0,242,254,0.3); border-radius:8px; margin-bottom:16px; font-size:13px;">
+            Selected: <strong id="selectedFileName">file.txt</strong> (<span id="selectedFileSize">0 KB</span>)
+        </div>
+
+        <button class="btn-primary" id="uploadBtn" style="width:100%; justify-content:center; display:none;" onclick="uploadSelectedFile()">
+            <span>🚀</span><span>Upload & Index with Embeddings</span>
+        </button>
+    </div>
+
+    <!-- Right: Semantic RAG Search Tester -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>🔍</span><span>Semantic Query Tester</span>
+        </h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Query the vector store directly via the <code>query_documents</code> tool.
+        </p>
+
+        <div class="form-group">
+            <label class="form-label">Search Query across Documents</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" class="form-input" id="ragQueryInput" placeholder="e.g. summarize section 4 of the report...">
+                <button class="btn-primary" onclick="queryRagDocuments()">Search ⚡</button>
+            </div>
+        </div>
+
+        <pre class="code-viewer" id="ragResultViewer" style="min-height:180px;">// Search results will appear here with source chunks & relevance scores...</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let currentFile = null;
+
+    function handleFileSelected(file) {
+        if (!file) return;
+        currentFile = file;
+        document.getElementById('selectedFileName').textContent = file.name;
+        document.getElementById('selectedFileSize').textContent = Math.round(file.size / 1024) + ' KB';
+        document.getElementById('selectedFileInfo').style.display = 'block';
+        document.getElementById('uploadBtn').style.display = 'flex';
+    }
+
+    async function uploadSelectedFile() {
+        if (!currentFile) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64 = e.target.result.split(',')[1];
+            try {
+                window.showLoader('Processing & embedding document...');
+                const res = await window.ajaxClient.post('/api/upload', {
+                    filename: currentFile.name,
+                    content_base64: base64
+                });
+                window.hideLoader();
+                window.showToast(`Document uploaded successfully! Created ${res.chunks || 1} chunks.`, 'success');
+                document.getElementById('selectedFileInfo').style.display = 'none';
+                document.getElementById('uploadBtn').style.display = 'none';
+                currentFile = null;
+            } catch (err) {
+                window.hideLoader();
+                window.showToast(err.message, 'error');
+            }
+        };
+        reader.readAsDataURL(currentFile);
+    }
+
+    async function queryRagDocuments() {
+        const query = document.getElementById('ragQueryInput').value.trim();
+        if (!query) return;
+
+        const viewer = document.getElementById('ragResultViewer');
+        viewer.textContent = 'Searching vector index...';
+
+        try {
+            const res = await window.ajaxClient.executeTool('query_documents', { query });
+            viewer.textContent = JSON.stringify(res, null, 2);
+        } catch (err) {
+            viewer.textContent = `Error: ${err.message}`;
+        }
+    }
+</script>
+{% endblock %}

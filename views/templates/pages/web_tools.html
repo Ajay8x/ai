@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Web & Media Tools{% endblock %}
+{% block header_title %}Web & Media Intelligence Tools{% endblock %}
+{% block header_subtitle %}Live Web Search, Wikipedia Knowledge Extraction, YouTube Player & Web Browsing{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">🌐 Web & Media Integration</h2>
+        <div class="page-subtitle">Access live real-time internet information, media playback, and encyclopedic lookups.</div>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom:24px;">
+    <!-- Search Web -->
+    <div class="glass-panel" style="margin-bottom:0;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>🔍</span><span>Live Web Search</span>
+        </h3>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Query Google / DuckDuckGo for up-to-date internet news and data.</p>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="webSearchQuery" class="form-input" placeholder="e.g. latest SpaceX launch">
+            <button class="btn-primary" onclick="runWebSearch()" style="padding:8px 14px;">Search</button>
+        </div>
+    </div>
+
+    <!-- Wikipedia -->
+    <div class="glass-panel" style="margin-bottom:0;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>📚</span><span>Wikipedia Lookup</span>
+        </h3>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Fetch authoritative summaries from Wikipedia.</p>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="wikiQuery" class="form-input" placeholder="e.g. Quantum Computing">
+            <button class="btn-primary" onclick="runWikiSearch()" style="padding:8px 14px;">Lookup</button>
+        </div>
+    </div>
+
+    <!-- Play YouTube -->
+    <div class="glass-panel" style="margin-bottom:0;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>▶️</span><span>Play YouTube</span>
+        </h3>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Launch music or videos directly via YouTube tool.</p>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="ytQuery" class="form-input" placeholder="e.g. lofi hip hop live">
+            <button class="btn-primary" onclick="runPlayYt()" style="padding:8px 14px;">Play</button>
+        </div>
+    </div>
+
+    <!-- Open Website -->
+    <div class="glass-panel" style="margin-bottom:0;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>🌐</span><span>Open Website</span>
+        </h3>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Launch a URL safely in the host browser.</p>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="urlQuery" class="form-input" placeholder="e.g. github.com">
+            <button class="btn-primary" onclick="runOpenUrl()" style="padding:8px 14px;">Open</button>
+        </div>
+    </div>
+</div>
+
+<!-- Output Viewer -->
+<div class="glass-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+            <span>📡</span><span>Live Web Query Output</span>
+        </h3>
+        <button class="btn-secondary" style="font-size:12px; padding:4px 10px;" onclick="askAiWeb()">Ask AI About This</button>
+    </div>
+    <pre class="code-viewer" id="webViewer" style="min-height:220px;">// Results from Web, Wikipedia, or Media tools will appear here...</pre>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let lastWebResult = null;
+
+    async function runWebSearch() {
+        const query = document.getElementById('webSearchQuery').value.trim();
+        if (!query) return;
+        const res = await window.ajaxClient.executeTool('search_web', { query });
+        lastWebResult = res;
+        document.getElementById('webViewer').textContent = JSON.stringify(res, null, 2);
+    }
+
+    async function runWikiSearch() {
+        const query = document.getElementById('wikiQuery').value.trim();
+        if (!query) return;
+        const res = await window.ajaxClient.executeTool('search_wikipedia', { query });
+        lastWebResult = res;
+        document.getElementById('webViewer').textContent = JSON.stringify(res, null, 2);
+    }
+
+    async function runPlayYt() {
+        const query = document.getElementById('ytQuery').value.trim();
+        if (!query) return;
+        const res = await window.ajaxClient.executeTool('play_youtube', { query });
+        lastWebResult = res;
+        document.getElementById('webViewer').textContent = JSON.stringify(res, null, 2);
+    }
+
+    async function runOpenUrl() {
+        const url = document.getElementById('urlQuery').value.trim();
+        if (!url) return;
+        const res = await window.ajaxClient.executeTool('open_website', { url });
+        lastWebResult = res;
+        document.getElementById('webViewer').textContent = JSON.stringify(res, null, 2);
+    }
+
+    function askAiWeb() {
+        if (!lastWebResult) return;
+        window.ajaxClient.askAIAboutData('Web Tool Output', lastWebResult);
+    }
+</script>
+{% endblock %}

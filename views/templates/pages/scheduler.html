@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Scheduler, Timers & Alarms{% endblock %}
+{% block header_title %}Scheduler, Timers & Alarms{% endblock %}
+{% block header_subtitle %}Automated Reminders, Countdown Timers & Timezone Alarms{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">⏰ Autonomous Scheduler</h2>
+        <div class="page-subtitle">Schedule time-based triggers, reminders, and background alerts with AJAX AI.</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:22px;">
+    <!-- Timer Form -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>⏳</span><span>Set Countdown Timer</span>
+        </h3>
+
+        <form onsubmit="event.preventDefault(); createTimer();">
+            <div class="form-group">
+                <label class="form-label" for="timerDuration">Duration (Seconds or Format)</label>
+                <input type="text" class="form-input" id="timerDuration" placeholder="e.g. 60 or 5m or 10s" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="timerLabel">Label / Purpose</label>
+                <input type="text" class="form-input" id="timerLabel" placeholder="e.g. Check model training checkpoint">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
+                Start Timer ⏳
+            </button>
+        </form>
+    </div>
+
+    <!-- Alarm Form -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>🔔</span><span>Set Alarm / Reminder</span>
+        </h3>
+
+        <form onsubmit="event.preventDefault(); createAlarm();">
+            <div class="form-group">
+                <label class="form-label" for="alarmTime">Alarm Time (HH:MM / 24h)</label>
+                <input type="time" class="form-input" id="alarmTime" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="alarmLabel">Message / Reminder</label>
+                <input type="text" class="form-input" id="alarmLabel" placeholder="e.g. Daily Standup Meeting">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
+                Set Alarm 🔔
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="glass-panel" style="margin-top:20px;">
+    <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+        <span>📋</span><span>Active Local Timers & Reminders</span>
+    </h3>
+    <div id="timersList" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:13px; color:var(--text-dim); font-style:italic;">No active timers running currently.</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function createTimer() {
+        const duration = document.getElementById('timerDuration').value.trim();
+        const label = document.getElementById('timerLabel').value.trim() || 'Timer';
+
+        try {
+            const res = await window.ajaxClient.executeTool('set_timer', { duration, label });
+            window.showToast(`Timer set for ${duration}`, 'success');
+            addTimerCard(label, duration);
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    async function createAlarm() {
+        const time = document.getElementById('alarmTime').value.trim();
+        const label = document.getElementById('alarmLabel').value.trim() || 'Alarm';
+
+        try {
+            const res = await window.ajaxClient.executeTool('set_alarm', { time, label });
+            window.showToast(`Alarm set for ${time}`, 'success');
+            addTimerCard(`Alarm: ${label}`, time);
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    function addTimerCard(label, timeInfo) {
+        const list = document.getElementById('timersList');
+        const card = document.createElement('div');
+        card.style.display = 'flex';
+        card.style.justifyContent = 'space-between';
+        card.style.alignItems = 'center';
+        card.style.padding = '12px 14px';
+        card.style.background = 'rgba(255,255,255,0.03)';
+        card.style.borderRadius = '8px';
+        card.innerHTML = `
+            <div>
+                <strong style="color:var(--accent-cyan);">${label}</strong>
+                <span style="margin-left:8px; font-size:12px; color:var(--text-dim);">Trigger: ${timeInfo}</span>
+            </div>
+            <span class="badge-safe">ACTIVE</span>
+        `;
+        list.prepend(card);
+    }
+</script>
+{% endblock %}

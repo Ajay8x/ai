@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}AJAX AI - Autonomous Assistant{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=3.3">
+    <link rel="stylesheet" href="/css/ajax-ui.css?v=3.3">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        function toggleSidebar(forceState) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (!sidebar) return;
+            const isOpen = sidebar.classList.contains('open');
+            const shouldOpen = forceState !== undefined ? forceState : !isOpen;
+            if (shouldOpen) {
+                sidebar.classList.add('open');
+                if (backdrop) backdrop.classList.add('active');
+            } else {
+                sidebar.classList.remove('open');
+                if (backdrop) backdrop.classList.remove('active');
+            }
+        }
+        window.toggleSidebar = toggleSidebar;
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar(false)"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/AJAX/dashboard" class="logo" style="text-decoration:none; color:inherit;">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">AJAX AI</span>
+                </a>
+                <div class="header-right-tools">
+                    <div class="status-pill" title="Connected to MongoDB Atlas Cloud">
+                        <span class="status-dot"></span>
+                        <span class="status-text">ONLINE</span>
+                    </div>
+                    <button class="mobile-close-btn" onclick="toggleSidebar(false)" title="Close Menu">✕</button>
+                </div>
+            </div>
+
+            <!-- New Chat Action -->
+            <a href="/AJAX/chat" class="new-chat-btn" style="text-decoration:none;">
+                <span class="btn-icon">💬</span>
+                <span>Open AI Chat</span>
+            </a>
+
+            <!-- Scrollable Nav Links -->
+            <div style="flex:1; overflow-y:auto; padding-right:2px; display:flex; flex-direction:column; gap:4px;">
+                <!-- Section: Overview -->
+                <div class="nav-group">
+                    <div class="nav-group-title">Overview</div>
+                    <a href="/AJAX/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+                        <span class="nav-badge">Core</span>
+                    </a>
+                    <a href="/AJAX/chat" class="nav-link {% if active_page == 'chat' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🤖</span><span>AI Chat Studio</span></div>
+                        <span class="nav-badge">Live</span>
+                    </a>
+                </div>
+
+                <!-- Section: Intelligence -->
+                <div class="nav-group">
+                    <div class="nav-group-title">AI Intelligence</div>
+                    <a href="/AJAX/brain" class="nav-link {% if active_page == 'brain' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🧠</span><span>Brain & Neural Intent</span></div>
+                        <span class="nav-badge">20</span>
+                    </a>
+                    <a href="/AJAX/memory" class="nav-link {% if active_page == 'memory' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">💾</span><span>Memory Manager</span></div>
+                        <span class="nav-badge">RAG</span>
+                    </a>
+                    <a href="/AJAX/documents" class="nav-link {% if active_page == 'documents' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">📄</span><span>Documents & RAG</span></div>
+                        <span class="nav-badge">Vector</span>
+                    </a>
+                    <a href="/AJAX/scheduler" class="nav-link {% if active_page == 'scheduler' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">⏰</span><span>Scheduler & Alarms</span></div>
+                    </a>
+                </div>
+
+                <!-- Section: Tools & Automation -->
+                <div class="nav-group">
+                    <div class="nav-group-title">Tools & Automation</div>
+                    <a href="/AJAX/tools" class="nav-link {% if active_page == 'tools' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🛠️</span><span>25 Tools Catalog</span></div>
+                        <span class="nav-badge">25</span>
+                    </a>
+                    <a href="/AJAX/web-tools" class="nav-link {% if active_page == 'web_tools' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🌐</span><span>Web & Media</span></div>
+                        <span class="nav-badge">4</span>
+                    </a>
+                    <a href="/AJAX/plugins" class="nav-link {% if active_page == 'plugins' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🧩</span><span>Custom Plugins</span></div>
+                        <span class="nav-badge">3</span>
+                    </a>
+                </div>
+
+                <!-- Section: Public APIs -->
+                <div class="nav-group">
+                    <div class="nav-group-title">Public APIs & Connectors</div>
+                    <a href="/AJAX/apis" class="nav-link {% if active_page == 'apis' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🔌</span><span>16 Public APIs</span></div>
+                        <span class="nav-badge">16</span>
+                    </a>
+                    <a href="/AJAX/schema" class="nav-link {% if active_page == 'schema' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">📋</span><span>Schema Mapper</span></div>
+                        <span class="nav-badge">14 Types</span>
+                    </a>
+                    <a href="/AJAX/workflows" class="nav-link {% if active_page == 'workflows' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">🔄</span><span>Workflows & Loops</span></div>
+                        <span class="nav-badge">DAG</span>
+                    </a>
+                </div>
+
+                <!-- Section: Operations -->
+                <div class="nav-group">
+                    <div class="nav-group-title">System & Ops</div>
+                    <a href="/AJAX/system" class="nav-link {% if active_page == 'system' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">💻</span><span>System Diagnostics</span></div>
+                        <span class="nav-badge">Live</span>
+                    </a>
+                    <a href="/AJAX/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+                        <div class="nav-link-left"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="user-profile-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <div class="user-name">Ajay Singh</div>
+                        <div class="user-badge">● Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Layout -->
+        <div class="page-main-layout">
+            <!-- Universal Top Header -->
+            <header class="top-header">
+                <div class="top-left">
+                    <button class="hamburger-btn" onclick="toggleSidebar(true)" title="Open Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <div class="chat-header-info">
+                        <h1 class="chat-title" id="pageHeaderTitle">{% block header_title %}AJAX AI Dashboard{% endblock %}</h1>
+                        <span class="chat-subtitle" id="pageHeaderSubtitle">{% block header_subtitle %}Autonomous Agentic Intelligence & Public API Gateway{% endblock %}</span>
+                    </div>
+                </div>
+
+                <div class="top-right">
+                    <!-- Language Selector (EN / HI) -->
+                    <button class="lang-switch-btn" id="globalLangSwitchBtn" onclick="toggleGlobalLanguage()" title="Switch Language (English / Hindi)">
+                        <span class="lang-icon">🌐</span>
+                        <span id="globalLangLabel">EN</span>
+                    </button>
+
+                    <!-- Voice Speech Toggle -->
+                    <button class="voice-toggle-btn" id="globalVoiceToggleBtn" onclick="toggleGlobalVoice()" title="Toggle Voice Output">
+                        <span id="globalVoiceIcon">🔈</span>
+                        <span class="voice-text">Voice: <strong id="globalVoiceStatus">OFF</strong></span>
+                    </button>
+
+                    <div class="model-badge">
+                        <span class="sparkle">✨</span>
+                        <span>AJAX Core 3.0</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Page Content Container -->
+            <div class="page-scroll-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/ajax-state.js?v=3.3"></script>
+    <script src="/js/ajax-ui.js?v=3.3"></script>
+    <script src="/js/ajax-client.js?v=3.3"></script>
+    <script src="/js/ajax-minichat.js?v=3.3"></script>
+
+    <script>
+        // Update top-bar language & voice button states on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const langLabel = document.getElementById('globalLangLabel');
+            const voiceStatus = document.getElementById('globalVoiceStatus');
+            const voiceIcon = document.getElementById('globalVoiceIcon');
+
+            if (langLabel && window.ajaxState) {
+                langLabel.textContent = window.ajaxState.getLanguage().toUpperCase();
+            }
+            if (voiceStatus && window.ajaxState) {
+                const isVoice = window.ajaxState.isVoiceEnabled();
+                voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
+                if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
+            }
+        });
+
+        function toggleGlobalLanguage() {
+            if (!window.ajaxState) return;
+            const newLang = window.ajaxState.toggleLanguage();
+            const langLabel = document.getElementById('globalLangLabel');
+            if (langLabel) langLabel.textContent = newLang.toUpperCase();
+            window.showToast(`Language switched to: ${newLang === 'hi' ? 'Hindi (हिन्दी)' : 'English'}`, 'info');
+        }
+
+        function toggleGlobalVoice() {
+            if (!window.ajaxState) return;
+            const isVoice = window.ajaxState.toggleVoice();
+            const voiceStatus = document.getElementById('globalVoiceStatus');
+            const voiceIcon = document.getElementById('globalVoiceIcon');
+            if (voiceStatus) voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
+            if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
+            window.showToast(`Voice replies: ${isVoice ? 'Enabled' : 'Disabled'}`, 'info');
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

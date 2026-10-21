@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Brain Architecture & Neural Intent{% endblock %}
+{% block header_title %}Brain Architecture & Neural Intent Classifier{% endblock %}
+{% block header_subtitle %}20 Pre-Trained Intent Vectors, Zero-Latency Direct Tool Routing & LLM Orchestration{% endblock %}
+
+{% block content %}
+<div class="page-title-row">
+    <div>
+        <h2 class="page-title-main">🧠 Cognitive Architecture</h2>
+        <div class="page-subtitle">How AJAX AI parses natural queries, predicts semantic intents, and triggers automated tool calling.</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
+    <!-- Intent Playground -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>⚡</span><span>Intent Prediction Playground</span>
+        </h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Type any query in English or Hindi to see how the Neural Intent Router classifies intent and selects direct tools with zero LLM latency.
+        </p>
+
+        <div class="form-group">
+            <label class="form-label">User Query</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="intentTestInput" class="form-input" placeholder="e.g. Where is ISS right now? or 25 * 4?" value="Where is the ISS right now?">
+                <button class="btn-primary" onclick="testIntent()" style="white-space:nowrap;">Predict 🧠</button>
+            </div>
+        </div>
+
+        <div id="intentPredictionResult" style="padding:14px; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:8px; font-size:13px; min-height:120px; line-height:1.5;">
+            Click 'Predict' above to analyze query.
+        </div>
+    </div>
+
+    <!-- Supported 20 Intents Grid -->
+    <div class="glass-panel">
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <span>🎯</span><span>20 Registered Cognitive Intents</span>
+        </h3>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; max-height:360px; overflow-y:auto;">
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">GET_WEATHER</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">CALCULATE</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">TRACK_ISS</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">CONVERT_CURRENCY</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">EARTHQUAKE_INFO</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">PUBLIC_HOLIDAYS</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">GEOCODE_LOCATION</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">GET_SYSTEM_TIME</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SYSTEM_STATUS</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SET_TIMER</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SET_ALARM</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">REMEMBER_FACT</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">RECALL_MEMORY</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SEARCH_FILES</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">READ_FILE</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">DELETE_FILE</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">PLAY_YOUTUBE</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SEARCH_WIKIPEDIA</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">SEARCH_WEB</div>
+            <div style="padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:12px; font-family:var(--font-mono); color:var(--accent-cyan);">GENERAL_CHAT</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function testIntent() {
+        const query = document.getElementById('intentTestInput').value.trim();
+        if (!query) return;
+
+        const out = document.getElementById('intentPredictionResult');
+        out.innerHTML = '<span style="color:var(--accent-cyan);">Classifying intent vectors...</span>';
+
+        try {
+            const res = await window.ajaxClient.post('/api/chat', { query });
+            out.innerHTML = `
+                <div><strong>Predicted Intent:</strong> <span style="color:var(--accent-cyan); font-family:var(--font-mono);">${res.intent}</span></div>
+                <div><strong>Confidence:</strong> <span style="color:var(--accent-emerald);">${Math.round(res.confidence * 100)}%</span></div>
+                <div><strong>Tool Triggered:</strong> <span style="color:var(--accent-blue);">${res.tool_called || 'None (Direct LLM Response)'}</span></div>
+                <div style="margin-top:8px; border-top:1px solid var(--border-subtle); padding-top:6px; color:var(--text-muted);">${res.response.substring(0, 150)}...</div>
+            `;
+        } catch (err) {
+            out.textContent = `Error: ${err.message}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', testIntent);
+</script>
+{% endblock %}
