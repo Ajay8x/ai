@@ -337,11 +337,25 @@ async def serve_api_detail_page(request: Request, api_slug: str):
         "default_params_json": json.dumps(preset.get("params", {}), indent=2)
     }
 
+    if provider_id == "windy_webcams" or api_slug in ("windy-webcams", "webcams"):
+        return templates.TemplateResponse("pages/apis/webcams.html", {
+            "request": request,
+            "active_page": "apis",
+            "api": api_data,
+            "is_auth_configured": is_auth_configured
+        })
+
     return templates.TemplateResponse("pages/api_detail.html", {
         "request": request,
         "active_page": "apis",
         "api": api_data
     })
+
+# Direct Dedicated Webcams Route
+@pages_router.get("/AJAX/webcams", response_class=HTMLResponse)
+@pages_router.get("/AJAX/apis/webcams", response_class=HTMLResponse)
+async def serve_dedicated_webcams_page(request: Request):
+    return await serve_api_detail_page(request, "windy-webcams")
 
 # Core Subsystem: Memory
 @pages_router.get("/AJAX/memory", response_class=HTMLResponse)

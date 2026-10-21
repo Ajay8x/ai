@@ -121,12 +121,22 @@ class TestCredentialErrorHandling(unittest.TestCase):
     def test_windy_webcams_missing_credential(self):
         old_val = os.environ.pop("WINDY_API_KEY", None)
         try:
+            # 1. Service provides fallback verified public streams
             res = webcam_service.get_webcams(country="IN")
-            self.assertFalse(res.success)
-            self.assertEqual(res.status_code, 401)
-            self.assertIn("WINDY_API_KEY", res.error)
-            self.assertIsInstance(res.data, dict)
-            self.assertEqual(res.data.get("status"), "unauthenticated")
+            self.assertTrue(res.success)
+            self.assertFalse(res.data.get("key_configured"))
+            self.assertEqual(res.data.get("mode"), "public_verified_streams")
+            self.assertTrue(len(res.data.get("webcams", [])) > 0)
+
+            # 2. Raw proxy call returns 401 without credential
+            from connectors.base import ConnectorRequest
+            from connectors.proxy import secure_proxy
+            p = connector_registry.get("windy_webcams")
+            req = ConnectorRequest(provider_id="windy_webcams", endpoint="webcams")
+            proxy_res = secure_proxy.execute_request(req, p)
+            self.assertFalse(proxy_res.success)
+            self.assertEqual(proxy_res.status_code, 401)
+            self.assertIn("WINDY_API_KEY", proxy_res.error)
         finally:
             if old_val:
                 os.environ["WINDY_API_KEY"] = old_val

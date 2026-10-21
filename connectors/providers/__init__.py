@@ -43,9 +43,9 @@ class ProviderDispatcher:
         # Category B: Public Webcams and Traffic
         if p_id == "windy_webcams":
             return webcam_service.get_webcams(
-                country=params.get("country", "IN"),
+                country=params.get("country"),
                 category=params.get("category"),
-                limit=int(params.get("limit", 6))
+                limit=int(params.get("limit", 12))
             )
 
         # Category C: Aircraft and Aviation
