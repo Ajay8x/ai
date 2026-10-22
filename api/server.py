@@ -67,6 +67,7 @@ if os.path.exists(js_dir):
 
 # Register MVC Controller Routers
 app.include_router(pages_router)
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(upload_router)
 app.include_router(system_controller_router := system_router)
