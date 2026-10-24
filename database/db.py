@@ -367,19 +367,6 @@ def init_db():
                 db.audit_logs.create_index("id", unique=True)
                 db.audit_logs.create_index([("created_at", -1)])
 
-                # Public API Connectors & Loop Subsystem
-                db.api_providers.create_index("id", unique=True)
-                db.api_providers.create_index("category")
-                db.api_usage.create_index([("provider_id", 1), ("timestamp", -1)])
-                db.api_health_checks.create_index([("provider_id", 1), ("checked_at", -1)])
-                db.connector_schemas.create_index("id", unique=True)
-                db.connector_schemas.create_index("provider_id")
-                db.api_cache_metadata.create_index("cache_key", unique=True)
-                db.scheduled_jobs.create_index("id", unique=True)
-                db.workflow_dependencies.create_index([("source_node", 1), ("target_node", 1)])
-                db.loop_detection_events.create_index([("created_at", -1)])
-                db.api_audit_logs.create_index([("created_at", -1)])
-
                 # Auto-migrate SQLite data if MongoDB Atlas collections are empty
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")

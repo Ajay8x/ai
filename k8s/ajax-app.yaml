@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ajax-ai-app
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: ajax-ai-app
+    app.kubernetes.io/part-of: ajax-ai
+    app: ajax-ai
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ajax-ai
+  template:
+    metadata:
+      labels:
+        app: ajax-ai
+    spec:
+      containers:
+        - name: ajax-ai
+          image: ajax-ai:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: ajax-config
+            - secretRef:
+                name: ajax-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: app-logs
+              mountPath: /app/logs
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: ajax-data-pvc
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: ajax-logs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ajax-ai-service
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: ajax-ai-service
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: ajax-ai

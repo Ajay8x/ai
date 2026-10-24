@@ -56,11 +56,7 @@
             <span>New Conversation</span>
         </button>
 
-        <!-- Public API Hub & Schema Studio Action -->
-        <button class="api-hub-sidebar-btn" onclick="openApiHubModal()" title="Public API Connectors, Schema Mapper & Loop Detection Monitor">
-            <span class="btn-icon">🔌</span>
-            <span>Public API Hub</span>
-        </button>
+
 
         <!-- Chat History Section -->
         <div class="history-section">
@@ -130,11 +126,7 @@
                     <span class="pill-indicator" id="webSearchIndicator">OFF</span>
                 </button>
 
-                <!-- Public API Hub Button in Header -->
-                <button class="api-hub-pill-btn" onclick="openApiHubModal()" title="Public API Connectors, Schema Mapper & Loop Detection Monitor">
-                    <span class="pill-icon">🔌</span>
-                    <span class="pill-label">API Hub</span>
-                </button>
+
             </div>
         </header>
 
@@ -205,123 +197,6 @@
             </div>
         </footer>
     </main>
-
-    <!-- Public API Integration, Loop Detection & Schema Studio Modal -->
-    <div class="api-modal-backdrop" id="apiHubModal">
-        <div class="api-modal-container">
-            <div class="api-modal-header">
-                <div class="api-modal-title">
-                    <span class="modal-icon">🔌</span>
-                    <div>
-                        <h3>Public API Hub & Schema Studio</h3>
-                        <p>Verified Connectors across 11 Categories, Loop Detection & JSON Schema Mapper</p>
-                    </div>
-                </div>
-                <button class="modal-close-btn" onclick="closeApiHubModal()">✕</button>
-            </div>
-
-            <!-- Modal Tab Navigation -->
-            <div class="api-tabs-nav">
-                <button class="api-tab-btn active" id="tabBtnCatalog" onclick="switchApiTab('catalog')">
-                    <span>🌐</span> Connectors Catalog
-                </button>
-                <button class="api-tab-btn" id="tabBtnSchema" onclick="switchApiTab('schema')">
-                    <span>📋</span> Schema Mapper
-                </button>
-                <button class="api-tab-btn" id="tabBtnLoops" onclick="switchApiTab('loops')">
-                    <span>🔄</span> Loop & Cycle Guard
-                </button>
-                <button class="api-tab-btn" id="tabBtnHealth" onclick="switchApiTab('health')">
-                    <span>🩺</span> Health & Circuit Breakers
-                </button>
-            </div>
-
-            <!-- Tab 1: Connectors Catalog -->
-            <div class="api-tab-pane active" id="paneCatalog">
-                <div class="catalog-filter-bar">
-                    <input type="text" id="providerSearchInput" placeholder="Filter providers by name or category..." oninput="filterProvidersUI()">
-                    <select id="categoryFilterSelect" onchange="filterProvidersUI()">
-                        <option value="">All 11 Categories</option>
-                    </select>
-                </div>
-                <div class="providers-grid" id="providersGrid">
-                    <div class="api-loading">Loading verified providers catalog...</div>
-                </div>
-            </div>
-
-            <!-- Tab 2: Dynamic Schema Mapper -->
-            <div class="api-tab-pane" id="paneSchema">
-                <div class="schema-layout">
-                    <div class="schema-input-side">
-                        <label class="form-label">Sample JSON API Response:</label>
-                        <textarea id="schemaJsonInput" class="schema-textarea" placeholder="Paste sample JSON payload here..."></textarea>
-                        <div class="schema-actions-row">
-                            <input type="text" id="schemaDataPathInput" placeholder="Optional data path (e.g. $.items)" class="path-input">
-                            <select id="presetApiSelect" onchange="loadPresetApiSample(this.value)" class="path-input" style="max-width:200px;">
-                                <option value="">-- Load API Sample --</option>
-                                <option value="weather">Open-Meteo Weather</option>
-                                <option value="iss">Where The ISS At?</option>
-                                <option value="earthquake">USGS Earthquake</option>
-                                <option value="fx">Frankfurter FX Rates</option>
-                                <option value="holidays">Nager.Date Indian Holidays</option>
-                                <option value="countries">REST Countries India</option>
-                                <option value="demo">JSONPlaceholder Post</option>
-                            </select>
-                            <button class="schema-primary-btn" onclick="inferSchemaFromUI()">⚡ Infer Schema (14 Types)</button>
-                        </div>
-                    </div>
-                    <div class="schema-output-side">
-                        <label class="form-label">Inferred Schema Fields & Form Preview:</label>
-                        <div class="schema-preview-box" id="schemaPreviewBox">
-                            <div class="schema-placeholder-text">Click 'Infer Schema' to view generated form fields, data types, and JSONPath bindings.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Loop Detection & Cycle Guard -->
-            <div class="api-tab-pane" id="paneLoops">
-                <div class="loop-guard-dashboard">
-                    <div class="loop-card">
-                        <h4>🛡️ Request Loop Protection</h4>
-                        <p>Tracks endpoint hashes and request depth within a 3.0s window. Blocks rapid repeated queries while preserving legitimate polling.</p>
-                        <div class="loop-status-tag active">ACTIVE & MONITORING</div>
-                    </div>
-                    <div class="loop-card">
-                        <h4>🔄 Workflow Cycle Validator (DAG DFS)</h4>
-                        <p>Validates dependent connector sequences to eliminate circular dependencies (e.g. A ➔ B ➔ C ➔ A).</p>
-                        <div class="cycle-tester-box">
-                            <button class="test-btn-cycle" onclick="testWorkflowCycleDetection(true)">Trigger Test Cycle (A ➔ B ➔ C ➔ A)</button>
-                            <button class="test-btn-dag" onclick="testWorkflowCycleDetection(false)">Test Valid DAG Flow</button>
-                            <div class="cycle-result-box" id="cycleResultBox">Run a test above to inspect directed graph cycle detection.</div>
-                        </div>
-                    </div>
-                    <div class="loop-card">
-                        <h4>⚡ Retry Loop & Jitter Engine</h4>
-                        <p>Exponential backoff with full jitter. Respects HTTP <code>Retry-After</code> and terminates retries on 401/403 credentials failures.</p>
-                        <div class="loop-status-tag active">FULL JITTER ACTIVE</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 4: Health & Circuit Breakers -->
-            <div class="api-tab-pane" id="paneHealth">
-                <div class="health-header-bar">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span>Live Canary Telemetry & Circuit Breaker States</span>
-                        <span id="healthPollBadge" class="health-poll-badge">IDLE</span>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button id="healthPollToggleBtn" class="probe-refresh-btn" onclick="toggleHealthAutoPoll()">⚡ Auto-Poll: OFF</button>
-                        <button class="probe-refresh-btn" onclick="loadHealthChecksUI()">🔄 Run Probes Now</button>
-                    </div>
-                </div>
-                <div class="health-grid" id="healthGrid">
-                    <div class="api-loading">Loading telemetry and latency metrics...</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="/js/app.js?v=3.3"></script>
 </body>

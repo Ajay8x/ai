@@ -20,6 +20,8 @@ duckduckgo-search>=5.0.0
 wikipedia>=1.4.0
 pypdf>=4.0.0
 psutil>=5.9.0
+meilisearch>=0.43.0
+networkx>=3.2.0
 
 # Voice & Audio (Optional local dependencies)
 # SpeechRecognition>=3.10.0

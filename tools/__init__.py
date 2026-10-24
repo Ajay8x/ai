@@ -11,14 +11,12 @@ from tools.weather_tool import WeatherTool
 from tools.scheduler_tools import SetTimerTool
 from tools.memory_tools import RememberTool, RecallMemoryTool
 from tools.rag_tools import QueryDocumentsTool
-from tools.calculator_tool import CalculatorTool
-from tools.public_api_tools import (
-    ISSTrackerTool,
-    EarthquakeTrackerTool,
-    CurrencyExchangeTool,
-    GeocodeTool,
-    PublicHolidayTool
+from tools.graphrag_tools import (
+    GraphRAGQueryTool,
+    IndexToGraphRAGTool,
+    ExploreKnowledgeGraphTool
 )
+from tools.calculator_tool import CalculatorTool
 
 def register_all_tools():
     """Register all default tools with the singleton registry (PC automation excluded)."""
@@ -37,12 +35,10 @@ def register_all_tools():
         RememberTool(),
         RecallMemoryTool(),
         QueryDocumentsTool(),
-        CalculatorTool(),
-        ISSTrackerTool(),
-        EarthquakeTrackerTool(),
-        CurrencyExchangeTool(),
-        GeocodeTool(),
-        PublicHolidayTool()
+        GraphRAGQueryTool(),
+        IndexToGraphRAGTool(),
+        ExploreKnowledgeGraphTool(),
+        CalculatorTool()
     ]
     for t in tools:
         registry.register(t)

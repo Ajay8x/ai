@@ -67,31 +67,6 @@
         }
 
         /**
-         * Safely executes an external connector via SSRF-protected /api/connectors/execute
-         */
-        async executeConnector(providerId, endpoint = '/', method = 'GET', params = {}, headers = {}, body = null) {
-            return this.post('/api/connectors/execute', {
-                provider_id: providerId,
-                endpoint,
-                method,
-                params,
-                headers,
-                body,
-                calling_workflow: 'dedicated_api_page'
-            }, `Querying ${providerId} securely...`);
-        }
-
-        /**
-         * Executes a high-level typed capability query via /api/connectors/{providerId}/query
-         */
-        async queryConnectorCapability(providerId, action = 'default', params = {}) {
-            return this.post(`/api/connectors/${providerId}/query`, {
-                action,
-                params
-            }, `Fetching ${providerId} data...`);
-        }
-
-        /**
          * Adds an execution result into active AI conversation and asks AI about it
          */
         askAIAboutData(contextTitle, dataPayload) {

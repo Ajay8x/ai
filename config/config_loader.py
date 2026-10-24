@@ -85,11 +85,18 @@ class DatabaseConfig:
     postgres_db: str = os.getenv("POSTGRES_DB", "ajax_ai")
 
 @dataclass
+class MeiliSearchConfig:
+    host: str = os.getenv("MEILISEARCH_HOST", "http://127.0.0.1:7700")
+    key: str = os.getenv("MEILISEARCH_KEY", "")
+    index: str = os.getenv("MEILISEARCH_INDEX", "ajax_graphrag")
+
+@dataclass
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     voice: VoiceConfig = field(default_factory=VoiceConfig)
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
+    meilisearch: MeiliSearchConfig = field(default_factory=MeiliSearchConfig)
     database_path: str = os.path.join(DATA_DIR, "ajax.db")
     host: str = os.getenv("HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", "8000"))

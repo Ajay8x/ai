@@ -60,6 +60,20 @@ cp .env.example .env
   python main.py --diagnostics
   ```
 
+### 4. Container & Cloud Deployment
+
+- **Docker Compose** (FastAPI + PostgreSQL + Meilisearch):
+  ```bash
+  docker-compose up -d
+  ```
+  See [README-DOCKER.md](file:///c:/Users/Ajaysingh/PROJECT/Ai%20full%203.0/README-DOCKER.md) for full guide.
+
+- **Kubernetes (K8s)** (Production Autoscaling Stack):
+  ```bash
+  kubectl apply -k k8s/
+  ```
+  See [README-K8S.md](file:///c:/Users/Ajaysingh/PROJECT/Ai%20full%203.0/README-K8S.md) for full Kubernetes deployment guide.
+
 ---
 
 ## 💬 CLI Slash Commands

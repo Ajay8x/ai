@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ajax-config
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: ajax-config
+    app.kubernetes.io/part-of: ajax-ai
+data:
+  # App & Server Configuration
+  PORT: "8000"
+  HOST: "0.0.0.0"
+  DEBUG: "false"
+  SAFETY_LEVEL: "STANDARD"
+  REQUIRE_CONFIRMATION_FOR_DESTRUCTIVE_ACTIONS: "true"
+  PRIVACY_MODE: "false"
+
+  # AI LLM Provider
+  DEFAULT_LLM_PROVIDER: "openai"
+  LLM_MODEL: "gpt-4o-mini"
+  LLM_TEMPERATURE: "0.7"
+  LLM_MAX_TOKENS: "2048"
+
+  # Database Configuration
+  DB_TYPE: "postgres"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "ajax_db"
+
+  # GraphRAG & Fast Search Engine (Meilisearch)
+  MEILISEARCH_HOST: "http://meilisearch-service:7700"
+  MEILISEARCH_INDEX: "ajax_graphrag"
+  MEILISEARCH_ENABLED: "true"
+
+  # Voice & Audio
+  VOICE_ENABLED: "false"
+  WAKE_WORD: "ajax"
+  WAKE_WORD_ENABLED: "false"

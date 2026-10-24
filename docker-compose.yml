@@ -27,12 +27,35 @@ services:
       - POSTGRES_USER=ajax_user
       - POSTGRES_PASSWORD=ajax_secure_password
       - POSTGRES_DB=ajax_db
+      # GraphRAG & Fast Search Configuration
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - MEILISEARCH_KEY=${MEILISEARCH_KEY:-ajax_master_key_123}
     volumes:
       - ajax_data:/app/data
       - ajax_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
+      meilisearch:
+        condition: service_started
+    networks:
+      - ajax_network
+
+  # ==============================================================================
+  # Meilisearch Ultra-Fast Search Service (GraphRAG Entrypoint)
+  # ==============================================================================
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: ajax-meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:-ajax_master_key_123}
+      - MEILI_ENV=production
+      - MEILI_NO_ANALYTICS=true
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
     networks:
       - ajax_network
 
@@ -68,6 +91,8 @@ volumes:
   ajax_logs:
     driver: local
   pg_data:
+    driver: local
+  meili_data:
     driver: local
 
 networks:

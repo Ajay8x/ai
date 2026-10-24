@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ajax-data-pvc
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: ajax-data
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ajax-logs-pvc
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: ajax-logs
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: postgres-data
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: meilisearch-pvc
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: meilisearch-data
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

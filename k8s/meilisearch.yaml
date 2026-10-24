@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meilisearch
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: meilisearch
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: meilisearch
+  template:
+    metadata:
+      labels:
+        app: meilisearch
+    spec:
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7700
+              name: meilisearch
+          env:
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ajax-secrets
+                  key: MEILISEARCH_KEY
+            - name: MEILI_ENV
+              value: "production"
+            - name: MEILI_NO_ANALYTICS
+              value: "true"
+            - name: MEILI_DB_PATH
+              value: "/meili_data"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1500m
+              memory: 2Gi
+          volumeMounts:
+            - name: meilisearch-storage
+              mountPath: /meili_data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+      volumes:
+        - name: meilisearch-storage
+          persistentVolumeClaim:
+            claimName: meilisearch-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meilisearch-service
+  namespace: ajax-ai
+  labels:
+    app.kubernetes.io/name: meilisearch-service
+    app.kubernetes.io/part-of: ajax-ai
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7700
+      targetPort: 7700
+      name: http
+  selector:
+    app: meilisearch
