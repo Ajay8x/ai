@@ -40,25 +40,20 @@ async def ajax_root():
 # Main Dashboard
 @pages_router.get("/AJAX/dashboard", response_class=HTMLResponse)
 async def serve_dashboard_page(request: Request):
-    try:
-        return templates.TemplateResponse("pages/dashboard.html", {
-            "request": request,
-            "active_page": "dashboard"
-        })
-    except Exception as e:
-        import traceback
-        return HTMLResponse(
-            f"<h3>Dashboard Render Error</h3><pre>{traceback.format_exc()}</pre>",
-            status_code=500
-        )
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/dashboard.html",
+        context={"active_page": "dashboard"}
+    )
 
 # AI Chat Studio
 @pages_router.get("/AJAX/chat", response_class=HTMLResponse)
 async def serve_chat_page(request: Request):
-    return templates.TemplateResponse("pages/chat.html", {
-        "request": request,
-        "active_page": "chat"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/chat.html",
+        context={"active_page": "chat"}
+    )
 
 # Retired Routes Redirects
 @pages_router.get("/AJAX/tools", response_class=RedirectResponse)
@@ -72,26 +67,29 @@ async def redirect_retired_pages():
 # Core Subsystem: Memory
 @pages_router.get("/AJAX/memory", response_class=HTMLResponse)
 async def serve_memory_page(request: Request):
-    return templates.TemplateResponse("pages/memory.html", {
-        "request": request,
-        "active_page": "memory"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/memory.html",
+        context={"active_page": "memory"}
+    )
 
 # Core Subsystem: System Diagnostics
 @pages_router.get("/AJAX/system", response_class=HTMLResponse)
 async def serve_system_page(request: Request):
-    return templates.TemplateResponse("pages/system.html", {
-        "request": request,
-        "active_page": "system"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/system.html",
+        context={"active_page": "system"}
+    )
 
 # Core Subsystem: Documents & RAG
 @pages_router.get("/AJAX/documents", response_class=HTMLResponse)
 async def serve_documents_page(request: Request):
-    return templates.TemplateResponse("pages/documents.html", {
-        "request": request,
-        "active_page": "documents"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/documents.html",
+        context={"active_page": "documents"}
+    )
 
 # Retired Pages & Subsystems Redirects
 @pages_router.get("/AJAX/scheduler", response_class=RedirectResponse)
@@ -105,15 +103,17 @@ async def redirect_retired_scheduler_and_tools():
 # Core Subsystem: Brain & Neural Intent
 @pages_router.get("/AJAX/brain", response_class=HTMLResponse)
 async def serve_brain_page(request: Request):
-    return templates.TemplateResponse("pages/brain.html", {
-        "request": request,
-        "active_page": "brain"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/brain.html",
+        context={"active_page": "brain"}
+    )
 
 # Core Subsystem: Settings
 @pages_router.get("/AJAX/settings", response_class=HTMLResponse)
 async def serve_settings_page(request: Request):
-    return templates.TemplateResponse("pages/settings.html", {
-        "request": request,
-        "active_page": "settings"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/settings.html",
+        context={"active_page": "settings"}
+    )
