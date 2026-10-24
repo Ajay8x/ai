@@ -13,7 +13,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATES_DIR = os.path.join(BASE_DIR, "views", "templates")
+
+candidate_template_dirs = [
+    os.path.join(BASE_DIR, "views", "templates"),
+    os.path.join(os.getcwd(), "views", "templates"),
+    os.path.join("/var", "task", "views", "templates"),
+]
+valid_template_dirs = [d for d in candidate_template_dirs if os.path.exists(d)]
+TEMPLATES_DIR = valid_template_dirs if valid_template_dirs else os.path.join(BASE_DIR, "views", "templates")
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 pages_router = APIRouter(tags=["Multi-Page Dashboard"])
@@ -33,10 +40,17 @@ async def ajax_root():
 # Main Dashboard
 @pages_router.get("/AJAX/dashboard", response_class=HTMLResponse)
 async def serve_dashboard_page(request: Request):
-    return templates.TemplateResponse("pages/dashboard.html", {
-        "request": request,
-        "active_page": "dashboard"
-    })
+    try:
+        return templates.TemplateResponse("pages/dashboard.html", {
+            "request": request,
+            "active_page": "dashboard"
+        })
+    except Exception as e:
+        import traceback
+        return HTMLResponse(
+            f"<h3>Dashboard Render Error</h3><pre>{traceback.format_exc()}</pre>",
+            status_code=500
+        )
 
 # AI Chat Studio
 @pages_router.get("/AJAX/chat", response_class=HTMLResponse)

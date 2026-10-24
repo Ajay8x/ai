@@ -89,6 +89,38 @@ async def health_check():
         "serverless": bool(os.environ.get("VERCEL"))
     })
 
+# Serverless Diagnosis Endpoint
+@app.get("/api/debug")
+async def debug_endpoint():
+    import traceback
+    info = {
+        "cwd": os.getcwd(),
+        "base_dir": BASE_DIR,
+        "views_dir": VIEWS_DIR,
+        "views_exists": os.path.exists(VIEWS_DIR),
+        "templates_dir": TEMPLATES_DIR,
+        "templates_exists": os.path.exists(TEMPLATES_DIR),
+        "cwd_listdir": os.listdir(os.getcwd()) if os.path.exists(os.getcwd()) else [],
+        "base_listdir": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else [],
+    }
+    if os.path.exists(VIEWS_DIR):
+        info["views_listdir"] = os.listdir(VIEWS_DIR)
+        t_dir = os.path.join(VIEWS_DIR, "templates")
+        if os.path.exists(t_dir):
+            info["templates_listdir"] = os.listdir(t_dir)
+            p_dir = os.path.join(t_dir, "pages")
+            if os.path.exists(p_dir):
+                info["pages_listdir"] = os.listdir(p_dir)
+    
+    try:
+        from controllers.pages_controller import templates
+        template = templates.get_template("pages/dashboard.html")
+        info["template_loaded"] = True
+    except Exception as e:
+        info["template_error"] = traceback.format_exc()
+
+    return JSONResponse(info)
+
 # Redirect root to /AJAX/dashboard
 @app.get("/")
 async def root_redirect():
