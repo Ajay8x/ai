@@ -4,7 +4,7 @@
       "id": "demis hassabis",
       "name": "Demis Hassabis",
       "type": "CONCEPT",
-      "frequency": 6,
+      "frequency": 8,
       "doc_id": "683017e7cac24818"
     },
     {
@@ -18,7 +18,7 @@
       "id": "deepmind",
       "name": "DeepMind",
       "type": "CONCEPT",
-      "frequency": 8,
+      "frequency": 11,
       "doc_id": "683017e7cac24818"
     },
     {
@@ -32,7 +32,7 @@
       "id": "alphafold",
       "name": "AlphaFold",
       "type": "CONCEPT",
-      "frequency": 10,
+      "frequency": 14,
       "doc_id": "683017e7cac24818"
     },
     {
@@ -46,21 +46,21 @@
       "id": "embl",
       "name": "EMBL",
       "type": "CONCEPT",
-      "frequency": 8,
+      "frequency": 11,
       "doc_id": "683017e7cac24818"
     },
     {
       "id": "structural biology and genomics",
       "name": "Structural Biology and Genomics",
       "type": "CONCEPT",
-      "frequency": 6,
+      "frequency": 8,
       "doc_id": "683017e7cac24818"
     },
     {
       "id": "john jumper",
       "name": "John Jumper",
       "type": "CONCEPT",
-      "frequency": 6,
+      "frequency": 8,
       "doc_id": "683017e7cac24818"
     },
     {
@@ -74,28 +74,28 @@
       "id": "london",
       "name": "London",
       "type": "ENTITY",
-      "frequency": 3,
+      "frequency": 4,
       "doc_id": "683017e7cac24818"
     },
     {
       "id": "structural biology",
       "name": "Structural Biology",
       "type": "ENTITY",
-      "frequency": 3,
+      "frequency": 4,
       "doc_id": "683017e7cac24818"
     },
     {
       "id": "genomics",
       "name": "Genomics",
       "type": "ENTITY",
-      "frequency": 3,
+      "frequency": 4,
       "doc_id": "683017e7cac24818"
     },
     {
       "id": "european",
       "name": "European",
       "type": "ENTITY",
-      "frequency": 3,
+      "frequency": 4,
       "doc_id": "683017e7cac24818"
     }
   ],
@@ -117,7 +117,7 @@
       "relation": "FOUNDED",
       "doc_id": "683017e7cac24818",
       "evidence": "Demis Hassabis founded DeepMind in London. DeepMind developed AlphaFold to solve the 50-year-old protein folding grand challenge. AlphaFold collaborates with EMBL to build a public database of 200 mil",
-      "weight": 2.0,
+      "weight": 3.0,
       "docs": [
         "683017e7cac24818"
       ]
@@ -139,7 +139,7 @@
       "relation": "DEVELOPED",
       "doc_id": "683017e7cac24818",
       "evidence": "Demis Hassabis founded DeepMind in London. DeepMind developed AlphaFold to solve the 50-year-old protein folding grand challenge. AlphaFold collaborates with EMBL to build a public database of 200 mil",
-      "weight": 2.0,
+      "weight": 3.0,
       "docs": [
         "683017e7cac24818"
       ]
@@ -161,7 +161,7 @@
       "relation": "COLLABORATES_WITH",
       "doc_id": "683017e7cac24818",
       "evidence": "Demis Hassabis founded DeepMind in London. DeepMind developed AlphaFold to solve the 50-year-old protein folding grand challenge. AlphaFold collaborates with EMBL to build a public database of 200 mil",
-      "weight": 2.0,
+      "weight": 3.0,
       "docs": [
         "683017e7cac24818"
       ]
@@ -172,7 +172,7 @@
       "relation": "RESEARCHES",
       "doc_id": "683017e7cac24818",
       "evidence": "Demis Hassabis founded DeepMind in London. DeepMind developed AlphaFold to solve the 50-year-old protein folding grand challenge. AlphaFold collaborates with EMBL to build a public database of 200 mil",
-      "weight": 3.0,
+      "weight": 4.0,
       "docs": [
         "683017e7cac24818"
       ]
@@ -194,7 +194,7 @@
       "relation": "WORKS_ON",
       "doc_id": "683017e7cac24818",
       "evidence": "Demis Hassabis founded DeepMind in London. DeepMind developed AlphaFold to solve the 50-year-old protein folding grand challenge. AlphaFold collaborates with EMBL to build a public database of 200 mil",
-      "weight": 2.0,
+      "weight": 3.0,
       "docs": [
         "683017e7cac24818"
       ]
