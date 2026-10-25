@@ -213,6 +213,11 @@
                             authBtn.title = 'Sign Out';
                         }
                     } else {
+                        const currentPath = window.location.pathname.toLowerCase();
+                        if (!currentPath.includes('/login')) {
+                            window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
+                            return;
+                        }
                         if (nameEl) nameEl.textContent = 'Guest User';
                         if (avatarEl) avatarEl.textContent = '👤';
                         if (roleEl) {

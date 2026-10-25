@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -123,10 +123,14 @@ async def debug_endpoint():
 
     return JSONResponse(info)
 
-# Redirect root to /AJAX/dashboard
+# Redirect root to /AJAX/dashboard (or /AJAX/login if unauthenticated)
 @app.get("/")
-async def root_redirect():
-    return RedirectResponse(url="/AJAX/dashboard")
+async def root_redirect(request: Request):
+    from controllers.auth_controller import get_current_user_from_request
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/AJAX/login", status_code=302)
+    return RedirectResponse(url="/AJAX/dashboard", status_code=302)
 
 
 def start_server(host: str = "127.0.0.1", port: int = 8000):
