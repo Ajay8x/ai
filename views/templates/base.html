@@ -174,13 +174,137 @@
         </div>
     </div>
 
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <!-- Scripts -->
-    <script src="/js/ajax-state.js?v=3.6"></script>
-    <script src="/js/ajax-ui.js?v=3.6"></script>
-    <script src="/js/ajax-client.js?v=3.6"></script>
-    <script src="/js/ajax-minichat.js?v=3.6"></script>
+    <script src="/js/ajax-state.js?v=3.7"></script>
+    <script src="/js/ajax-ui.js?v=3.7"></script>
+    <script src="/js/ajax-client.js?v=3.7"></script>
+    <script src="/js/ajax-minichat.js?v=3.7"></script>
 
     <script>
+        // Global Bootstrap-Style Toast Notification System
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const iconMap = {
+                success: 'fa-solid fa-circle-check',
+                error: 'fa-solid fa-circle-xmark',
+                warning: 'fa-solid fa-triangle-exclamation',
+                info: 'fa-solid fa-circle-info'
+            };
+            const titleMap = {
+                success: 'Success',
+                error: 'Attention',
+                warning: 'Warning',
+                info: 'System'
+            };
+
+            const iconClass = iconMap[type] || iconMap.info;
+            const titleText = titleMap[type] || 'AJAX AI';
+
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon-wrapper">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-header-row">
+                        <span class="toast-title">${titleText}</span>
+                        <span class="toast-time">just now</span>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+                <button type="button" class="toast-close-btn" title="Dismiss" onclick="this.closest('.toast-msg').remove()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="toast-progress-bar"></div>
+            `;
+
+            container.appendChild(toast);
+
+            let isPaused = false;
+            let dismissTimeout = null;
+
+            const startDismissTimer = () => {
+                dismissTimeout = setTimeout(() => {
+                    if (!isPaused && toast.parentNode) {
+                        toast.classList.add('toast-hiding');
+                        setTimeout(() => toast.remove(), 320);
+                    }
+                }, 3500);
+            };
+
+            toast.addEventListener('mouseenter', () => {
+                isPaused = true;
+                if (dismissTimeout) clearTimeout(dismissTimeout);
+                const bar = toast.querySelector('.toast-progress-bar');
+                if (bar) bar.style.animationPlayState = 'paused';
+            });
+
+            toast.addEventListener('mouseleave', () => {
+                isPaused = false;
+                const bar = toast.querySelector('.toast-progress-bar');
+                if (bar) bar.style.animationPlayState = 'running';
+                startDismissTimer();
+            });
+
+            startDismissTimer();
+        }
+        window.showToast = showToast;
+
+        // Instant Audible Chime via Web Audio API
+        function playAudioTone(type = 'on') {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!window._globalAudioCtx) window._globalAudioCtx = new AudioCtx();
+                if (window._globalAudioCtx.state === 'suspended') {
+                    window._globalAudioCtx.resume();
+                }
+                const ctx = window._globalAudioCtx;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+                if (type === 'on') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.12); // G5
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'off') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(659.25, now); // E5
+                    osc.frequency.exponentialRampToValueAtTime(329.63, now + 0.15); // E4
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'message') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now); // A5
+                    osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.08); // D6
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (_) {}
+        }
+        window.playAudioTone = playAudioTone;
+
         // Initialize Theme (Dark by default, toggles to Light)
         function initTheme() {
             const savedTheme = localStorage.getItem('ajax_theme') || 'dark';
@@ -200,7 +324,7 @@
             localStorage.setItem('ajax_theme', newTheme);
             const icon = document.getElementById('globalThemeIcon');
             if (icon) icon.className = isLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-            window.showToast(`Theme switched to: ${isLight ? 'Light Mode' : 'Dark Mode'}`, 'info');
+            if (window.showToast) window.showToast(`Theme switched to: ${isLight ? 'Light Mode' : 'Dark Mode'}`, 'info');
         }
         window.toggleTheme = toggleTheme;
 
@@ -258,7 +382,6 @@
                             topAuthBtn.title = `Signed in as @${u.username} (Click to Sign Out)`;
                         }
                     } else {
-                        // User not authenticated: automatically redirect to login page. Never show Sign In inside dashboard!
                         window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
                         return;
                     }
@@ -274,7 +397,7 @@
                 if (data.authenticated) {
                     if (confirm(`Signed in as @${data.user.username} (${data.user.full_name}). Do you want to sign out?`)) {
                         await fetch('/api/auth/logout', { method: 'POST' });
-                        window.showToast('Signed out successfully.', 'info');
+                        if (window.showToast) window.showToast('Signed out successfully.', 'info');
                         setTimeout(() => {
                             window.location.href = '/AJAX/login';
                         }, 300);
@@ -294,7 +417,7 @@
             const newLang = window.ajaxState.toggleLanguage();
             const langLabel = document.getElementById('globalLangLabel');
             if (langLabel) langLabel.textContent = newLang.toUpperCase();
-            window.showToast(`Language switched to: ${newLang === 'hi' ? 'Hindi (हिन्दी)' : 'English'}`, 'info');
+            if (window.showToast) window.showToast(`Language switched to: ${newLang === 'hi' ? 'Hindi (हिन्दी)' : 'English'}`, 'info');
         }
 
         function toggleGlobalVoice() {
@@ -305,8 +428,13 @@
             if (voiceStatus) voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
             if (voiceIcon) voiceIcon.className = isVoice ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
             
+            // Immediate audible tone via Web Audio API (Hardware audio confirmation)
+            if (window.playAudioTone) {
+                window.playAudioTone(isVoice ? 'on' : 'off');
+            }
+
             // Prime audio context on direct user click
-            if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+            if ('speechSynthesis' in window) {
                 window.speechSynthesis.resume();
             }
 
@@ -318,13 +446,13 @@
             );
 
             if (isVoice) {
-                window.showToast('Voice replies: Enabled (वॉयस चालू)', 'success');
+                if (window.showToast) window.showToast('Voice replies: Enabled (वॉयस चालू)', 'success');
                 const confirmation = hasHiVoice
                     ? 'वॉयस चालू हो गया है। Voice replies enabled.'
                     : 'Voice replies enabled. Voice chalu ho gaya hai.';
                 if (window.speakText) window.speakText(confirmation, hasHiVoice ? 'hi' : 'en', true);
             } else {
-                window.showToast('Voice replies: Disabled (वॉयस बंद)', 'info');
+                if (window.showToast) window.showToast('Voice replies: Disabled (वॉयस बंद)', 'info');
                 const confirmation = hasHiVoice
                     ? 'वॉयस बंद कर दी गई है। Voice replies disabled.'
                     : 'Voice replies disabled. Voice band ho gaya hai.';

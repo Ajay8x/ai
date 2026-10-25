@@ -430,20 +430,74 @@
     <div id="toastContainer"></div>
 
     <script>
-        // Toast notification helper
+        // Bootstrap-Style Toast notification helper
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
+
+            const iconMap = {
+                success: 'fa-solid fa-circle-check',
+                error: 'fa-solid fa-circle-xmark',
+                warning: 'fa-solid fa-triangle-exclamation',
+                info: 'fa-solid fa-circle-info'
+            };
+            const titleMap = {
+                success: 'Success',
+                error: 'Attention',
+                warning: 'Warning',
+                info: 'System'
+            };
+
+            const iconClass = iconMap[type] || iconMap.info;
+            const titleText = titleMap[type] || 'AJAX AI';
+
             const toast = document.createElement('div');
             toast.className = `toast-msg ${type}`;
-            toast.textContent = message;
+            toast.innerHTML = `
+                <div class="toast-icon-wrapper">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-header-row">
+                        <span class="toast-title">${titleText}</span>
+                        <span class="toast-time">just now</span>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+                <button type="button" class="toast-close-btn" title="Dismiss" onclick="this.closest('.toast-msg').remove()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="toast-progress-bar"></div>
+            `;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-10px)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
+
+            let isPaused = false;
+            let dismissTimeout = null;
+
+            const startDismissTimer = () => {
+                dismissTimeout = setTimeout(() => {
+                    if (!isPaused && toast.parentNode) {
+                        toast.classList.add('toast-hiding');
+                        setTimeout(() => toast.remove(), 320);
+                    }
+                }, 3500);
+            };
+
+            toast.addEventListener('mouseenter', () => {
+                isPaused = true;
+                if (dismissTimeout) clearTimeout(dismissTimeout);
+                const bar = toast.querySelector('.toast-progress-bar');
+                if (bar) bar.style.animationPlayState = 'paused';
+            });
+
+            toast.addEventListener('mouseleave', () => {
+                isPaused = false;
+                const bar = toast.querySelector('.toast-progress-bar');
+                if (bar) bar.style.animationPlayState = 'running';
+                startDismissTimer();
+            });
+
+            startDismissTimer();
         }
         window.showToast = showToast;
 

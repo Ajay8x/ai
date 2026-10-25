@@ -75,7 +75,7 @@
                 <button type="button" class="btn-voice-dictation" id="chatMicBtn" onclick="toggleChatVoiceDictation()" title="Voice Typing (बोलकर टाइप करें)">
                     <i class="fa-solid fa-microphone" id="chatMicIcon"></i>
                 </button>
-                <input type="text" id="fullChatInput" class="form-input" style="flex:1; padding:12px 16px; font-size:14px;" placeholder="Message AJAX AI... (Press Enter to send or talk via 🎙️)" autocomplete="off">
+                <input type="text" id="fullChatInput" class="form-input" style="flex:1; padding:12px 16px; font-size:14px;" placeholder="Message AJAX AI... (Press Enter to send or use Mic)" autocomplete="off">
                 <button class="btn-primary" id="fullSendBtn" onclick="sendFullChatMessage()" style="padding:12px 20px;">
                     <span>Send</span> <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -241,6 +241,7 @@
 
             // Speak response if voice is enabled
             if (window.ajaxState && window.ajaxState.isVoiceEnabled() && fullResponse && window.speakText) {
+                if (window.playAudioTone) window.playAudioTone('message');
                 window.speakText(fullResponse, window.ajaxState.getLanguage());
             }
         }

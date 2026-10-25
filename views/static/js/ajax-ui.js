@@ -73,28 +73,65 @@
         info: '<i class="fa-solid fa-circle-info"></i>',
         success: '<i class="fa-solid fa-circle-check"></i>',
         warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
-        error: '<i class="fa-solid fa-circle-exclamation"></i>'
+        error: '<i class="fa-solid fa-circle-xmark"></i>'
     };
 
-    window.showToast = function(message, type = 'info', duration = 4000) {
+    const TOAST_TITLES = {
+        info: 'System',
+        success: 'Success',
+        warning: 'Warning',
+        error: 'Attention'
+    };
+
+    window.showToast = function(message, type = 'info', duration = 3500) {
         ensureToastContainer();
         const toast = document.createElement('div');
-        toast.className = `ajax-toast ${type}`;
+        toast.className = `toast-msg ${type}`;
         toast.innerHTML = `
-            <span class="ajax-toast-icon">${TOAST_ICONS[type] || '<i class="fa-solid fa-circle-info"></i>'}</span>
-            <div class="ajax-toast-body">${message}</div>
-            <button class="ajax-toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="toast-icon-wrapper">
+                ${TOAST_ICONS[type] || TOAST_ICONS.info}
+            </div>
+            <div class="toast-content">
+                <div class="toast-header-row">
+                    <span class="toast-title">${TOAST_TITLES[type] || 'AJAX AI'}</span>
+                    <span class="toast-time">just now</span>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+            <button type="button" class="toast-close-btn" title="Dismiss" onclick="this.closest('.toast-msg').remove()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="toast-progress-bar"></div>
         `;
         toastContainer.appendChild(toast);
 
-        // Animate in
-        requestAnimationFrame(() => toast.classList.add('show'));
+        let isPaused = false;
+        let dismissTimeout = null;
 
-        // Auto dismiss
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
+        const startDismissTimer = () => {
+            dismissTimeout = setTimeout(() => {
+                if (!isPaused && toast.parentNode) {
+                    toast.classList.add('toast-hiding');
+                    setTimeout(() => toast.remove(), 320);
+                }
+            }, duration);
+        };
+
+        toast.addEventListener('mouseenter', () => {
+            isPaused = true;
+            if (dismissTimeout) clearTimeout(dismissTimeout);
+            const bar = toast.querySelector('.toast-progress-bar');
+            if (bar) bar.style.animationPlayState = 'paused';
+        });
+
+        toast.addEventListener('mouseleave', () => {
+            isPaused = false;
+            const bar = toast.querySelector('.toast-progress-bar');
+            if (bar) bar.style.animationPlayState = 'running';
+            startDismissTimer();
+        });
+
+        startDismissTimer();
     };
 
     // -------------------------------------------------------------------------
@@ -217,6 +254,11 @@
                 return marked.parse(withThoughts);
             } catch (e) {
                 return withThoughts;
+            }
+        }
+        return withThoughts;
+    }
+
     // -------------------------------------------------------------------------
     // 5. Global Speech Synthesis (Text-to-Speech Engine)
     // -------------------------------------------------------------------------
@@ -283,99 +325,93 @@
         }
 
         try {
-            // Cancel any pending speech safely
-            window.speechSynthesis.cancel();
+            const clean = cleanTextForSpeech(text);
+            if (!clean) return;
+
+            // Only cancel if actively speaking
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
             if (window._ttsResumeTimer) {
                 clearInterval(window._ttsResumeTimer);
                 window._ttsResumeTimer = null;
             }
 
-            const clean = cleanTextForSpeech(text);
-            if (!clean) return;
+            // Refresh voice list
+            loadVoices();
+            const voices = availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-            // Wait 60ms to let browser speech engine flush previous cancellations
+            // Take first 600 characters for fluid conversational speech without browser lockup
+            const speechSnippet = clean.length > 600 ? clean.substring(0, 600) + '...' : clean;
+
+            const utterance = new SpeechSynthesisUtterance(speechSnippet);
+            window._activeUtterance = utterance; // Prevent Chrome V8 garbage collection bug!
+
+            // Determine language preference and detect characters
+            const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
+            const hasDevanagari = /[\u0900-\u097F]/.test(speechSnippet);
+
+            let chosenVoice = null;
+            let hindiVoice = null;
+            if (voices && voices.length > 0) {
+                hindiVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')) || (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur'))));
+            }
+
+            if (hasDevanagari && hindiVoice) {
+                chosenVoice = hindiVoice;
+            } else if (currentLang === 'hi' && hindiVoice) {
+                chosenVoice = hindiVoice;
+            }
+
+            // Fallback to high-quality English / system default voice if no Hindi voice installed
+            if (!chosenVoice && voices && voices.length > 0) {
+                chosenVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Zira') || v.name.includes('Jenny') || v.default))
+                           || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'))
+                           || voices.find(v => v.default)
+                           || voices[0];
+            }
+
+            if (chosenVoice) {
+                utterance.voice = chosenVoice;
+                utterance.lang = chosenVoice.lang || (hasDevanagari ? 'hi-IN' : 'en-US');
+            } else {
+                utterance.lang = hasDevanagari ? 'hi-IN' : 'en-US';
+            }
+
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            utterance.onstart = () => {
+                console.log('[TTS] Speaking initiated via voice:', chosenVoice ? chosenVoice.name : 'default');
+                // Chrome 14-second cutoff keepalive
+                window._ttsResumeTimer = setInterval(() => {
+                    if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+                        window.speechSynthesis.resume();
+                    }
+                }, 5000);
+            };
+
+            utterance.onend = () => {
+                console.log('[TTS] Speech finished.');
+                if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
+                window._activeUtterance = null;
+            };
+
+            utterance.onerror = (e) => {
+                console.warn('[TTS] Speech error or interrupted:', e);
+                if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
+                window._activeUtterance = null;
+            };
+
+            // Immediate resume and speak directly in the user gesture context!
+            window.speechSynthesis.resume();
+            window.speechSynthesis.speak(utterance);
+
+            // Chrome unpause safety check
             setTimeout(() => {
-                try {
-                    // Refresh voice list
-                    loadVoices();
-                    const voices = availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
-
-                    // Take first 600 characters for fluid conversational speech without browser lockup
-                    const speechSnippet = clean.length > 600 ? clean.substring(0, 600) + '...' : clean;
-
-                    const utterance = new SpeechSynthesisUtterance(speechSnippet);
-                    window._activeUtterance = utterance; // Prevent Chrome V8 garbage collection bug!
-
-                    // Determine language preference and detect characters
-                    const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
-                    const hasDevanagari = /[\u0900-\u097F]/.test(speechSnippet);
-
-                    let chosenVoice = null;
-                    let hindiVoice = null;
-                    if (voices && voices.length > 0) {
-                        hindiVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')) || (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur'))));
-                    }
-
-                    if (hasDevanagari && hindiVoice) {
-                        chosenVoice = hindiVoice;
-                    } else if (currentLang === 'hi' && hindiVoice) {
-                        chosenVoice = hindiVoice;
-                    }
-
-                    // Fallback to high-quality English / system default voice if no Hindi voice installed
-                    if (!chosenVoice && voices && voices.length > 0) {
-                        chosenVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Zira') || v.name.includes('Jenny') || v.default))
-                                   || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'))
-                                   || voices.find(v => v.default)
-                                   || voices[0];
-                    }
-
-                    if (chosenVoice) {
-                        utterance.voice = chosenVoice;
-                        utterance.lang = chosenVoice.lang || (hasDevanagari ? 'hi-IN' : 'en-US');
-                    } else {
-                        utterance.lang = hasDevanagari ? 'hi-IN' : 'en-US';
-                    }
-
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-
-                    utterance.onstart = () => {
-                        console.log('[TTS] Speaking initiated via voice:', chosenVoice ? chosenVoice.name : 'default');
-                        // Chrome 14-second cutoff keepalive
-                        window._ttsResumeTimer = setInterval(() => {
-                            if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
-                                window.speechSynthesis.resume();
-                            }
-                        }, 5000);
-                    };
-
-                    utterance.onend = () => {
-                        console.log('[TTS] Speech finished.');
-                        if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
-                        window._activeUtterance = null;
-                    };
-
-                    utterance.onerror = (e) => {
-                        console.warn('[TTS] Speech error or interrupted:', e);
-                        if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
-                        window._activeUtterance = null;
-                    };
-
-                    // Chrome unpause fix: always resume right before speak
+                if (window.speechSynthesis.paused) {
                     window.speechSynthesis.resume();
-                    window.speechSynthesis.speak(utterance);
-
-                    // Extra fallback resume check after 100ms
-                    setTimeout(() => {
-                        if (window.speechSynthesis.paused) {
-                            window.speechSynthesis.resume();
-                        }
-                    }, 100);
-
-                } catch (innerErr) {
-                    console.error('[TTS] Internal speak execution error:', innerErr);
                 }
             }, 60);
 
@@ -445,8 +481,14 @@
                 if (micIcon) micIcon.className = 'fa-solid fa-microphone-lines';
             }
 
-            inputEl.setAttribute('placeholder', currentLang === 'hi' ? 'बोलिए... टाइप हो रहा है 🎙️' : 'Listening... speak now 🎙️');
-            window.showToast(currentLang === 'hi' ? 'वॉयस टाइपिंग चालू है... बोलिए' : 'Voice typing active... Speak now', 'info');
+            if (window.playAudioTone) {
+                window.playAudioTone('on');
+            }
+
+            inputEl.setAttribute('placeholder', currentLang === 'hi' ? 'बोलिए... टाइप हो रहा है...' : 'Listening... speak now...');
+            if (window.showToast) {
+                window.showToast(currentLang === 'hi' ? 'वॉयस टाइपिंग चालू है... बोलिए' : 'Voice typing active... Speak now', 'info');
+            }
 
             let sessionFinalText = existingValue ? existingValue + ' ' : '';
 
@@ -490,6 +532,9 @@
     };
 
     window.stopVoiceDictation = function() {
+        if (isDictating && window.playAudioTone) {
+            window.playAudioTone('off');
+        }
         if (globalRecognition) {
             try {
                 globalRecognition.stop();
