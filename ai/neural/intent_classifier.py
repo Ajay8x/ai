@@ -468,12 +468,17 @@ class IntentClassifier:
                 entities["query"] = text_clean
 
         elif final_intent == "WEATHER":
-            m = re.search(r'(?:in|for|at|ka\s+mausam|me\s+mausam)\s+([a-zA-Z\u0900-\u097F]+)', text_clean)
-            if m:
-                entities["city"] = m.group(1).strip()
+            # Match Hindi pattern: "<city> me/ka mausam"
+            m_hindi = re.search(r'([a-zA-Z\u0900-\u097F]+)\s+(?:me|ka|ki|ke)\s+mausam', text_clean)
+            # Match English pattern: "weather in/at/for <city>"
+            m_eng = re.search(r'(?:in|for|at|weather\s+in|weather\s+of|forecast\s+for)\s+([a-zA-Z\u0900-\u097F]+)', text_clean)
+            if m_hindi:
+                entities["city"] = m_hindi.group(1).strip().title()
+            elif m_eng:
+                entities["city"] = m_eng.group(1).strip().title()
             else:
                 # Check known Indian and major global cities in query
-                known_cities = ["delhi", "mumbai", "bangalore", "bengaluru", "kolkata", "chennai", "hyderabad", "pune", "ahmedabad", "jaipur", "london", "new york", "tokyo", "paris", "dubai"]
+                known_cities = ["delhi", "mumbai", "bangalore", "bengaluru", "kolkata", "chennai", "hyderabad", "pune", "ahmedabad", "jaipur", "lucknow", "surat", "patna", "bhopal", "london", "new york", "tokyo", "paris", "dubai"]
                 for c in known_cities:
                     if c in text_clean:
                         entities["city"] = c.title()

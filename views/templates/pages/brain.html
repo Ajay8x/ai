@@ -240,7 +240,7 @@
             </div>
             <div class="hud-pill">
                 <span style="color:var(--accent-emerald);">●</span>
-                <span>Graph Density: <strong>0.38 (Connected)</strong></span>
+                <span>Neural Engine: <strong id="hudNeuralStatus">PyTorch Deep Net (CPU/GPU)</strong></span>
             </div>
         </div>
 
@@ -250,9 +250,9 @@
                 <span style="font-size:11px; font-weight:800; font-family:var(--font-mono); color:var(--accent-cyan); text-transform:uppercase;" id="insCluster">Cluster: Brain</span>
                 <button class="btn-secondary" style="padding:2px 6px; font-size:11px;" onclick="deselectNode()">✕</button>
             </div>
-            <h4 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-main);" id="insTitle">Neural Intent Classifier</h4>
+            <h4 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-main);" id="insTitle">PyTorch Deep Neural Intent Router</h4>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:12px;" id="insDesc">
-                Evaluates incoming natural query tokens and applies cosine similarity against 20 intent vectors with zero LLM overhead.
+                Evaluates input tokens using PyTorch Deep Neural Network (NeuralIntentNet) with Softmax probability distribution and cosine semantic consensus across 20 anchors with sub-millisecond execution.
             </p>
 
             <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Connected Relationships:</div>
@@ -291,7 +291,7 @@
 const NODES_DATA = [
     // 1. Ingestion & Neural Brain Cluster (Cyan)
     { id: "user_query", label: "User Query Ingestion", cluster: "BRAIN", icon: "💬", color: "#00f2fe", size: 24, x: -350, y: 0, desc: "Multimodal query capture (English & Hindi) with automatic text and voice audio tokenization.", latency: "0.1ms" },
-    { id: "intent_router", label: "Neural Intent Router", cluster: "BRAIN", icon: "🧠", color: "#00f2fe", size: 28, x: -180, y: -40, desc: "Evaluates token frequency vectors with cosine similarity across 20 anchors in under 0.05ms.", latency: "< 0.05ms" },
+    { id: "intent_router", label: "PyTorch Neural Intent Router", cluster: "BRAIN", icon: "🧠", color: "#00f2fe", size: 28, x: -180, y: -40, desc: "Evaluates token representations through PyTorch NeuralIntentNet with Softmax probability and Cosine consensus in < 0.05ms.", latency: "< 0.05ms" },
     { id: "intent_vectors", label: "20 Intent Anchors", cluster: "BRAIN", icon: "🎯", color: "#00f2fe", size: 18, x: -220, y: -160, desc: "Mathematical intent reference vectors: Calculate, Weather, GraphRAG, Memory, Files, Time, Status.", latency: "0.01ms" },
 
     // 2. Search-Guided GraphRAG Cluster (Indigo)

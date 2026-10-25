@@ -2,21 +2,150 @@
 
 {% block title %}AJAX AI - Settings & Preferences{% endblock %}
 {% block header_title %}System Settings & Preferences{% endblock %}
-{% block header_subtitle %}Manage Speech Parameters, Default Language, Storage Sessions & API Security Config{% endblock %}
+{% block header_subtitle %}Manage LLM Providers, PyTorch Deep Neural Network, Speech Parameters, and Storage Sessions{% endblock %}
 
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">⚙️ Application Settings</h2>
-        <div class="page-subtitle">Configure your personal assistant preferences and browser session storage.</div>
+        <h2 class="page-title-main">⚙️ Application & Neural Architecture Settings</h2>
+        <div class="page-subtitle">Configure language models, hardware-accelerated neural intent classification, and localization.</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:22px; margin-bottom: 24px;">
+    <!-- 1. LLM Brain Provider Configuration -->
+    <div class="glass-panel" style="position:relative; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <span>🧠</span><span>Multi-Tier LLM Brain</span>
+            </h3>
+            <span id="llmStatusBadge" class="badge" style="background:rgba(16, 185, 129, 0.15); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.3); font-size:11px; padding:3px 8px; border-radius:12px;">Active</span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="settingLlmProvider">Primary LLM Provider</label>
+            <select class="form-select" id="settingLlmProvider" onchange="onLlmProviderChange(this.value)">
+                <option value="gemini">Google Gemini (Gemini 2.0 / 1.5 Flash - Free & Ultra-Fast)</option>
+                <option value="groq">Groq (Llama 3.3 70B - Sub-Second Cloud)</option>
+                <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                <option value="deepseek">DeepSeek (deepseek-chat / deepseek-reasoner)</option>
+                <option value="openrouter">OpenRouter (Multi-Model Cloud)</option>
+                <option value="ollama">Ollama (Local Daemon - llama3.2 / gemma)</option>
+                <option value="local_fallback">Local Rule-Based & Offline Brain</option>
+            </select>
+            <span style="font-size:11px; color:var(--text-dim);">Zero-crash auto-cascade: if primary is unreachable, cascades to secondary cloud and local engine.</span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="settingLlmModel">Model Name</label>
+            <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. gemini-1.5-flash or llama-3.3-70b-versatile">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+                <label class="form-label">Temperature: <strong id="tempLabel" style="color:var(--accent-cyan);">0.7</strong></label>
+                <input type="range" min="0.0" max="1.5" step="0.1" value="0.7" id="settingLlmTemp" style="width:100%; accent-color:var(--accent-cyan);" oninput="document.getElementById('tempLabel').textContent = this.value">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Max Output Tokens</label>
+                <input type="number" class="form-input" id="settingLlmTokens" value="2048" min="256" max="8192">
+            </div>
+        </div>
+
+        <!-- Optional API Keys Accordion -->
+        <div style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.25); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">🔑 API Key Overrides (Optional / Saved Securely)</div>
+            
+            <div class="form-group" style="margin-bottom:8px;">
+                <label class="form-label" style="font-size:11px;">Google Gemini API Key</label>
+                <input type="password" class="form-input" id="keyGemini" placeholder="AIzaSy... (leave blank to keep existing)" style="font-size:11.5px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:8px;">
+                <label class="form-label" style="font-size:11px;">Groq API Key</label>
+                <input type="password" class="form-input" id="keyGroq" placeholder="gsk_... (leave blank to keep existing)" style="font-size:11.5px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:11px;">OpenAI API Key</label>
+                <input type="password" class="form-input" id="keyOpenAI" placeholder="sk-... (leave blank to keep existing)" style="font-size:11.5px;">
+            </div>
+        </div>
+
+        <button class="btn-primary" style="margin-top:16px; width:100%; justify-content:center;" onclick="saveLlmSettings()">
+            <span>💾</span><span>Apply & Save LLM Configuration</span>
+        </button>
+    </div>
+
+    <!-- 2. PyTorch Deep Neural Network & Intent Playground -->
+    <div class="glass-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <span>⚡</span><span>PyTorch Deep Neural Network</span>
+            </h3>
+            <span id="neuralStatusBadge" class="badge" style="background:rgba(0, 242, 254, 0.15); color:var(--accent-cyan); border:1px solid rgba(0,242,254,0.3); font-size:11px; padding:3px 8px; border-radius:12px;">Active</span>
+        </div>
+
+        <!-- Telemetry Summary -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:16px; text-align:center;">
+            <div style="background:rgba(0,0,0,0.3); padding:8px 4px; border-radius:6px; border:1px solid var(--border-subtle);">
+                <div style="font-size:10px; color:var(--text-dim); text-transform:uppercase;">Architecture</div>
+                <div style="font-size:12px; font-weight:700; color:var(--accent-cyan);" id="telemetryArch">MLP 3-Layer</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.3); padding:8px 4px; border-radius:6px; border:1px solid var(--border-subtle);">
+                <div style="font-size:10px; color:var(--text-dim); text-transform:uppercase;">Vocabulary</div>
+                <div style="font-size:12px; font-weight:700; color:var(--accent-emerald);" id="telemetryVocab">585 Words</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.3); padding:8px 4px; border-radius:6px; border:1px solid var(--border-subtle);">
+                <div style="font-size:10px; color:var(--text-dim); text-transform:uppercase;">Intents</div>
+                <div style="font-size:12px; font-weight:700; color:var(--accent-indigo);" id="telemetryClasses">20 Classes</div>
+            </div>
+        </div>
+
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px;" id="telemetryDevice">
+            Compute Device: Multi-Threaded CPU (10 threads)
+        </div>
+
+        <!-- Live Neural Playground -->
+        <div style="background:rgba(13, 18, 29, 0.7); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:14px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;">🎯 Live Intent Classifier Playground</div>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input type="text" id="neuralTestQuery" class="form-input" placeholder="Type query (e.g. 'kholo notepad', 'time kya hua', 'sqrt(144)', 'delhi mausam')..." style="font-size:12px;" onkeydown="if(event.key==='Enter') runNeuralTest()">
+                <button class="btn-secondary" style="padding:6px 14px; font-size:12px; white-space:nowrap;" onclick="runNeuralTest()">Test 🚀</button>
+            </div>
+
+            <!-- Test Output Box -->
+            <div id="neuralTestOutput" style="display:none; background:rgba(0,0,0,0.4); border-radius:6px; padding:10px; font-family:var(--font-mono); font-size:11.5px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-dim);">Predicted Intent:</span>
+                    <strong style="color:var(--accent-cyan);" id="testIntentLabel">-</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-dim);">Confidence:</span>
+                    <strong style="color:var(--accent-emerald);" id="testConfidenceLabel">-</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-dim);">Engine:</span>
+                    <span style="color:var(--accent-indigo);" id="testEngineLabel">-</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="color:var(--text-dim);">Latency:</span>
+                    <span style="color:#e2e8f0;" id="testLatencyLabel">-</span>
+                </div>
+                <div id="testEntitiesRow" style="margin-top:6px; border-top:1px solid var(--border-subtle); padding-top:6px; display:none;">
+                    <span style="color:var(--text-dim);">Entities:</span>
+                    <span style="color:var(--accent-amber);" id="testEntitiesLabel">{}</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
-    <!-- General Preferences -->
+    <!-- Localization & Voice -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-            <span>🌐</span><span>Localization & Voice Settings</span>
+            <span>🌐</span><span>Localization & Speech Voice</span>
         </h3>
 
         <div class="form-group">
@@ -73,7 +202,138 @@
             document.getElementById('settingVoice').value = String(window.ajaxState.isVoiceEnabled());
             document.getElementById('settingConvId').value = window.ajaxState.getConversationId();
         }
+        loadServerSettings();
     });
+
+    async function loadServerSettings() {
+        try {
+            const res = await fetch('/api/settings');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            // Populate LLM Settings
+            if (data.llm) {
+                document.getElementById('settingLlmProvider').value = data.llm.provider || 'gemini';
+                document.getElementById('settingLlmModel').value = data.llm.model || '';
+                document.getElementById('settingLlmTemp').value = data.llm.temperature || 0.7;
+                document.getElementById('tempLabel').textContent = data.llm.temperature || 0.7;
+                document.getElementById('settingLlmTokens').value = data.llm.max_tokens || 2048;
+
+                if (data.llm.gemini_key_masked) {
+                    document.getElementById('keyGemini').placeholder = data.llm.gemini_key_masked;
+                }
+                if (data.llm.groq_key_masked) {
+                    document.getElementById('keyGroq').placeholder = data.llm.groq_key_masked;
+                }
+                if (data.llm.openai_key_masked) {
+                    document.getElementById('keyOpenAI').placeholder = data.llm.openai_key_masked;
+                }
+
+                if (data.llm.brain_status) {
+                    const statusText = data.llm.brain_status.primary_active ? 'Online' : 'Fallback Active';
+                    document.getElementById('llmStatusBadge').textContent = statusText;
+                    document.getElementById('llmStatusBadge').style.color = data.llm.brain_status.primary_active ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+                }
+            }
+
+            // Populate Neural Telemetry
+            if (data.neural) {
+                document.getElementById('telemetryVocab').textContent = (data.neural.vocab_size || 585) + ' Words';
+                document.getElementById('telemetryClasses').textContent = (data.neural.num_classes || 20) + ' Classes';
+                document.getElementById('telemetryDevice').textContent = 'Compute Device: ' + (data.neural.compute_device || 'CPU');
+                if (data.neural.neural_loaded) {
+                    document.getElementById('neuralStatusBadge').textContent = '🟢 Deep Net Active';
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load server settings:', e);
+        }
+    }
+
+    function onLlmProviderChange(provider) {
+        const modelInput = document.getElementById('settingLlmModel');
+        const defaultModels = {
+            'gemini': 'gemini-1.5-flash',
+            'groq': 'llama-3.3-70b-versatile',
+            'openai': 'gpt-4o-mini',
+            'deepseek': 'deepseek-chat',
+            'openrouter': 'meta-llama/llama-3.3-70b-instruct',
+            'ollama': 'llama3.2:3b',
+            'local_fallback': 'chat_assistant_engine'
+        };
+        if (defaultModels[provider]) {
+            modelInput.value = defaultModels[provider];
+        }
+    }
+
+    async function saveLlmSettings() {
+        const payload = {
+            llm_provider: document.getElementById('settingLlmProvider').value,
+            llm_model: document.getElementById('settingLlmModel').value,
+            llm_temperature: parseFloat(document.getElementById('settingLlmTemp').value),
+            llm_max_tokens: parseInt(document.getElementById('settingLlmTokens').value)
+        };
+
+        const geminiKey = document.getElementById('keyGemini').value.trim();
+        if (geminiKey) payload.gemini_api_key = geminiKey;
+
+        const groqKey = document.getElementById('keyGroq').value.trim();
+        if (groqKey) payload.groq_api_key = groqKey;
+
+        const openaiKey = document.getElementById('keyOpenAI').value.trim();
+        if (openaiKey) payload.openai_api_key = openaiKey;
+
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.showToast('✅ LLM Brain configuration applied & saved!', 'success');
+                loadServerSettings();
+            } else {
+                window.showToast('Error saving settings: ' + (data.error || 'Unknown'), 'error');
+            }
+        } catch (e) {
+            window.showToast('Failed to save settings: ' + e.message, 'error');
+        }
+    }
+
+    async function runNeuralTest() {
+        const query = document.getElementById('neuralTestQuery').value.trim();
+        if (!query) {
+            window.showToast('Please enter a query to test', 'warning');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/neural/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+            const data = await res.json();
+            if (data.prediction) {
+                const p = data.prediction;
+                document.getElementById('neuralTestOutput').style.display = 'block';
+                document.getElementById('testIntentLabel').textContent = p.intent;
+                document.getElementById('testConfidenceLabel').textContent = Math.round(p.confidence * 100) + '%';
+                document.getElementById('testEngineLabel').textContent = p.neural_engine;
+                document.getElementById('testLatencyLabel').textContent = (p.inference_time_ms || '< 1') + ' ms';
+                
+                if (p.entities && Object.keys(p.entities).length > 0) {
+                    document.getElementById('testEntitiesRow').style.display = 'flex';
+                    document.getElementById('testEntitiesLabel').textContent = JSON.stringify(p.entities);
+                } else {
+                    document.getElementById('testEntitiesRow').style.display = 'none';
+                }
+            }
+        } catch (e) {
+            window.showToast('Neural test failed: ' + e.message, 'error');
+        }
+    }
 
     function updateSettingLang(val) {
         if (window.ajaxState) {
@@ -99,21 +359,14 @@
         const newId = 'conv_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
         window.ajaxState.setConversationId(newId);
         document.getElementById('settingConvId').value = newId;
-        window.showToast('Created new conversation session!', 'success');
+        window.showToast('Generated new conversation session!', 'info');
     }
 
-    async function clearAllLocalStorage() {
-        const proceed = await window.showConfirmModal({
-            title: 'Purge Local Storage',
-            message: 'Are you sure you want to delete all cached session IDs and local tool history? This cannot be undone.',
-            confirmText: 'Purge Everything',
-            cancelText: 'Cancel'
-        });
-
-        if (proceed) {
+    function clearAllLocalStorage() {
+        if (confirm('Are you sure you want to purge all local conversation cache and session keys?')) {
             localStorage.clear();
-            window.showToast('Local storage purged. Reloading...', 'warning');
-            setTimeout(() => location.reload(), 800);
+            window.showToast('All local storage purged!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
         }
     }
 </script>
