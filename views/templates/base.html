@@ -98,17 +98,25 @@
                     <a href="/AJAX/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
                         <div class="nav-link-left"><span class="nav-icon">⚙️</span><span>Settings</span></div>
                     </a>
+                    <!-- Protected Admin Panel Link (Only displayed for Admin role) -->
+                    <a href="/AJAX/admin" class="nav-link admin-only-link {% if active_page == 'admin' %}active{% endif %}" id="sidebarAdminLink" style="display:none;">
+                        <div class="nav-link-left"><span class="nav-icon">👑</span><span>Admin Panel</span></div>
+                        <span class="nav-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);">Admin</span>
+                    </a>
                 </div>
             </div>
 
             <!-- Footer -->
             <div class="sidebar-footer">
-                <div class="user-profile-card">
-                    <div class="user-avatar">A</div>
-                    <div class="user-details">
-                        <div class="user-name">Ajay Singh</div>
-                        <div class="user-badge">● Administrator</div>
+                <div class="user-profile-card" id="sidebarUserProfileCard">
+                    <div class="user-avatar" id="sidebarUserAvatar">A</div>
+                    <div class="user-details" style="min-width:0; flex:1;">
+                        <div class="user-name" id="sidebarUserName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Ajay Singh</div>
+                        <div class="user-badge" id="sidebarUserRole">● Administrator</div>
                     </div>
+                    <button class="auth-action-icon-btn" id="sidebarAuthBtn" onclick="handleSidebarAuthAction()" title="Sign In / Switch Account" style="background:transparent; border:none; cursor:pointer; font-size:16px; padding:4px; opacity:0.85; transition:transform 0.2s;">
+                        🔑
+                    </button>
                 </div>
             </div>
         </aside>
@@ -175,7 +183,70 @@
                 voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
                 if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
             }
+            syncCurrentUserAuth();
         });
+
+        async function syncCurrentUserAuth() {
+            try {
+                const res = await fetch('/api/auth/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    const nameEl = document.getElementById('sidebarUserName');
+                    const avatarEl = document.getElementById('sidebarUserAvatar');
+                    const roleEl = document.getElementById('sidebarUserRole');
+                    const adminLink = document.getElementById('sidebarAdminLink');
+                    const authBtn = document.getElementById('sidebarAuthBtn');
+
+                    if (data.authenticated && data.user) {
+                        const u = data.user;
+                        if (nameEl) nameEl.textContent = u.full_name || u.username;
+                        if (avatarEl) avatarEl.textContent = (u.full_name || u.username || 'U').charAt(0).toUpperCase();
+                        if (roleEl) {
+                            roleEl.textContent = u.role === 'admin' ? '● Administrator' : '● User';
+                            roleEl.style.color = u.role === 'admin' ? '#fbbf24' : 'var(--accent-cyan)';
+                        }
+                        if (adminLink) {
+                            adminLink.style.display = u.role === 'admin' ? 'flex' : 'none';
+                        }
+                        if (authBtn) {
+                            authBtn.innerHTML = '🚪';
+                            authBtn.title = 'Sign Out';
+                        }
+                    } else {
+                        if (nameEl) nameEl.textContent = 'Guest User';
+                        if (avatarEl) avatarEl.textContent = '👤';
+                        if (roleEl) {
+                            roleEl.textContent = '● Not Signed In';
+                            roleEl.style.color = 'var(--text-dim)';
+                        }
+                        if (adminLink) adminLink.style.display = 'none';
+                        if (authBtn) {
+                            authBtn.innerHTML = '🔑';
+                            authBtn.title = 'Sign In';
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
+        window.syncCurrentUserAuth = syncCurrentUserAuth;
+
+        async function handleSidebarAuthAction() {
+            try {
+                const res = await fetch('/api/auth/me');
+                const data = await res.json();
+                if (data.authenticated) {
+                    if (confirm('Are you sure you want to sign out of your account?')) {
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        window.location.href = '/AJAX/login';
+                    }
+                } else {
+                    window.location.href = '/AJAX/login';
+                }
+            } catch (e) {
+                window.location.href = '/AJAX/login';
+            }
+        }
+        window.handleSidebarAuthAction = handleSidebarAuthAction;
 
         function toggleGlobalLanguage() {
             if (!window.ajaxState) return;

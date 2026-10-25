@@ -25,7 +25,7 @@ from database.crud import (
     delete_user,
     update_user_last_login,
     list_conversations,
-    get_all_memories,
+    search_memories,
     is_mongo_active
 )
 from core.logger import ajax_logger
@@ -96,10 +96,10 @@ class RegisterRequest(BaseModel):
     email: Optional[str] = None
 
 class StatusUpdateRequest(BaseModel):
-    status: str = Field(..., regex="^(active|blocked)$")
+    status: str = Field(..., pattern="^(active|blocked)$")
 
 class RoleUpdateRequest(BaseModel):
-    role: str = Field(..., regex="^(admin|user)$")
+    role: str = Field(..., pattern="^(admin|user)$")
 
 
 # ------------------------------------------------------------------------------
@@ -336,7 +336,7 @@ async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin))
     active_count = sum(1 for u in users if u.get("status") == "active")
 
     convs = list_conversations(limit=200)
-    memories = get_all_memories()
+    memories = search_memories(limit=200)
 
     from ai.neural.intent_classifier import intent_classifier
     num_intents = len(intent_classifier.classes) if hasattr(intent_classifier, "classes") else 20

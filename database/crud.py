@@ -426,7 +426,7 @@ def create_user(
         try:
             db = get_mongo_db()
             db.users.insert_one(user_doc)
-            safe_doc = {k: v for k, v in user_doc.items() if k != "password_hash"}
+            safe_doc = {k: v for k, v in user_doc.items() if k not in ["password_hash", "_id"]}
             return safe_doc
         except Exception as e:
             error_logger.error(f"MongoDB create_user error: {e}")
@@ -452,7 +452,7 @@ def create_user(
         conn.commit()
         conn.close()
 
-    safe_doc = {k: v for k, v in user_doc.items() if k != "password_hash"}
+    safe_doc = {k: v for k, v in user_doc.items() if k not in ["password_hash", "_id"]}
     return safe_doc
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:

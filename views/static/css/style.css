@@ -2175,5 +2175,560 @@ body {
     }
 }
 
+/* ==============================================================================
+   AUTHENTICATION & ACCESS PORTAL STYLES
+   ============================================================================== */
+.auth-page-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 130px);
+    min-height: calc(100dvh - 130px);
+    padding: 24px 16px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 32px 28px;
+    background: rgba(13, 18, 30, 0.88);
+    border: 1px solid rgba(0, 242, 254, 0.22);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 30px rgba(0, 242, 254, 0.08);
+    backdrop-filter: blur(20px);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.auth-brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(99, 102, 241, 0.2));
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    font-size: 22px;
+    margin-bottom: 12px;
+    box-shadow: 0 0 16px rgba(0, 242, 254, 0.25);
+}
+
+.auth-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.auth-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.auth-notice-banner {
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    color: #fbbf24;
+    font-size: 12.5px;
+    line-height: 1.4;
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+/* One-Tab Portal Segmented Selector */
+.auth-portal-selector {
+    display: flex;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    margin-bottom: 20px;
+    gap: 4px;
+}
+
+.portal-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.portal-tab-btn:hover {
+    color: var(--text-main);
+}
+
+.portal-tab-btn.active {
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(99, 102, 241, 0.25));
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 242, 254, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15);
+}
+
+#tabAdminPortal.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.25));
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.45);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.18);
+}
+
+/* Sub-Mode Toggle (Sign In vs Create Account) */
+.sub-mode-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 12px;
+}
+
+.sub-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.sub-toggle-btn.active {
+    color: var(--accent-cyan);
+}
+
+.sub-toggle-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -13px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.input-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon-wrapper .field-icon {
+    position: absolute;
+    left: 12px;
+    font-size: 14px;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.form-input.with-icon {
+    width: 100%;
+    padding-left: 38px;
+    padding-right: 14px;
+}
+
+.auth-submit-btn {
+    width: 100%;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.auth-submit-btn.admin-theme-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #07090e;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+.auth-submit-btn.admin-theme-btn:hover {
+    box-shadow: 0 0 24px rgba(245, 158, 11, 0.55);
+}
+
+.admin-notice-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+}
+
+.demo-credential-chip {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(245, 158, 11, 0.3);
+    color: var(--text-muted);
+    font-size: 11.5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+
+.demo-credential-chip:hover {
+    background: rgba(245, 158, 11, 0.08);
+    color: #fbbf24;
+    border-color: #fbbf24;
+}
+
+.auth-footer-help {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.auth-link {
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+/* ==============================================================================
+   ADMINISTRATOR COMMAND CENTER STYLES
+   ============================================================================== */
+.admin-panel-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1300px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+}
+
+.kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    margin-bottom: 0;
+}
+
+.kpi-icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.kpi-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.admin-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+}
+
+.admin-search-field {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 12.5px;
+    width: 230px;
+}
+
+.admin-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.filter-chip {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.filter-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+.filter-chip.active {
+    background: rgba(0, 242, 254, 0.14);
+    border-color: rgba(0, 242, 254, 0.4);
+    color: var(--accent-cyan);
+}
+
+.admin-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(7, 9, 14, 0.6);
+}
+
+.admin-users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.admin-users-table th {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.admin-users-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.admin-user-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.user-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    color: #07090e;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.role-badge.admin {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.role-badge.user {
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.status-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-pill-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-pill-badge.active {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--accent-emerald);
+}
+.status-pill-badge.active .dot { background: var(--accent-emerald); }
+
+.status-pill-badge.blocked {
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--accent-rose);
+}
+.status-pill-badge.blocked .dot { background: var(--accent-rose); }
+
+.action-btn-small {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn-small:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.action-btn-small.suspend:hover {
+    background: rgba(244, 63, 94, 0.2);
+    color: var(--accent-rose);
+    border-color: rgba(244, 63, 94, 0.4);
+}
+
+.action-btn-small.activate:hover {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--accent-emerald);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.action-btn-small.delete:hover {
+    background: rgba(244, 63, 94, 0.2);
+    color: var(--accent-rose);
+    border-color: rgba(244, 63, 94, 0.4);
+}
+
+/* Add User Modal */
+.admin-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.admin-modal-backdrop.open {
+    display: flex;
+}
+
+.admin-modal-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    background: rgba(13, 18, 30, 0.96);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+
 
 
