@@ -55,6 +55,41 @@ async def serve_chat_page(request: Request):
         context={"active_page": "chat"}
     )
 
+# Unified Login & Register Page
+@pages_router.get("/login", response_class=RedirectResponse)
+@pages_router.get("/login/", response_class=RedirectResponse)
+async def redirect_login():
+    return RedirectResponse(url="/AJAX/login", status_code=302)
+
+@pages_router.get("/AJAX/login", response_class=HTMLResponse)
+@pages_router.get("/ajax/login", response_class=HTMLResponse)
+async def serve_login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/login.html",
+        context={"active_page": "login"}
+    )
+
+# Dedicated Administrator Panel (Strictly Admin Only)
+@pages_router.get("/admin", response_class=RedirectResponse)
+@pages_router.get("/admin/", response_class=RedirectResponse)
+async def redirect_admin():
+    return RedirectResponse(url="/AJAX/admin", status_code=302)
+
+@pages_router.get("/AJAX/admin", response_class=HTMLResponse)
+@pages_router.get("/ajax/admin", response_class=HTMLResponse)
+async def serve_admin_page(request: Request):
+    from controllers.auth_controller import get_current_user_from_request
+    user = get_current_user_from_request(request)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/AJAX/login?redirect=/AJAX/admin&reason=admin_required", status_code=302)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/admin.html",
+        context={"active_page": "admin", "current_user": user}
+    )
+
 # Retired Routes Redirects
 @pages_router.get("/AJAX/tools", response_class=RedirectResponse)
 @pages_router.get("/AJAX/tools/{tool_slug:path}", response_class=RedirectResponse)
