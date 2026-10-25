@@ -305,14 +305,30 @@
             if (voiceStatus) voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
             if (voiceIcon) voiceIcon.className = isVoice ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
             
+            // Prime audio context on direct user click
+            if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
+
+            const voices = ('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : [];
+            const hasHiVoice = voices && voices.some(v => 
+                (v.lang && v.lang.toLowerCase().startsWith('hi')) || 
+                (v.name && v.name.toLowerCase().includes('hindi')) ||
+                (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur')))
+            );
+
             if (isVoice) {
-                window.showToast('Voice replies: Enabled', 'success');
-                const lang = window.ajaxState.getLanguage();
-                const confirmation = lang === 'hi' ? 'वॉयस रिस्पांस चालू हो गया है।' : 'Voice output enabled.';
-                if (window.speakText) window.speakText(confirmation, lang);
+                window.showToast('Voice replies: Enabled (वॉयस चालू)', 'success');
+                const confirmation = hasHiVoice
+                    ? 'वॉयस चालू हो गया है। Voice replies enabled.'
+                    : 'Voice replies enabled. Voice chalu ho gaya hai.';
+                if (window.speakText) window.speakText(confirmation, hasHiVoice ? 'hi' : 'en', true);
             } else {
-                window.showToast('Voice replies: Disabled', 'info');
-                if (window.stopSpeech) window.stopSpeech();
+                window.showToast('Voice replies: Disabled (वॉयस बंद)', 'info');
+                const confirmation = hasHiVoice
+                    ? 'वॉयस बंद कर दी गई है। Voice replies disabled.'
+                    : 'Voice replies disabled. Voice band ho gaya hai.';
+                if (window.speakText) window.speakText(confirmation, hasHiVoice ? 'hi' : 'en', true);
             }
         }
     </script>

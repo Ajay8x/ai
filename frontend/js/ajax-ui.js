@@ -245,7 +245,7 @@
 
     function cleanTextForSpeech(text) {
         if (!text) return '';
-        return text
+        let cleaned = text
             // Strip thinking blocks <think>...</think>
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<think>[\s\S]*$/gi, '')
@@ -262,11 +262,23 @@
             // Collapse whitespaces
             .replace(/\s+/g, ' ')
             .trim();
+
+        // Fallback: If stripping thinking blocks left nothing, strip only HTML and speak the raw response
+        if (!cleaned && text.trim()) {
+            cleaned = text.replace(/<[^>]+>/g, '').replace(/[*#_~>`]/g, '').replace(/\s+/g, ' ').trim();
+        }
+        return cleaned;
     }
 
-    window.speakText = function(text, lang = null) {
+    window.speakText = function(text, lang = null, force = false) {
         if (!('speechSynthesis' in window)) {
             console.warn('[TTS] Speech synthesis not supported in this browser.');
+            return;
+        }
+
+        // If not forced and voice is toggled off in settings, do not speak
+        if (!force && window.ajaxState && !window.ajaxState.isVoiceEnabled()) {
+            console.log('[TTS] Voice output is disabled in settings.');
             return;
         }
 
@@ -294,13 +306,20 @@
                     const utterance = new SpeechSynthesisUtterance(speechSnippet);
                     window._activeUtterance = utterance; // Prevent Chrome V8 garbage collection bug!
 
-                    // Determine language preference
+                    // Determine language preference and detect characters
                     const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
-                    
+                    const hasDevanagari = /[\u0900-\u097F]/.test(speechSnippet);
+
                     let chosenVoice = null;
-                    if (currentLang === 'hi' && voices && voices.length > 0) {
-                        // Find Hindi voice
-                        chosenVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')) || (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur'))));
+                    let hindiVoice = null;
+                    if (voices && voices.length > 0) {
+                        hindiVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')) || (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur'))));
+                    }
+
+                    if (hasDevanagari && hindiVoice) {
+                        chosenVoice = hindiVoice;
+                    } else if (currentLang === 'hi' && hindiVoice) {
+                        chosenVoice = hindiVoice;
                     }
 
                     // Fallback to high-quality English / system default voice if no Hindi voice installed
@@ -313,9 +332,9 @@
 
                     if (chosenVoice) {
                         utterance.voice = chosenVoice;
-                        utterance.lang = chosenVoice.lang || (currentLang === 'hi' ? 'hi-IN' : 'en-US');
+                        utterance.lang = chosenVoice.lang || (hasDevanagari ? 'hi-IN' : 'en-US');
                     } else {
-                        utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                        utterance.lang = hasDevanagari ? 'hi-IN' : 'en-US';
                     }
 
                     utterance.rate = 1.0;
@@ -344,11 +363,8 @@
                         window._activeUtterance = null;
                     };
 
-                    // Chrome unpause fix
-                    if (window.speechSynthesis.paused) {
-                        window.speechSynthesis.resume();
-                    }
-
+                    // Chrome unpause fix: always resume right before speak
+                    window.speechSynthesis.resume();
                     window.speechSynthesis.speak(utterance);
 
                     // Extra fallback resume check after 100ms
@@ -376,6 +392,124 @@
                 window.speechSynthesis.cancel();
             } catch (_) {}
         }
+    };
+
+    // -------------------------------------------------------------------------
+    // 6. Global Speech-to-Text (Voice Typing / Dictation Engine)
+    // -------------------------------------------------------------------------
+    let globalRecognition = null;
+    let isDictating = false;
+    let activeDictationTarget = null;
+    let activeDictationBtn = null;
+
+    window.toggleVoiceDictation = function(inputEl, micBtn, onFinishCallback) {
+        if (!inputEl) return;
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+            window.showToast('Voice typing requires Chrome, Edge, or a Web Speech supported browser.', 'warning');
+            return;
+        }
+
+        // If currently recording this target, toggle off
+        if (isDictating && activeDictationTarget === inputEl) {
+            window.stopVoiceDictation();
+            return;
+        }
+
+        // If currently recording another target, cancel that first
+        if (isDictating) {
+            window.stopVoiceDictation();
+        }
+
+        try {
+            globalRecognition = new SpeechRec();
+            const currentLang = window.ajaxState ? window.ajaxState.getLanguage() : 'en';
+            globalRecognition.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+            globalRecognition.continuous = true;
+            globalRecognition.interimResults = true;
+
+            activeDictationTarget = inputEl;
+            activeDictationBtn = micBtn;
+            isDictating = true;
+
+            // Save original placeholder
+            if (!inputEl.getAttribute('data-original-ph')) {
+                inputEl.setAttribute('data-original-ph', inputEl.getAttribute('placeholder') || '');
+            }
+
+            const existingValue = inputEl.value;
+
+            if (micBtn) {
+                micBtn.classList.add('recording');
+                const micIcon = micBtn.querySelector('i');
+                if (micIcon) micIcon.className = 'fa-solid fa-microphone-lines';
+            }
+
+            inputEl.setAttribute('placeholder', currentLang === 'hi' ? 'बोलिए... टाइप हो रहा है 🎙️' : 'Listening... speak now 🎙️');
+            window.showToast(currentLang === 'hi' ? 'वॉयस टाइपिंग चालू है... बोलिए' : 'Voice typing active... Speak now', 'info');
+
+            let sessionFinalText = existingValue ? existingValue + ' ' : '';
+
+            globalRecognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        sessionFinalText += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                inputEl.value = (sessionFinalText + interimTranscript).trim();
+                inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            globalRecognition.onerror = (e) => {
+                console.warn('[STT] Speech recognition error:', e.error);
+                if (e.error === 'not-allowed') {
+                    window.showToast('Microphone access denied. Please allow microphone permission.', 'error');
+                } else if (e.error !== 'no-speech') {
+                    window.showToast(`Voice typing: ${e.error}`, 'warning');
+                }
+                window.stopVoiceDictation();
+            };
+
+            globalRecognition.onend = () => {
+                window.stopVoiceDictation();
+                if (onFinishCallback && typeof onFinishCallback === 'function') {
+                    onFinishCallback(inputEl.value);
+                }
+            };
+
+            globalRecognition.start();
+
+        } catch (err) {
+            console.error('[STT] Failed to start speech recognition:', err);
+            window.stopVoiceDictation();
+        }
+    };
+
+    window.stopVoiceDictation = function() {
+        if (globalRecognition) {
+            try {
+                globalRecognition.stop();
+            } catch (_) {}
+            globalRecognition = null;
+        }
+        if (activeDictationBtn) {
+            activeDictationBtn.classList.remove('recording');
+            const micIcon = activeDictationBtn.querySelector('i');
+            if (micIcon) micIcon.className = 'fa-solid fa-microphone';
+        }
+        if (activeDictationTarget) {
+            const originalPh = activeDictationTarget.getAttribute('data-original-ph');
+            if (originalPh) {
+                activeDictationTarget.setAttribute('placeholder', originalPh);
+            }
+        }
+        isDictating = false;
+        activeDictationTarget = null;
+        activeDictationBtn = null;
     };
 
     window.formatThinkingBlocks = formatThinkingBlocks;

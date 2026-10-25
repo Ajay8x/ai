@@ -50,8 +50,11 @@
                 </div>
             </div>
             <div class="minichat-footer">
-                <input type="text" class="minichat-input" id="miniChatInput" placeholder="Ask AJAX AI..." autocomplete="off">
-                <button class="minichat-send-btn" id="miniChatSendBtn">Send</button>
+                <button type="button" class="minichat-mic-btn" id="miniChatMicBtn" title="Voice Typing (बोलकर टाइप करें)">
+                    <i class="fa-solid fa-microphone" id="miniChatMicIcon"></i>
+                </button>
+                <input type="text" class="minichat-input" id="miniChatInput" placeholder="Ask AJAX AI... (or speak 🎙️)" autocomplete="off">
+                <button class="minichat-send-btn" id="miniChatSendBtn"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         `;
         document.body.appendChild(miniChatDrawer);
@@ -65,6 +68,15 @@
         document.getElementById('miniChatExpandBtn').addEventListener('click', () => {
             window.location.href = '/AJAX/chat';
         });
+
+        const miniMicBtn = document.getElementById('miniChatMicBtn');
+        if (miniMicBtn) {
+            miniMicBtn.addEventListener('click', () => {
+                if (window.toggleVoiceDictation) {
+                    window.toggleVoiceDictation(miniChatInput, miniMicBtn);
+                }
+            });
+        }
 
         document.getElementById('miniChatSendBtn').addEventListener('click', sendMiniChatMessage);
         miniChatInput.addEventListener('keydown', (e) => {
@@ -90,6 +102,11 @@
     async function sendMiniChatMessage() {
         const text = miniChatInput.value.trim();
         if (!text || isStreaming) return;
+
+        // Prime audio context on direct user send action
+        if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+        }
 
         appendMessage('user', text);
         miniChatInput.value = '';

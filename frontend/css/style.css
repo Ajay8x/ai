@@ -3014,6 +3014,102 @@ body.light-theme .theme-toggle-btn {
     box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);
 }
 
+/* Voice Dictation (Speech-to-Text / Voice Typing) */
+.btn-voice-dictation {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.btn-voice-dictation:hover {
+    background: rgba(0, 242, 254, 0.14);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    transform: scale(1.05);
+}
+
+.btn-voice-dictation.recording {
+    background: rgba(244, 63, 94, 0.22);
+    border-color: var(--accent-rose);
+    color: var(--accent-rose);
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.5);
+    animation: micPulseGlow 1.2s infinite alternate;
+}
+
+body.light-theme .btn-voice-dictation {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #334155;
+}
+
+body.light-theme .btn-voice-dictation:hover {
+    background: rgba(2, 132, 199, 0.1);
+    border-color: #0284c7;
+    color: #0284c7;
+}
+
+body.light-theme .btn-voice-dictation.recording {
+    background: rgba(244, 63, 94, 0.15);
+    border-color: #e11d48;
+    color: #e11d48;
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);
+}
+
+.minichat-mic-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.minichat-mic-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+.minichat-mic-btn.recording {
+    background: rgba(244, 63, 94, 0.25);
+    border-color: var(--accent-rose);
+    color: var(--accent-rose);
+    animation: micPulseGlow 1.2s infinite alternate;
+}
+
+body.light-theme .minichat-mic-btn {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #334155;
+}
+
+@keyframes micPulseGlow {
+    from {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
+    }
+    to {
+        transform: scale(1.08);
+        box-shadow: 0 0 20px rgba(244, 63, 94, 0.7);
+    }
+}
+
 
 
 
