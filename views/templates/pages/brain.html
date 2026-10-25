@@ -187,7 +187,7 @@
     <div class="network-toolbar">
         <div style="display:flex; align-items:center; gap:12px;">
             <div style="width:36px; height:36px; border-radius:8px; background:rgba(0, 242, 254, 0.1); border:1px solid rgba(0,242,254,0.3); display:flex; align-items:center; justify-content:center; font-size:18px;">
-                🕸️
+                <i class="fa-solid fa-circle-nodes" style="color:var(--accent-cyan);"></i>
             </div>
             <div>
                 <h3 style="font-size:15px; font-weight:700; color:var(--text-main);">Neural Intent & GraphRAG Network Topology</h3>
@@ -202,19 +202,19 @@
             <!-- Cluster Filter -->
             <select id="clusterFilter" class="form-input" style="padding:5px 10px; font-size:12px;" onchange="filterCluster()">
                 <option value="ALL">All Clusters (Full System)</option>
-                <option value="BRAIN">🧠 Neural Intent & Routing</option>
-                <option value="GRAPHRAG">🕸️ Search-Guided GraphRAG</option>
-                <option value="ENTITY">🧬 Knowledge Entities</option>
-                <option value="EXEC">⚡ Execution & DB Storage</option>
+                <option value="BRAIN">Neural Intent & Routing</option>
+                <option value="GRAPHRAG">Search-Guided GraphRAG</option>
+                <option value="ENTITY">Knowledge Entities</option>
+                <option value="EXEC">Execution & DB Storage</option>
             </select>
 
             <!-- Buttons -->
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomIn()" title="Zoom In">➕</button>
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomOut()" title="Zoom Out">➖</button>
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="resetCamera()" title="Fit View">🎯 Reset</button>
-            <button class="btn-secondary" id="togglePhysicsBtn" style="padding:5px 10px; font-size:12px;" onclick="togglePhysics()">⏸️ Pause</button>
-            <button class="btn-secondary" id="toolbarFullscreenBtn" style="padding:5px 10px; font-size:12px;" onclick="toggleCanvasFullscreen()" title="Toggle Fullscreen">⛶ Fullscreen</button>
-            <button class="btn-primary" style="padding:5px 12px; font-size:12px;" onclick="pulseAllChains()">✨ Pulse Flow</button>
+            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomIn()" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomOut()" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="resetCamera()" title="Fit View"><i class="fa-solid fa-arrows-to-dot"></i> Reset</button>
+            <button class="btn-secondary" id="togglePhysicsBtn" style="padding:5px 10px; font-size:12px;" onclick="togglePhysics()"><i class="fa-solid fa-pause"></i> Pause</button>
+            <button class="btn-secondary" id="toolbarFullscreenBtn" style="padding:5px 10px; font-size:12px;" onclick="toggleCanvasFullscreen()" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+            <button class="btn-primary" style="padding:5px 12px; font-size:12px; gap:6px;" onclick="pulseAllChains()"><i class="fa-solid fa-bolt"></i> Pulse Flow</button>
         </div>
     </div>
 
@@ -223,7 +223,7 @@
         <!-- Floating Fullscreen Button (Top-Right Corner) -->
         <div class="network-top-right-tools">
             <button class="fullscreen-toggle-btn" id="canvasFullscreenBtn" onclick="toggleCanvasFullscreen()" title="Toggle Fullscreen Canvas (Esc to exit)">
-                <span id="fsIcon">⛶</span>
+                <span id="fsIcon"><i class="fa-solid fa-expand"></i></span>
                 <span id="fsText">Fullscreen</span>
             </button>
         </div>

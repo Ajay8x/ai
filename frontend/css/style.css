@@ -2777,16 +2777,16 @@ body {
    Light Theme System & Theme Toggle Button
    ============================================================================== */
 body.light-theme {
-    --bg-primary: #f1f5f9;
+    --bg-primary: #f8fafc;
     --bg-sidebar: #ffffff;
-    --bg-card: rgba(255, 255, 255, 0.92);
+    --bg-card: rgba(255, 255, 255, 0.95);
     --bg-input: #ffffff;
     --text-main: #0f172a;
-    --text-muted: #475569;
+    --text-muted: #334155;
     --text-dim: #64748b;
-    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-subtle: rgba(0, 0, 0, 0.1);
     --border-card: rgba(0, 0, 0, 0.12);
-    --border-active: rgba(0, 180, 216, 0.6);
+    --border-active: rgba(2, 132, 199, 0.6);
     background-color: var(--bg-primary);
     color: var(--text-main);
 }
@@ -2794,19 +2794,159 @@ body.light-theme {
 body.light-theme .glass-panel,
 body.light-theme .top-header,
 body.light-theme .sidebar-nav {
-    background: var(--bg-card);
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .metric-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+body.light-theme .metric-value {
+    color: #0f172a;
+}
+
+body.light-theme .metric-label {
+    color: #475569;
+}
+
+body.light-theme .metric-desc {
+    color: #64748b;
+}
+
+body.light-theme .nav-link {
+    color: #475569;
+}
+
+body.light-theme .nav-link:hover {
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.08);
+}
+
+body.light-theme .nav-link.active {
+    color: #0284c7;
+    background: rgba(2, 132, 199, 0.12);
+    font-weight: 600;
 }
 
 body.light-theme .chat-input-deck,
 body.light-theme .chat-input-textarea {
     background: #ffffff;
     color: #0f172a;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .chat-input-textarea::placeholder {
+    color: #94a3b8;
 }
 
 body.light-theme .session-item-card {
-    background: rgba(0, 0, 0, 0.04);
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.08);
     color: #1e293b;
+}
+
+body.light-theme .session-item-card:hover,
+body.light-theme .session-item-card.active {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: rgba(2, 132, 199, 0.4);
+}
+
+body.light-theme .chat-drawer {
+    background: #f8fafc;
+    border-right-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .chat-message.assistant {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-theme .thought-accordion {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #334155;
+}
+
+body.light-theme .thought-body {
+    color: #475569;
+}
+
+body.light-theme .admin-users-table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-bottom-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-theme .admin-users-table td {
+    color: #0f172a;
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .admin-users-table tr:hover td {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme .form-input,
+body.light-theme .form-select {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .form-input::placeholder {
+    color: #94a3b8;
+}
+
+body.light-theme .btn-secondary {
+    background: #ffffff;
+    color: #1e293b;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .btn-secondary:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+body.light-theme .modal-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .modal-header,
+body.light-theme .modal-body {
+    color: #0f172a;
+}
+
+body.light-theme .badge-admin {
+    background: rgba(244, 63, 94, 0.12);
+    color: #e11d48;
+    border-color: rgba(244, 63, 94, 0.25);
+}
+
+body.light-theme .badge-user {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+    border-color: rgba(2, 132, 199, 0.25);
+}
+
+body.light-theme pre,
+body.light-theme code {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+body.light-theme .page-title-main {
+    color: #0f172a;
 }
 
 /* Theme Toggle Button (Dark / Light) */

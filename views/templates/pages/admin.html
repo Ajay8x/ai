@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}AJAX AI - Administrator Command Center{% endblock %}
-{% block header_title %}👑 Administrator Command Center{% endblock %}
+{% block header_title %}Administrator Command Center{% endblock %}
 {% block header_subtitle %}Full Multi-User Governance, Role-Based Access Control & System Management{% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
     <!-- Top System Diagnostic KPI Row -->
     <div class="admin-kpi-grid">
         <div class="kpi-card glass-panel">
-            <div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.12); color:var(--accent-cyan);">👥</div>
+            <div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.12); color:var(--accent-cyan);"><i class="fa-solid fa-users"></i></div>
             <div class="kpi-info">
                 <div class="kpi-label">Total Users</div>
                 <div class="kpi-value" id="kpiTotalUsers">--</div>
@@ -17,7 +17,7 @@
         </div>
 
         <div class="kpi-card glass-panel">
-            <div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15); color:#fbbf24;">🛡️</div>
+            <div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15); color:#fbbf24;"><i class="fa-solid fa-shield-halved"></i></div>
             <div class="kpi-info">
                 <div class="kpi-label">Administrators</div>
                 <div class="kpi-value" id="kpiTotalAdmins">--</div>
@@ -25,7 +25,7 @@
         </div>
 
         <div class="kpi-card glass-panel">
-            <div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.12); color:var(--accent-emerald);">💬</div>
+            <div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.12); color:var(--accent-emerald);"><i class="fa-solid fa-comments"></i></div>
             <div class="kpi-info">
                 <div class="kpi-label">Conversations</div>
                 <div class="kpi-value" id="kpiTotalConvs">--</div>
@@ -33,7 +33,7 @@
         </div>
 
         <div class="kpi-card glass-panel">
-            <div class="kpi-icon-wrap" style="background:rgba(139,92,246,0.15); color:#a78bfa;">🧠</div>
+            <div class="kpi-icon-wrap" style="background:rgba(139,92,246,0.15); color:#a78bfa;"><i class="fa-solid fa-brain"></i></div>
             <div class="kpi-info">
                 <div class="kpi-label">Neural Intents</div>
                 <div class="kpi-value" id="kpiNeuralIntents">20 Classes</div>
@@ -47,7 +47,7 @@
         <div class="admin-table-header">
             <div>
                 <h3 style="font-size:17px; font-weight:700; color:var(--text-main); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
-                    <span>👥</span><span>User Management & Access Control</span>
+                    <i class="fa-solid fa-users-gear" style="color:var(--accent-cyan);"></i><span>User Management & Access Control</span>
                 </h3>
                 <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
                     Manage user permissions, activate or suspend accounts, and assign administrative roles.
@@ -56,11 +56,11 @@
 
             <div class="admin-header-actions">
                 <div class="search-input-wrapper">
-                    <span style="font-size:13px; color:var(--text-dim);">🔍</span>
+                    <span style="font-size:13px; color:var(--text-dim);"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <input type="text" id="userSearchInput" oninput="filterUsersTable()" placeholder="Search users by name, username or email..." class="admin-search-field">
                 </div>
                 <button class="btn-primary" onclick="openCreateUserModal()" style="padding:8px 16px; font-size:12.5px; gap:6px;">
-                    <span>➕</span><span>New User</span>
+                    <i class="fa-solid fa-user-plus"></i><span>New User</span>
                 </button>
             </div>
         </div>
@@ -68,9 +68,9 @@
         <!-- Filter Pill Chips -->
         <div class="admin-filter-bar">
             <button class="filter-chip active" onclick="setFilterRole('all', this)">All Users</button>
-            <button class="filter-chip" onclick="setFilterRole('admin', this)">🛡️ Admins</button>
-            <button class="filter-chip" onclick="setFilterRole('user', this)">👤 Regular Users</button>
-            <button class="filter-chip" onclick="setFilterRole('blocked', this)">🛑 Suspended</button>
+            <button class="filter-chip" onclick="setFilterRole('admin', this)"><i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i>Admins</button>
+            <button class="filter-chip" onclick="setFilterRole('user', this)"><i class="fa-solid fa-user" style="margin-right:4px;"></i>Regular Users</button>
+            <button class="filter-chip" onclick="setFilterRole('blocked', this)"><i class="fa-solid fa-ban" style="margin-right:4px;"></i>Suspended</button>
         </div>
 
         <!-- Users Table -->
@@ -103,7 +103,7 @@
         <!-- Quick System Operations -->
         <div class="glass-panel" style="padding:18px;">
             <h4 style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-                <span>⚡</span><span>System Operations</span>
+                <i class="fa-solid fa-bolt" style="color:var(--accent-cyan);"></i><span>System Operations</span>
             </h4>
             <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:16px;">
                 Execute administrative maintenance pipelines across AI models, RAG vector index, and database cache.
@@ -111,7 +111,7 @@
 
             <div style="display:flex; flex-direction:column; gap:10px;">
                 <button class="btn-secondary" onclick="triggerNeuralRetraining()" style="justify-content:flex-start; padding:10px 14px; gap:10px; width:100%;">
-                    <span>🧠</span>
+                    <i class="fa-solid fa-brain" style="font-size:16px; color:#a78bfa;"></i>
                     <div style="text-align:left;">
                         <div style="font-weight:600; font-size:13px;">Retrain Neural Intent Classifier</div>
                         <div style="font-size:11px; color:var(--text-dim);">Re-fits PyTorch deep neural network on verified Q&A datasets</div>
@@ -119,7 +119,7 @@
                 </button>
 
                 <button class="btn-secondary" onclick="triggerCacheFlush()" style="justify-content:flex-start; padding:10px 14px; gap:10px; width:100%;">
-                    <span>🧹</span>
+                    <i class="fa-solid fa-broom" style="font-size:16px; color:var(--accent-cyan);"></i>
                     <div style="text-align:left;">
                         <div style="font-weight:600; font-size:13px;">Flush In-Memory Caches</div>
                         <div style="font-size:11px; color:var(--text-dim);">Purges expired API cache, tool schema registry, and transient buffers</div>
@@ -131,7 +131,7 @@
         <!-- Security & Audit Info -->
         <div class="glass-panel" style="padding:18px;">
             <h4 style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-                <span>🔒</span><span>Security & Database Topology</span>
+                <i class="fa-solid fa-shield-halved" style="color:var(--accent-emerald);"></i><span>Security & Database Topology</span>
             </h4>
             <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--text-muted); margin-top:12px;">
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
@@ -162,9 +162,9 @@
     <div class="admin-modal-card glass-panel" onclick="event.stopPropagation()">
         <div class="admin-modal-header">
             <h3 style="font-size:16px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
-                <span>➕</span><span>Create User Account</span>
+                <i class="fa-solid fa-user-plus" style="color:var(--accent-cyan);"></i><span>Create User Account</span>
             </h3>
-            <button class="admin-modal-close" onclick="closeCreateUserModal()">✕</button>
+            <button class="admin-modal-close" onclick="closeCreateUserModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <form onsubmit="handleAdminCreateUser(event)" style="display:flex; flex-direction:column; gap:14px; margin-top:14px;">
@@ -262,7 +262,7 @@
                     <td style="font-size:12.5px; color:var(--text-muted);">${u.email || '-'}</td>
                     <td>
                         <span class="role-badge ${isAdmin ? 'admin' : 'user'}">
-                            ${isAdmin ? '🛡️ Admin' : '👤 User'}
+                            ${isAdmin ? '<i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i>Admin' : '<i class="fa-solid fa-user" style="margin-right:4px;"></i>User'}
                         </span>
                     </td>
                     <td>
@@ -285,7 +285,7 @@
                             </button>
                             <!-- Delete -->
                             <button class="action-btn-small delete" onclick="confirmDeleteUser('${u.id}', '${u.username}')" title="Delete User">
-                                🗑️
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
                     </td>

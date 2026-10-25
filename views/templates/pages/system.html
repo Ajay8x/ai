@@ -7,17 +7,17 @@
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">💻 Subsystem Diagnostics & Monitoring</h2>
+        <h2 class="page-title-main"><i class="fa-solid fa-server"></i> Subsystem Diagnostics & Monitoring</h2>
         <div class="page-subtitle">Continuous diagnostic monitoring of AI subsystems, database, and real-time execution logs.</div>
     </div>
-    <button class="btn-primary" onclick="refreshSystemData()">🔄 Refresh Diagnostics</button>
+    <button class="btn-primary" onclick="refreshSystemData()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Diagnostics</button>
 </div>
 
 <!-- Diagnostics & Subsystem Status -->
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-            <span>🛡️</span><span>Subsystem Diagnostic Probes</span>
+            <span><i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i></span><span>Subsystem Diagnostic Probes</span>
         </h3>
         <div id="diagnosticsList" style="display:flex; flex-direction:column; gap:8px;">
             <div style="font-size:13px; color:var(--text-dim);">Running diagnostic probes...</div>
@@ -28,9 +28,9 @@
     <div class="glass-panel" style="display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <span>📜</span><span>Server Application Logs</span>
+                <span><i class="fa-solid fa-file-lines" style="color:var(--accent-blue);"></i></span><span>Server Application Logs</span>
             </h3>
-            <button class="btn-secondary" style="font-size:11.5px; padding:3px 10px;" onclick="loadRecentLogs()">Tail Logs 🔄</button>
+            <button class="btn-secondary" style="font-size:11.5px; padding:3px 10px;" onclick="loadRecentLogs()">Tail Logs <i class="fa-solid fa-rotate-right"></i></button>
         </div>
         <pre class="code-viewer" id="logsViewer" style="flex:1; min-height:220px; font-size:12px; line-height:1.4;">Loading logs...</pre>
     </div>

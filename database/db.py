@@ -375,12 +375,13 @@ def init_db():
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
 
-                # Seed default admin account
+                # Seed default admin and demo user accounts
                 try:
-                    from database.crud import seed_default_admin
+                    from database.crud import seed_default_admin, seed_default_demo_user
                     seed_default_admin()
+                    seed_default_demo_user()
                 except Exception as se:
-                    ajax_logger.warning(f"Default admin seeding notice: {se}")
+                    ajax_logger.warning(f"Default user seeding notice: {se}")
 
                 return
             except Exception as e:
@@ -655,12 +656,13 @@ def init_db():
             db_name = "PostgreSQL" if is_pg else "SQLite"
             ajax_logger.info(f"{db_name} Database initialized successfully with all tables.")
 
-            # Seed default admin account if not present
+            # Seed default admin and demo user accounts if not present
             try:
-                from database.crud import seed_default_admin
+                from database.crud import seed_default_admin, seed_default_demo_user
                 seed_default_admin()
+                seed_default_demo_user()
             except Exception as se:
-                ajax_logger.warning(f"Default admin seeding check: {se}")
+                ajax_logger.warning(f"Default user seeding check: {se}")
         except Exception as e:
             error_logger.error(f"Failed to initialize database: {e}")
             raise e

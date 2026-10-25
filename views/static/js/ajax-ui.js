@@ -25,7 +25,7 @@
                     <div class="loader-spinner-container">
                         <div class="loader-orbital-ring"></div>
                         <div class="loader-orbital-ring-inner"></div>
-                        <span class="loader-icon-center">⚡</span>
+                        <span class="loader-icon-center"><i class="fa-solid fa-bolt"></i></span>
                     </div>
                     <div class="loader-title">AJAX AI</div>
                     <div class="loader-status-text" id="loaderStatusText">Processing request...</div>
@@ -70,10 +70,10 @@
     }
 
     const TOAST_ICONS = {
-        info: 'ℹ️',
-        success: '✅',
-        warning: '⚠️',
-        error: '🛑'
+        info: '<i class="fa-solid fa-circle-info"></i>',
+        success: '<i class="fa-solid fa-circle-check"></i>',
+        warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+        error: '<i class="fa-solid fa-circle-exclamation"></i>'
     };
 
     window.showToast = function(message, type = 'info', duration = 4000) {
@@ -81,9 +81,9 @@
         const toast = document.createElement('div');
         toast.className = `ajax-toast ${type}`;
         toast.innerHTML = `
-            <span class="ajax-toast-icon">${TOAST_ICONS[type] || 'ℹ️'}</span>
+            <span class="ajax-toast-icon">${TOAST_ICONS[type] || '<i class="fa-solid fa-circle-info"></i>'}</span>
             <div class="ajax-toast-body">${message}</div>
-            <button class="ajax-toast-close" onclick="this.parentElement.remove()">✕</button>
+            <button class="ajax-toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
         `;
         toastContainer.appendChild(toast);
 
@@ -174,7 +174,7 @@
             const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
             return `<details class="thought-accordion">
                 <summary class="thought-summary">
-                    <span class="thought-icon">💡</span>
+                    <span class="thought-icon"><i class="fa-regular fa-lightbulb"></i></span>
                     <span class="thought-title">Reasoning Process</span>
                     <span class="thought-badge">Chain of Thought</span>
                 </summary>
@@ -188,7 +188,7 @@
             const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
             return `<details class="thought-accordion is-thinking" open>
                 <summary class="thought-summary">
-                    <span class="thought-icon thought-pulsing">⚡</span>
+                    <span class="thought-icon thought-pulsing"><i class="fa-solid fa-brain"></i></span>
                     <span class="thought-title">Reasoning & Planning...</span>
                     <span class="thought-badge">Thinking</span>
                 </summary>
@@ -221,18 +221,25 @@
     // 5. Global Speech Synthesis (Text-to-Speech Engine)
     // -------------------------------------------------------------------------
     let availableVoices = [];
+    window._activeUtterance = null;
+    window._ttsResumeTimer = null;
 
     function loadVoices() {
         if (!('speechSynthesis' in window)) return;
         try {
-            availableVoices = window.speechSynthesis.getVoices();
+            const v = window.speechSynthesis.getVoices();
+            if (v && v.length > 0) {
+                availableVoices = v;
+            }
         } catch (_) {}
     }
 
     if ('speechSynthesis' in window) {
         loadVoices();
         if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
+            window.speechSynthesis.onvoiceschanged = () => {
+                loadVoices();
+            };
         }
     }
 
@@ -243,13 +250,14 @@
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<think>[\s\S]*$/gi, '')
             // Strip code blocks ```...```
-            .replace(/```[\s\S]*?```/gi, ' Code block omitted. ')
+            .replace(/```[\s\S]*?```/gi, ' Code snippet omitted. ')
             // Strip inline code `...`
             .replace(/`([^`]+)`/g, '$1')
             // Strip HTML tags
             .replace(/<[^>]+>/g, '')
-            // Strip markdown formatting symbols
+            // Strip markdown formatting symbols and URLs
             .replace(/[*#_~>]/g, '')
+            .replace(/https?:\/\/\S+/gi, ' link ')
             .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
             // Collapse whitespaces
             .replace(/\s+/g, ' ')
@@ -258,64 +266,113 @@
 
     window.speakText = function(text, lang = null) {
         if (!('speechSynthesis' in window)) {
-            console.warn('Speech synthesis not supported in this browser.');
+            console.warn('[TTS] Speech synthesis not supported in this browser.');
             return;
         }
 
         try {
-            // Cancel any pending speech
+            // Cancel any pending speech safely
             window.speechSynthesis.cancel();
-
-            if (!availableVoices || availableVoices.length === 0) {
-                loadVoices();
+            if (window._ttsResumeTimer) {
+                clearInterval(window._ttsResumeTimer);
+                window._ttsResumeTimer = null;
             }
 
             const clean = cleanTextForSpeech(text);
             if (!clean) return;
 
-            // Take first 500 characters for fluid conversational speech without browser lockup
-            const speechSnippet = clean.length > 500 ? clean.substring(0, 500) + '...' : clean;
+            // Wait 60ms to let browser speech engine flush previous cancellations
+            setTimeout(() => {
+                try {
+                    // Refresh voice list
+                    loadVoices();
+                    const voices = availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-            const utterance = new SpeechSynthesisUtterance(speechSnippet);
+                    // Take first 600 characters for fluid conversational speech without browser lockup
+                    const speechSnippet = clean.length > 600 ? clean.substring(0, 600) + '...' : clean;
 
-            // Determine language preference
-            const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
-            const targetLangCode = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-            utterance.lang = targetLangCode;
-            utterance.rate = 1.05;
-            utterance.pitch = 1.0;
+                    const utterance = new SpeechSynthesisUtterance(speechSnippet);
+                    window._activeUtterance = utterance; // Prevent Chrome V8 garbage collection bug!
 
-            // Pick matching voice
-            if (availableVoices && availableVoices.length > 0) {
-                let matchedVoice = null;
-                if (currentLang === 'hi') {
-                    matchedVoice = availableVoices.find(v => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant'));
-                } else {
-                    matchedVoice = availableVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Zira') || v.name.includes('Jenny') || v.default));
+                    // Determine language preference
+                    const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
+                    
+                    let chosenVoice = null;
+                    if (currentLang === 'hi' && voices && voices.length > 0) {
+                        // Find Hindi voice
+                        chosenVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')) || (v.name && (v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant') || v.name.toLowerCase().includes('swara') || v.name.toLowerCase().includes('madhur'))));
+                    }
+
+                    // Fallback to high-quality English / system default voice if no Hindi voice installed
+                    if (!chosenVoice && voices && voices.length > 0) {
+                        chosenVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Zira') || v.name.includes('Jenny') || v.default))
+                                   || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'))
+                                   || voices.find(v => v.default)
+                                   || voices[0];
+                    }
+
+                    if (chosenVoice) {
+                        utterance.voice = chosenVoice;
+                        utterance.lang = chosenVoice.lang || (currentLang === 'hi' ? 'hi-IN' : 'en-US');
+                    } else {
+                        utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+                    }
+
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+
+                    utterance.onstart = () => {
+                        console.log('[TTS] Speaking initiated via voice:', chosenVoice ? chosenVoice.name : 'default');
+                        // Chrome 14-second cutoff keepalive
+                        window._ttsResumeTimer = setInterval(() => {
+                            if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+                                window.speechSynthesis.resume();
+                            }
+                        }, 5000);
+                    };
+
+                    utterance.onend = () => {
+                        console.log('[TTS] Speech finished.');
+                        if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
+                        window._activeUtterance = null;
+                    };
+
+                    utterance.onerror = (e) => {
+                        console.warn('[TTS] Speech error or interrupted:', e);
+                        if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
+                        window._activeUtterance = null;
+                    };
+
+                    // Chrome unpause fix
+                    if (window.speechSynthesis.paused) {
+                        window.speechSynthesis.resume();
+                    }
+
+                    window.speechSynthesis.speak(utterance);
+
+                    // Extra fallback resume check after 100ms
+                    setTimeout(() => {
+                        if (window.speechSynthesis.paused) {
+                            window.speechSynthesis.resume();
+                        }
+                    }, 100);
+
+                } catch (innerErr) {
+                    console.error('[TTS] Internal speak execution error:', innerErr);
                 }
-                if (matchedVoice) {
-                    utterance.voice = matchedVoice;
-                }
-            }
+            }, 60);
 
-            // Chrome audio unpause fix
-            if (window.speechSynthesis.paused) {
-                window.speechSynthesis.resume();
-            }
-
-            utterance.onerror = (e) => {
-                console.warn('SpeechSynthesis utterance error:', e);
-            };
-
-            window.speechSynthesis.speak(utterance);
         } catch (err) {
-            console.error('SpeechSynthesis error:', err);
+            console.error('[TTS] SpeechSynthesis error:', err);
         }
     };
 
     window.stopSpeech = function() {
         if ('speechSynthesis' in window) {
             try {
+                if (window._ttsResumeTimer) clearInterval(window._ttsResumeTimer);
+                window._activeUtterance = null;
                 window.speechSynthesis.cancel();
             } catch (_) {}
         }

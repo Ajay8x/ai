@@ -7,7 +7,7 @@
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">⚙️ Application & Neural Architecture Settings</h2>
+        <h2 class="page-title-main"><i class="fa-solid fa-sliders"></i> Application & Neural Architecture Settings</h2>
         <div class="page-subtitle">Configure language models, hardware-accelerated neural intent classification, and localization.</div>
     </div>
 </div>
@@ -17,7 +17,7 @@
     <div class="glass-panel" style="position:relative; overflow:hidden;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <span>🧠</span><span>Multi-Tier LLM Brain</span>
+                <span><i class="fa-solid fa-brain" style="color:var(--accent-cyan);"></i></span><span>Multi-Tier LLM Brain</span>
             </h3>
             <span id="llmStatusBadge" class="badge" style="background:rgba(16, 185, 129, 0.15); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.3); font-size:11px; padding:3px 8px; border-radius:12px;">Active</span>
         </div>
@@ -56,7 +56,7 @@
         <div style="margin-top:10px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; background:rgba(0, 242, 254, 0.06); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid rgba(0, 242, 254, 0.2);">
             <div>
                 <div style="font-size:12.5px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
-                    <span>🧠</span><span>Chain-of-Thought (CoT) Thinking Mode</span>
+                    <span><i class="fa-solid fa-lightbulb" style="color:var(--accent-amber);"></i></span><span>Chain-of-Thought (CoT) Thinking Mode</span>
                 </div>
                 <div style="font-size:11px; color:var(--text-dim);">Outputs collapsible step-by-step reasoning drawer before final response.</div>
             </div>
@@ -67,7 +67,7 @@
 
         <!-- Optional API Keys Accordion -->
         <div style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.25); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
-            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">🔑 API Key Overrides (Optional / Saved Securely)</div>
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;"><i class="fa-solid fa-key"></i> API Key Overrides (Optional / Saved Securely)</div>
             
             <div class="form-group" style="margin-bottom:8px;">
                 <label class="form-label" style="font-size:11px;">Google Gemini API Key</label>
@@ -85,8 +85,8 @@
             </div>
         </div>
 
-        <button class="btn-primary" style="margin-top:16px; width:100%; justify-content:center;" onclick="saveLlmSettings()">
-            <span>💾</span><span>Apply & Save LLM Configuration</span>
+        <button class="btn-primary" style="margin-top:16px; width:100%; justify-content:center; gap:8px;" onclick="saveLlmSettings()">
+            <span><i class="fa-solid fa-floppy-disk"></i></span><span>Apply & Save LLM Configuration</span>
         </button>
     </div>
 
@@ -94,7 +94,7 @@
     <div class="glass-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <span>⚡</span><span>PyTorch Deep Neural Network</span>
+                <span><i class="fa-solid fa-bolt" style="color:var(--accent-cyan);"></i></span><span>PyTorch Deep Neural Network</span>
             </h3>
             <span id="neuralStatusBadge" class="badge" style="background:rgba(0, 242, 254, 0.15); color:var(--accent-cyan); border:1px solid rgba(0,242,254,0.3); font-size:11px; padding:3px 8px; border-radius:12px;">Active</span>
         </div>
@@ -121,10 +121,10 @@
 
         <!-- Live Neural Playground -->
         <div style="background:rgba(13, 18, 29, 0.7); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:14px;">
-            <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;">🎯 Live Intent Classifier Playground</div>
+            <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;"><i class="fa-solid fa-bullseye" style="color:var(--accent-cyan);"></i> Live Intent Classifier Playground</div>
             <div style="display:flex; gap:8px; margin-bottom:12px;">
                 <input type="text" id="neuralTestQuery" class="form-input" placeholder="Type query (e.g. 'kholo notepad', 'time kya hua', 'sqrt(144)', 'delhi mausam')..." style="font-size:12px;" onkeydown="if(event.key==='Enter') runNeuralTest()">
-                <button class="btn-secondary" style="padding:6px 14px; font-size:12px; white-space:nowrap;" onclick="runNeuralTest()">Test 🚀</button>
+                <button class="btn-secondary" style="padding:6px 14px; font-size:12px; white-space:nowrap; gap:6px;" onclick="runNeuralTest()">Test <i class="fa-solid fa-paper-plane"></i></button>
             </div>
 
             <!-- Test Output Box -->
@@ -158,7 +158,7 @@
     <!-- Localization & Voice -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-            <span>🌐</span><span>Localization & Speech Voice</span>
+            <span><i class="fa-solid fa-globe" style="color:var(--accent-cyan);"></i></span><span>Localization & Speech Voice</span>
         </h3>
 
         <div class="form-group">
@@ -187,7 +187,7 @@
     <!-- Storage & Session Management -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-            <span>💾</span><span>Session & Cache Storage</span>
+            <span><i class="fa-solid fa-database" style="color:var(--accent-indigo);"></i></span><span>Session & Cache Storage</span>
         </h3>
 
         <div class="form-group">
@@ -196,11 +196,11 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
-            <button class="btn-secondary" onclick="resetActiveSession()">
-                <span>🔄</span><span>Generate Fresh Conversation Session</span>
+            <button class="btn-secondary" onclick="resetActiveSession()" style="gap:8px;">
+                <span><i class="fa-solid fa-arrows-rotate"></i></span><span>Generate Fresh Conversation Session</span>
             </button>
-            <button class="btn-danger" onclick="clearAllLocalStorage()">
-                <span>🗑️</span><span>Purge All Local Cache & History</span>
+            <button class="btn-danger" onclick="clearAllLocalStorage()" style="gap:8px;">
+                <span><i class="fa-solid fa-trash-can"></i></span><span>Purge All Local Cache & History</span>
             </button>
         </div>
     </div>
@@ -256,7 +256,7 @@
                 document.getElementById('telemetryClasses').textContent = (data.neural.num_classes || 20) + ' Classes';
                 document.getElementById('telemetryDevice').textContent = 'Compute Device: ' + (data.neural.compute_device || 'CPU');
                 if (data.neural.neural_loaded) {
-                    document.getElementById('neuralStatusBadge').textContent = '🟢 Deep Net Active';
+                    document.getElementById('neuralStatusBadge').textContent = 'Deep Net Active';
                 }
             }
         } catch (e) {
@@ -306,7 +306,7 @@
             });
             const data = await res.json();
             if (data.success) {
-                window.showToast('✅ LLM Brain configuration applied & saved!', 'success');
+                window.showToast('LLM Brain configuration applied & saved!', 'success');
                 loadServerSettings();
             } else {
                 window.showToast('Error saving settings: ' + (data.error || 'Unknown'), 'error');
@@ -365,7 +365,7 @@
             const status = document.getElementById('globalVoiceStatus');
             const icon = document.getElementById('globalVoiceIcon');
             if (status) status.textContent = val === 'true' ? 'ON' : 'OFF';
-            if (icon) icon.textContent = val === 'true' ? '🔊' : '🔈';
+            if (icon) icon.className = val === 'true' ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
             window.showToast(`Voice output: ${val === 'true' ? 'Enabled' : 'Disabled'}`, 'info');
         }
     }

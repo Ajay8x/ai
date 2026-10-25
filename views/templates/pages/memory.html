@@ -7,17 +7,17 @@
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main">💾 Memory Subsystem</h2>
+        <h2 class="page-title-main"><i class="fa-solid fa-brain"></i> Memory Subsystem</h2>
         <div class="page-subtitle">AJAX AI retains long-term personal facts and preferences across sessions.</div>
     </div>
-    <button class="btn-primary" onclick="openAddMemoryModal()">➕ Store New Fact</button>
+    <button class="btn-primary" onclick="openAddMemoryModal()"><i class="fa-solid fa-plus"></i> Store New Fact</button>
 </div>
 
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:22px;">
     <!-- Left: Add Memory Form -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-            <span>📝</span><span>Store Key-Value Memory</span>
+            <span><i class="fa-solid fa-pen-to-square" style="color:var(--accent-cyan);"></i></span><span>Store Key-Value Memory</span>
         </h3>
 
         <form id="memoryForm" onsubmit="event.preventDefault(); submitNewMemory();">
@@ -41,8 +41,8 @@
                 <textarea class="form-textarea" id="memValue" rows="4" placeholder="e.g. Ajay prefers concise answers and Python for automation." required></textarea>
             </div>
 
-            <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
-                Save to MongoDB Atlas 💾
+            <button type="submit" class="btn-primary" style="width:100%; justify-content:center; gap:8px;">
+                <i class="fa-solid fa-database"></i> Save to MongoDB Atlas
             </button>
         </form>
     </div>
@@ -50,7 +50,7 @@
     <!-- Right: Recall Tester -->
     <div class="glass-panel">
         <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-            <span>🔍</span><span>Test Memory Recall</span>
+            <span><i class="fa-solid fa-magnifying-glass" style="color:var(--accent-blue);"></i></span><span>Test Memory Recall</span>
         </h3>
         <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
             Test how the AI retrieves stored memories using the <code>recall_memory</code> tool or semantic search.
@@ -60,7 +60,7 @@
             <label class="form-label">Search Query</label>
             <div style="display:flex; gap:8px;">
                 <input type="text" class="form-input" id="recallQuery" placeholder="e.g. what is my favorite language?">
-                <button class="btn-primary" onclick="testRecall()" style="white-space:nowrap;">Recall ⚡</button>
+                <button class="btn-primary" onclick="testRecall()" style="white-space:nowrap; gap:6px;">Recall <i class="fa-solid fa-bolt"></i></button>
             </div>
         </div>
 
@@ -72,9 +72,9 @@
 <div class="glass-panel" style="margin-top:20px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-            <span>📋</span><span>Stored Memory Records</span>
+            <span><i class="fa-solid fa-table-list" style="color:var(--accent-indigo);"></i></span><span>Stored Memory Records</span>
         </h3>
-        <button class="btn-secondary" onclick="loadMemoriesList()">🔄 Refresh List</button>
+        <button class="btn-secondary" onclick="loadMemoriesList()"><i class="fa-solid fa-arrows-rotate"></i> Refresh List</button>
     </div>
 
     <div id="memoriesTableContainer" style="overflow-x:auto;">

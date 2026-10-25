@@ -159,6 +159,51 @@ async def login_user(payload: LoginRequest, response: Response):
     return response
 
 
+@auth_router.post("/auth/demo-login")
+@auth_router.get("/auth/demo-login")
+async def demo_quick_login(response: Response):
+    """Instant 1-Click Demo User login for visitors."""
+    from database.crud import seed_default_demo_user
+    seed_default_demo_user()
+
+    user = get_user_by_username("demo")
+    if not user:
+        user = create_user(
+            username="demo",
+            password="demo123",
+            full_name="Demo User",
+            email="demo@ajax.ai",
+            role="user"
+        )
+
+    token = create_session(user)
+    update_user_last_login(user["id"])
+
+    res = JSONResponse({
+        "success": True,
+        "message": "Welcome to AJAX AI Demo Account!",
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "full_name": user.get("full_name", "Demo User"),
+            "email": user.get("email", "demo@ajax.ai"),
+            "role": user.get("role", "user"),
+            "status": user.get("status", "active")
+        }
+    })
+
+    res.set_cookie(
+        key="ajax_session_token",
+        value=token,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=False,
+        samesite="lax",
+        path="/"
+    )
+    return res
+
+
 @auth_router.post("/auth/register")
 async def register_user(payload: RegisterRequest, response: Response):
     """Allows any new user to create an account and immediately sign in."""

@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}AJAX AI - Autonomous Assistant{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <link rel="stylesheet" href="/css/style.css?v=3.3">
-    <link rel="stylesheet" href="/css/ajax-ui.css?v=3.3">
+    <link rel="stylesheet" href="/css/style.css?v=3.7">
+    <link rel="stylesheet" href="/css/ajax-ui.css?v=3.7">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
@@ -38,7 +39,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="/AJAX/dashboard" class="logo" style="text-decoration:none; color:inherit;">
-                    <span class="logo-icon">⚡</span>
+                    <span class="logo-icon"><i class="fa-solid fa-bolt"></i></span>
                     <span class="logo-text">AJAX AI</span>
                 </a>
                 <div class="header-right-tools">
@@ -46,13 +47,13 @@
                         <span class="status-dot"></span>
                         <span class="status-text">ONLINE</span>
                     </div>
-                    <button class="mobile-close-btn" onclick="toggleSidebar(false)" title="Close Menu">✕</button>
+                    <button class="mobile-close-btn" onclick="toggleSidebar(false)" title="Close Menu"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
 
             <!-- New Chat Action -->
             <a href="/AJAX/chat" class="new-chat-btn" style="text-decoration:none;">
-                <span class="btn-icon">💬</span>
+                <span class="btn-icon"><i class="fa-solid fa-comment-dots"></i></span>
                 <span>Open AI Chat</span>
             </a>
 
@@ -62,11 +63,11 @@
                 <div class="nav-group">
                     <div class="nav-group-title">Overview</div>
                     <a href="/AJAX/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span><span>Dashboard</span></div>
                         <span class="nav-badge">Core</span>
                     </a>
                     <a href="/AJAX/chat" class="nav-link {% if active_page == 'chat' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">🤖</span><span>AI Chat Studio</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Chat Studio</span></div>
                         <span class="nav-badge">Live</span>
                     </a>
                 </div>
@@ -75,15 +76,15 @@
                 <div class="nav-group">
                     <div class="nav-group-title">AI Intelligence</div>
                     <a href="/AJAX/brain" class="nav-link {% if active_page == 'brain' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">🧠</span><span>Brain & Neural Intent</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-brain"></i></span><span>Brain & Neural Intent</span></div>
                         <span class="nav-badge">20</span>
                     </a>
                     <a href="/AJAX/memory" class="nav-link {% if active_page == 'memory' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">💾</span><span>Memory Manager</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-database"></i></span><span>Memory Manager</span></div>
                         <span class="nav-badge">RAG</span>
                     </a>
                     <a href="/AJAX/documents" class="nav-link {% if active_page == 'documents' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">📄</span><span>Documents & RAG</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Documents & RAG</span></div>
                         <span class="nav-badge">Vector</span>
                     </a>
                 </div>
@@ -92,15 +93,15 @@
                 <div class="nav-group">
                     <div class="nav-group-title">System & Ops</div>
                     <a href="/AJAX/system" class="nav-link {% if active_page == 'system' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">💻</span><span>System Diagnostics</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-server"></i></span><span>System Diagnostics</span></div>
                         <span class="nav-badge">Live</span>
                     </a>
                     <a href="/AJAX/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
-                        <div class="nav-link-left"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-gear"></i></span><span>Settings</span></div>
                     </a>
                     <!-- Protected Admin Panel Link (Only displayed for Admin role) -->
                     <a href="/AJAX/admin" class="nav-link admin-only-link {% if active_page == 'admin' %}active{% endif %}" id="sidebarAdminLink" style="display:none;">
-                        <div class="nav-link-left"><span class="nav-icon">👑</span><span>Admin Panel</span></div>
+                        <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span><span>Admin Panel</span></div>
                         <span class="nav-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);">Admin</span>
                     </a>
                 </div>
@@ -114,8 +115,8 @@
                         <div class="user-name" id="sidebarUserName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Ajay Singh</div>
                         <div class="user-badge" id="sidebarUserRole">● Administrator</div>
                     </div>
-                    <button class="auth-action-icon-btn" id="sidebarAuthBtn" onclick="handleSidebarAuthAction()" title="Sign In / Switch Account" style="background:transparent; border:none; cursor:pointer; font-size:16px; padding:4px; opacity:0.85; transition:transform 0.2s;">
-                        🔑
+                    <button class="auth-action-icon-btn" id="sidebarAuthBtn" onclick="handleSidebarAuthAction()" title="Sign Out" style="background:transparent; border:none; cursor:pointer; font-size:15px; padding:4px; opacity:0.85; transition:transform 0.2s;">
+                        <i class="fa-solid fa-arrow-right-from-bracket" id="sidebarAuthBtnIcon"></i>
                     </button>
                 </div>
             </div>
@@ -127,7 +128,7 @@
             <header class="top-header">
                 <div class="top-left">
                     <button class="hamburger-btn" onclick="toggleSidebar(true)" title="Open Menu">
-                        <span></span><span></span><span></span>
+                        <i class="fa-solid fa-bars"></i>
                     </button>
                     <div class="chat-header-info">
                         <h1 class="chat-title" id="pageHeaderTitle">{% block header_title %}AJAX AI Dashboard{% endblock %}</h1>
@@ -138,30 +139,30 @@
                 <div class="top-right">
                     <!-- Dark / Light Theme Toggle Button -->
                     <button class="theme-toggle-btn" id="globalThemeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">
-                        <span id="globalThemeIcon">🌙</span>
+                        <i class="fa-solid fa-moon" id="globalThemeIcon"></i>
                     </button>
 
                     <!-- Language Selector (EN / HI) -->
                     <button class="lang-switch-btn" id="globalLangSwitchBtn" onclick="toggleGlobalLanguage()" title="Switch Language (English / Hindi)">
-                        <span class="lang-icon">🌐</span>
+                        <span class="lang-icon"><i class="fa-solid fa-globe"></i></span>
                         <span id="globalLangLabel">EN</span>
                     </button>
 
                     <!-- Voice Speech Toggle -->
                     <button class="voice-toggle-btn" id="globalVoiceToggleBtn" onclick="toggleGlobalVoice()" title="Toggle Voice Output">
-                        <span id="globalVoiceIcon">🔈</span>
+                        <i class="fa-solid fa-volume-xmark" id="globalVoiceIcon"></i>
                         <span class="voice-text">Voice: <strong id="globalVoiceStatus">OFF</strong></span>
                     </button>
 
                     <div class="model-badge">
-                        <span class="sparkle">✨</span>
+                        <span class="sparkle"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
                         <span>AJAX Core 3.0</span>
                     </div>
 
-                    <!-- Explicit Login / Logout Header Button -->
-                    <button class="header-auth-btn" id="topHeaderAuthBtn" onclick="handleAuthButtonClick()" title="Sign In or Sign Out">
-                        <span class="auth-btn-icon" id="topHeaderAuthIcon">🔑</span>
-                        <span class="auth-btn-label" id="topHeaderAuthLabel">Sign In</span>
+                    <!-- Only Sign Out Button in Dashboard Workspace -->
+                    <button class="header-auth-btn logged-in" id="topHeaderAuthBtn" onclick="handleAuthButtonClick()" title="Sign Out">
+                        <span class="auth-btn-icon"><i class="fa-solid fa-arrow-right-from-bracket" id="topHeaderAuthIcon"></i></span>
+                        <span class="auth-btn-label" id="topHeaderAuthLabel">Sign Out</span>
                     </button>
                 </div>
             </header>
@@ -186,10 +187,10 @@
             const icon = document.getElementById('globalThemeIcon');
             if (savedTheme === 'light') {
                 document.body.classList.add('light-theme');
-                if (icon) icon.textContent = '☀️';
+                if (icon) icon.className = 'fa-solid fa-sun';
             } else {
                 document.body.classList.remove('light-theme');
-                if (icon) icon.textContent = '🌙';
+                if (icon) icon.className = 'fa-solid fa-moon';
             }
         }
 
@@ -198,8 +199,8 @@
             const newTheme = isLight ? 'light' : 'dark';
             localStorage.setItem('ajax_theme', newTheme);
             const icon = document.getElementById('globalThemeIcon');
-            if (icon) icon.textContent = isLight ? '☀️' : '🌙';
-            window.showToast(`Theme switched to: ${isLight ? 'Light Mode ☀️' : 'Dark Mode 🌙'}`, 'info');
+            if (icon) icon.className = isLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            window.showToast(`Theme switched to: ${isLight ? 'Light Mode' : 'Dark Mode'}`, 'info');
         }
         window.toggleTheme = toggleTheme;
 
@@ -216,7 +217,7 @@
             if (voiceStatus && window.ajaxState) {
                 const isVoice = window.ajaxState.isVoiceEnabled();
                 voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
-                if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
+                if (voiceIcon) voiceIcon.className = isVoice ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
             }
             syncCurrentUserAuth();
         });
@@ -247,38 +248,19 @@
                             adminLink.style.display = u.role === 'admin' ? 'flex' : 'none';
                         }
                         if (authBtn) {
-                            authBtn.innerHTML = '🚪';
+                            authBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
                             authBtn.title = 'Sign Out';
                         }
-                        if (topAuthIcon) topAuthIcon.textContent = '🚪';
-                        if (topAuthLabel) topAuthLabel.textContent = 'Logout';
+                        if (topAuthIcon) topAuthIcon.className = 'fa-solid fa-arrow-right-from-bracket';
+                        if (topAuthLabel) topAuthLabel.textContent = 'Sign Out';
                         if (topAuthBtn) {
                             topAuthBtn.classList.add('logged-in');
-                            topAuthBtn.title = `Signed in as @${u.username} (Click to Logout)`;
+                            topAuthBtn.title = `Signed in as @${u.username} (Click to Sign Out)`;
                         }
                     } else {
-                        const currentPath = window.location.pathname.toLowerCase();
-                        if (!currentPath.includes('/login')) {
-                            window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
-                            return;
-                        }
-                        if (nameEl) nameEl.textContent = 'Guest User';
-                        if (avatarEl) avatarEl.textContent = '👤';
-                        if (roleEl) {
-                            roleEl.textContent = '● Not Signed In';
-                            roleEl.style.color = 'var(--text-dim)';
-                        }
-                        if (adminLink) adminLink.style.display = 'none';
-                        if (authBtn) {
-                            authBtn.innerHTML = '🔑';
-                            authBtn.title = 'Sign In';
-                        }
-                        if (topAuthIcon) topAuthIcon.textContent = '🔑';
-                        if (topAuthLabel) topAuthLabel.textContent = 'Sign In';
-                        if (topAuthBtn) {
-                            topAuthBtn.classList.remove('logged-in');
-                            topAuthBtn.title = 'Sign In';
-                        }
+                        // User not authenticated: automatically redirect to login page. Never show Sign In inside dashboard!
+                        window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
+                        return;
                     }
                 }
             } catch (_) {}
@@ -321,15 +303,15 @@
             const voiceStatus = document.getElementById('globalVoiceStatus');
             const voiceIcon = document.getElementById('globalVoiceIcon');
             if (voiceStatus) voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
-            if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
+            if (voiceIcon) voiceIcon.className = isVoice ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
             
             if (isVoice) {
-                window.showToast('Voice replies: Enabled 🔊', 'success');
+                window.showToast('Voice replies: Enabled', 'success');
                 const lang = window.ajaxState.getLanguage();
                 const confirmation = lang === 'hi' ? 'वॉयस रिस्पांस चालू हो गया है।' : 'Voice output enabled.';
                 if (window.speakText) window.speakText(confirmation, lang);
             } else {
-                window.showToast('Voice replies: Disabled 🔈', 'info');
+                window.showToast('Voice replies: Disabled', 'info');
                 if (window.stopSpeech) window.stopSpeech();
             }
         }

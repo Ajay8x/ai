@@ -611,3 +611,17 @@ def seed_default_admin():
         )
         ajax_logger.info("Default administrator account seeded: 'admin' / 'admin123'")
 
+def seed_default_demo_user():
+    """Seeds default demo user account (demo / demo123) if none exists."""
+    demo_user = get_user_by_username("demo")
+    if not demo_user:
+        create_user(
+            username="demo",
+            password="demo123",
+            full_name="Demo User",
+            email="demo@ajax.ai",
+            role="user"
+        )
+        ajax_logger.info("Default demo account seeded: 'demo' / 'demo123'")
+
+
