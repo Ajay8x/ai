@@ -89,7 +89,7 @@ async def serve_admin_page(request: Request):
     if not user:
         return RedirectResponse(url="/AJAX/login?redirect=/AJAX/admin&reason=admin_required", status_code=302)
     if user.get("role") != "admin":
-        return RedirectResponse(url="/AJAX/login?redirect=/AJAX/admin&reason=admin_required", status_code=302)
+        return RedirectResponse(url="/AJAX/dashboard?notice=admin_required", status_code=302)
 
     return templates.TemplateResponse(
         request=request,

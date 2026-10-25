@@ -564,6 +564,9 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        try { localStorage.setItem('ajax_session_token', data.token); } catch (_) {}
+                    }
                     showToast(data.message || 'Signed in successfully!', 'success');
                     
                     // Determine redirect destination based on role and query param
@@ -606,6 +609,9 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        try { localStorage.setItem('ajax_session_token', data.token); } catch (_) {}
+                    }
                     showToast('Demo Access Granted! Launching Dashboard...', 'success');
                     const redirectParam = new URLSearchParams(window.location.search).get('redirect');
                     const targetUrl = redirectParam && !redirectParam.includes('/login') ? redirectParam : '/AJAX/dashboard';
@@ -661,6 +667,9 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        try { localStorage.setItem('ajax_session_token', data.token); } catch (_) {}
+                    }
                     showToast(data.message || 'Account created successfully!', 'success');
                     setTimeout(() => {
                         window.location.href = '/AJAX/dashboard';

@@ -625,3 +625,107 @@ def seed_default_demo_user():
         ajax_logger.info("Default demo account seeded: 'demo' / 'demo123'")
 
 
+# ----------------- PERSISTENT AUTH SESSIONS ----------------- #
+
+def save_auth_session(token: str, user: Dict[str, Any], expires_at: float) -> bool:
+    """Persists auth session to database so user remains logged in across server restarts."""
+    user_id = user["id"]
+    username = user["username"]
+    role = user.get("role", "user")
+    full_name = user.get("full_name", username)
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            db.auth_sessions.replace_one(
+                {"token": token},
+                {
+                    "token": token,
+                    "user_id": user_id,
+                    "username": username,
+                    "role": role,
+                    "full_name": full_name,
+                    "expires_at": expires_at,
+                    "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                },
+                upsert=True
+            )
+            return True
+        except Exception as e:
+            error_logger.error(f"MongoDB save_auth_session error: {e}")
+
+    with DB_LOCK:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO auth_sessions (token, user_id, username, role, full_name, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(token) DO UPDATE SET
+                    user_id=excluded.user_id,
+                    username=excluded.username,
+                    role=excluded.role,
+                    full_name=excluded.full_name,
+                    expires_at=excluded.expires_at
+                """,
+                (token, user_id, username, role, full_name, expires_at)
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            error_logger.error(f"DB save_auth_session error: {e}")
+            return False
+
+def get_auth_session(token: str) -> Optional[Dict[str, Any]]:
+    """Retrieves session from DB if valid and not expired."""
+    import time
+    now_ts = time.time()
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            doc = db.auth_sessions.find_one({"token": token, "expires_at": {"$gt": now_ts}}, {"_id": 0})
+            return doc
+        except Exception as e:
+            error_logger.error(f"MongoDB get_auth_session error: {e}")
+
+    with DB_LOCK:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM auth_sessions WHERE token = ? AND expires_at > ?",
+                (token, now_ts)
+            )
+            row = cursor.fetchone()
+            conn.close()
+            return dict(row) if row else None
+        except Exception as e:
+            error_logger.error(f"DB get_auth_session error: {e}")
+            return None
+
+def delete_auth_session(token: str) -> bool:
+    """Deletes an auth session on logout."""
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            db.auth_sessions.delete_one({"token": token})
+            return True
+        except Exception as e:
+            error_logger.error(f"MongoDB delete_auth_session error: {e}")
+
+    with DB_LOCK:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            error_logger.error(f"DB delete_auth_session error: {e}")
+            return False
+
+

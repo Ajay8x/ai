@@ -348,43 +348,67 @@
 
         async function syncCurrentUserAuth() {
             try {
-                const res = await fetch('/api/auth/me');
+                let res = await fetch('/api/auth/me');
+                let data = null;
                 if (res.ok) {
-                    const data = await res.json();
-                    const nameEl = document.getElementById('sidebarUserName');
-                    const avatarEl = document.getElementById('sidebarUserAvatar');
-                    const roleEl = document.getElementById('sidebarUserRole');
-                    const adminLink = document.getElementById('sidebarAdminLink');
-                    const authBtn = document.getElementById('sidebarAuthBtn');
-                    const topAuthIcon = document.getElementById('topHeaderAuthIcon');
-                    const topAuthLabel = document.getElementById('topHeaderAuthLabel');
-                    const topAuthBtn = document.getElementById('topHeaderAuthBtn');
+                    data = await res.json();
+                }
 
-                    if (data.authenticated && data.user) {
-                        const u = data.user;
-                        if (nameEl) nameEl.textContent = u.full_name || u.username;
-                        if (avatarEl) avatarEl.textContent = (u.full_name || u.username || 'U').charAt(0).toUpperCase();
-                        if (roleEl) {
-                            roleEl.textContent = u.role === 'admin' ? '● Administrator' : '● User';
-                            roleEl.style.color = u.role === 'admin' ? '#fbbf24' : 'var(--accent-cyan)';
+                // If cookie did not authenticate, check localStorage token backup
+                const localToken = localStorage.getItem('ajax_session_token');
+                if ((!data || !data.authenticated) && localToken) {
+                    try {
+                        const tokenRes = await fetch('/api/auth/me', {
+                            headers: { 'Authorization': `Bearer ${localToken}` }
+                        });
+                        if (tokenRes.ok) {
+                            const tokenData = await tokenRes.json();
+                            if (tokenData.authenticated) {
+                                data = tokenData;
+                                // Re-set cookie if browser lost it
+                                document.cookie = `ajax_session_token=${localToken}; path=/; max-age=2592000; samesite=lax`;
+                            }
                         }
-                        if (adminLink) {
-                            adminLink.style.display = u.role === 'admin' ? 'flex' : 'none';
-                        }
-                        if (authBtn) {
-                            authBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
-                            authBtn.title = 'Sign Out';
-                        }
-                        if (topAuthIcon) topAuthIcon.className = 'fa-solid fa-arrow-right-from-bracket';
-                        if (topAuthLabel) topAuthLabel.textContent = 'Sign Out';
-                        if (topAuthBtn) {
-                            topAuthBtn.classList.add('logged-in');
-                            topAuthBtn.title = `Signed in as @${u.username} (Click to Sign Out)`;
-                        }
-                    } else {
-                        window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
-                        return;
+                    } catch (_) {}
+                }
+
+                const nameEl = document.getElementById('sidebarUserName');
+                const avatarEl = document.getElementById('sidebarUserAvatar');
+                const roleEl = document.getElementById('sidebarUserRole');
+                const adminLink = document.getElementById('sidebarAdminLink');
+                const authBtn = document.getElementById('sidebarAuthBtn');
+                const topAuthIcon = document.getElementById('topHeaderAuthIcon');
+                const topAuthLabel = document.getElementById('topHeaderAuthLabel');
+                const topAuthBtn = document.getElementById('topHeaderAuthBtn');
+
+                if (data && data.authenticated && data.user) {
+                    const u = data.user;
+                    if (nameEl) nameEl.textContent = u.full_name || u.username;
+                    if (avatarEl) avatarEl.textContent = (u.full_name || u.username || 'U').charAt(0).toUpperCase();
+                    if (roleEl) {
+                        roleEl.textContent = u.role === 'admin' ? '● Administrator' : '● User';
+                        roleEl.style.color = u.role === 'admin' ? '#fbbf24' : 'var(--accent-cyan)';
                     }
+                    if (adminLink) {
+                        adminLink.style.display = u.role === 'admin' ? 'flex' : 'none';
+                    }
+                    if (authBtn) {
+                        authBtn.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i>';
+                        authBtn.title = 'Sign Out';
+                    }
+                    if (topAuthIcon) topAuthIcon.className = 'fa-solid fa-arrow-right-from-bracket';
+                    if (topAuthLabel) topAuthLabel.textContent = 'Sign Out';
+                    if (topAuthBtn) {
+                        topAuthBtn.classList.add('logged-in');
+                        topAuthBtn.title = `Signed in as @${u.username} (Click to Sign Out)`;
+                    }
+                } else {
+                    // Only redirect if this is a protected page and user is truly unauthenticated
+                    const publicPages = ['/AJAX/login', '/ajax/login', '/login', '/'];
+                    if (!publicPages.includes(window.location.pathname.toLowerCase())) {
+                        window.location.href = '/AJAX/login?redirect=' + encodeURIComponent(window.location.pathname);
+                    }
+                    return;
                 }
             } catch (_) {}
         }
@@ -392,20 +416,28 @@
 
         async function handleAuthButtonClick() {
             try {
-                const res = await fetch('/api/auth/me');
+                const localToken = localStorage.getItem('ajax_session_token');
+                const headers = localToken ? { 'Authorization': `Bearer ${localToken}` } : {};
+                const res = await fetch('/api/auth/me', { headers });
                 const data = await res.json();
                 if (data.authenticated) {
                     if (confirm(`Signed in as @${data.user.username} (${data.user.full_name}). Do you want to sign out?`)) {
-                        await fetch('/api/auth/logout', { method: 'POST' });
+                        await fetch('/api/auth/logout', { 
+                            method: 'POST',
+                            headers: localToken ? { 'Authorization': `Bearer ${localToken}` } : {}
+                        });
+                        try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
                         if (window.showToast) window.showToast('Signed out successfully.', 'info');
                         setTimeout(() => {
                             window.location.href = '/AJAX/login';
                         }, 300);
                     }
                 } else {
+                    try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
                     window.location.href = '/AJAX/login';
                 }
             } catch (_) {
+                try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
                 window.location.href = '/AJAX/login';
             }
         }

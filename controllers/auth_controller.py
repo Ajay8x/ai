@@ -26,7 +26,10 @@ from database.crud import (
     update_user_last_login,
     list_conversations,
     search_memories,
-    is_mongo_active
+    is_mongo_active,
+    save_auth_session,
+    get_auth_session,
+    delete_auth_session
 )
 from core.logger import ajax_logger
 
@@ -34,39 +37,78 @@ auth_router = APIRouter(prefix="/api", tags=["Authentication & Administration"])
 
 # In-Memory Session Token Cache: token -> {user_id, role, username, expires_at}
 _SESSIONS: Dict[str, Dict[str, Any]] = {}
-SESSION_TTL_SECONDS = 7 * 24 * 3600  # 7 Days
+SESSION_TTL_SECONDS = 30 * 24 * 3600  # 30 Days Persistent Session
 
 def create_session(user: Dict[str, Any]) -> str:
     token = secrets.token_urlsafe(32)
-    _SESSIONS[token] = {
+    expires_at = time.time() + SESSION_TTL_SECONDS
+    sess_data = {
         "user_id": user["id"],
         "username": user["username"],
         "role": user.get("role", "user"),
         "full_name": user.get("full_name", user["username"]),
-        "expires_at": time.time() + SESSION_TTL_SECONDS
+        "expires_at": expires_at
     }
+    # Cache in fast RAM
+    _SESSIONS[token] = sess_data
+    # Persist to database so session survives server restarts & reloads
+    try:
+        save_auth_session(token, user, expires_at)
+    except Exception as e:
+        ajax_logger.warning(f"Could not persist session to DB: {e}")
+
     return token
 
 def get_current_user_from_request(request: Request) -> Optional[Dict[str, Any]]:
-    """Resolves authenticated user from Cookie or Authorization header."""
+    """Resolves authenticated user from Cookie or Authorization header with DB fallback."""
     token = request.cookies.get("ajax_session_token")
     if not token:
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header.replace("Bearer ", "").strip()
 
-    if not token or token not in _SESSIONS:
+    if not token:
         return None
 
-    sess = _SESSIONS[token]
+    # 1. Fast RAM check
+    sess = _SESSIONS.get(token)
+
+    # 2. If not in RAM (e.g. after server restart or multi-process), check DB
+    if not sess:
+        try:
+            db_sess = get_auth_session(token)
+            if db_sess:
+                sess = {
+                    "user_id": db_sess["user_id"],
+                    "username": db_sess["username"],
+                    "role": db_sess.get("role", "user"),
+                    "full_name": db_sess.get("full_name", db_sess["username"]),
+                    "expires_at": db_sess["expires_at"]
+                }
+                # Re-populate RAM cache
+                _SESSIONS[token] = sess
+        except Exception as e:
+            ajax_logger.warning(f"Session DB lookup error: {e}")
+
+    if not sess:
+        return None
+
     if time.time() > sess["expires_at"]:
-        del _SESSIONS[token]
+        _SESSIONS.pop(token, None)
+        try:
+            delete_auth_session(token)
+        except Exception:
+            pass
         return None
 
     # Fetch fresh user details
     user = get_user_by_id(sess["user_id"])
     if not user or user.get("status") == "blocked":
-        del _SESSIONS[token]
+        _SESSIONS.pop(token, None)
+        try:
+            delete_auth_session(token)
+        except Exception:
+            pass
         return None
 
     return user
@@ -278,8 +320,17 @@ async def get_current_user_profile(request: Request):
 async def logout_user(request: Request, response: Response):
     """Logs out user and invalidates session token."""
     token = request.cookies.get("ajax_session_token")
-    if token and token in _SESSIONS:
-        del _SESSIONS[token]
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "").strip()
+
+    if token:
+        _SESSIONS.pop(token, None)
+        try:
+            delete_auth_session(token)
+        except Exception:
+            pass
 
     resp = JSONResponse({"success": True, "message": "Signed out successfully."})
     resp.delete_cookie(key="ajax_session_token", path="/")

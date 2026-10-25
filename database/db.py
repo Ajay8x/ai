@@ -62,6 +62,14 @@ def get_mongo_client() -> Optional[Any]:
         client.admin.command('ping')
         _MONGO_CLIENT = client
         _MONGO_AVAILABLE = True
+        try:
+            db_name = config.database.mongodb_db or "ajax_ai"
+            mdb = client[db_name]
+            mdb.auth_sessions.create_index("token", unique=True)
+            mdb.auth_sessions.create_index("expires_at")
+            mdb.users.create_index("username", unique=True)
+        except Exception:
+            pass
         return _MONGO_CLIENT
     except Exception as e:
         ajax_logger.warning(f"MongoDB Atlas connection check failed: {e}. Falling back to SQLite.")
@@ -371,6 +379,9 @@ def init_db():
                 db.users.create_index("username", unique=True)
                 db.users.create_index("role")
 
+                db.auth_sessions.create_index("token", unique=True)
+                db.auth_sessions.create_index("expires_at")
+
                 # Auto-migrate SQLite data if MongoDB Atlas collections are empty
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
@@ -632,6 +643,18 @@ def init_db():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+                """,
+                # 19. Persistent Auth Sessions (Survives Server Restarts)
+                """
+                CREATE TABLE IF NOT EXISTS auth_sessions (
+                    token VARCHAR(128) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL,
+                    username VARCHAR(64) NOT NULL,
+                    role VARCHAR(32) DEFAULT 'user',
+                    full_name VARCHAR(128),
+                    expires_at REAL NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
                 """
             ]
 
@@ -650,6 +673,8 @@ def init_db():
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_audit_created ON api_audit_logs(created_at)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON auth_sessions(token)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires ON auth_sessions(expires_at)")
 
             conn.commit()
             conn.close()
