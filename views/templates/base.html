@@ -136,6 +136,11 @@
                 </div>
 
                 <div class="top-right">
+                    <!-- Dark / Light Theme Toggle Button -->
+                    <button class="theme-toggle-btn" id="globalThemeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">
+                        <span id="globalThemeIcon">🌙</span>
+                    </button>
+
                     <!-- Language Selector (EN / HI) -->
                     <button class="lang-switch-btn" id="globalLangSwitchBtn" onclick="toggleGlobalLanguage()" title="Switch Language (English / Hindi)">
                         <span class="lang-icon">🌐</span>
@@ -152,6 +157,12 @@
                         <span class="sparkle">✨</span>
                         <span>AJAX Core 3.0</span>
                     </div>
+
+                    <!-- Explicit Login / Logout Header Button -->
+                    <button class="header-auth-btn" id="topHeaderAuthBtn" onclick="handleAuthButtonClick()" title="Sign In or Sign Out">
+                        <span class="auth-btn-icon" id="topHeaderAuthIcon">🔑</span>
+                        <span class="auth-btn-label" id="topHeaderAuthLabel">Sign In</span>
+                    </button>
                 </div>
             </header>
 
@@ -169,8 +180,32 @@
     <script src="/js/ajax-minichat.js?v=3.3"></script>
 
     <script>
+        // Initialize Theme (Dark by default, toggles to Light)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ajax_theme') || 'dark';
+            const icon = document.getElementById('globalThemeIcon');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                if (icon) icon.textContent = '☀️';
+            } else {
+                document.body.classList.remove('light-theme');
+                if (icon) icon.textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            const newTheme = isLight ? 'light' : 'dark';
+            localStorage.setItem('ajax_theme', newTheme);
+            const icon = document.getElementById('globalThemeIcon');
+            if (icon) icon.textContent = isLight ? '☀️' : '🌙';
+            window.showToast(`Theme switched to: ${isLight ? 'Light Mode ☀️' : 'Dark Mode 🌙'}`, 'info');
+        }
+        window.toggleTheme = toggleTheme;
+
         // Update top-bar language & voice button states on load
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             const langLabel = document.getElementById('globalLangLabel');
             const voiceStatus = document.getElementById('globalVoiceStatus');
             const voiceIcon = document.getElementById('globalVoiceIcon');
@@ -196,6 +231,9 @@
                     const roleEl = document.getElementById('sidebarUserRole');
                     const adminLink = document.getElementById('sidebarAdminLink');
                     const authBtn = document.getElementById('sidebarAuthBtn');
+                    const topAuthIcon = document.getElementById('topHeaderAuthIcon');
+                    const topAuthLabel = document.getElementById('topHeaderAuthLabel');
+                    const topAuthBtn = document.getElementById('topHeaderAuthBtn');
 
                     if (data.authenticated && data.user) {
                         const u = data.user;
@@ -211,6 +249,12 @@
                         if (authBtn) {
                             authBtn.innerHTML = '🚪';
                             authBtn.title = 'Sign Out';
+                        }
+                        if (topAuthIcon) topAuthIcon.textContent = '🚪';
+                        if (topAuthLabel) topAuthLabel.textContent = 'Logout';
+                        if (topAuthBtn) {
+                            topAuthBtn.classList.add('logged-in');
+                            topAuthBtn.title = `Signed in as @${u.username} (Click to Logout)`;
                         }
                     } else {
                         const currentPath = window.location.pathname.toLowerCase();
@@ -229,29 +273,39 @@
                             authBtn.innerHTML = '🔑';
                             authBtn.title = 'Sign In';
                         }
+                        if (topAuthIcon) topAuthIcon.textContent = '🔑';
+                        if (topAuthLabel) topAuthLabel.textContent = 'Sign In';
+                        if (topAuthBtn) {
+                            topAuthBtn.classList.remove('logged-in');
+                            topAuthBtn.title = 'Sign In';
+                        }
                     }
                 }
             } catch (_) {}
         }
         window.syncCurrentUserAuth = syncCurrentUserAuth;
 
-        async function handleSidebarAuthAction() {
+        async function handleAuthButtonClick() {
             try {
                 const res = await fetch('/api/auth/me');
                 const data = await res.json();
                 if (data.authenticated) {
-                    if (confirm('Are you sure you want to sign out of your account?')) {
+                    if (confirm(`Signed in as @${data.user.username} (${data.user.full_name}). Do you want to sign out?`)) {
                         await fetch('/api/auth/logout', { method: 'POST' });
-                        window.location.href = '/AJAX/login';
+                        window.showToast('Signed out successfully.', 'info');
+                        setTimeout(() => {
+                            window.location.href = '/AJAX/login';
+                        }, 300);
                     }
                 } else {
                     window.location.href = '/AJAX/login';
                 }
-            } catch (e) {
+            } catch (_) {
                 window.location.href = '/AJAX/login';
             }
         }
-        window.handleSidebarAuthAction = handleSidebarAuthAction;
+        window.handleAuthButtonClick = handleAuthButtonClick;
+        window.handleSidebarAuthAction = handleAuthButtonClick;
 
         function toggleGlobalLanguage() {
             if (!window.ajaxState) return;

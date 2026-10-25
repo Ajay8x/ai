@@ -32,6 +32,11 @@
         </div>
     </div>
 
+    <!-- Draggable Resizer for Chat History Panel -->
+    <div class="chat-drawer-resizer" id="chatDrawerResizer" title="Drag to resize history width">
+        <div class="resizer-knob"></div>
+    </div>
+
     <!-- Main Chat Feed & Input Box -->
     <div class="glass-panel chat-main-viewport">
         <!-- Top Mobile Bar with Sessions Drawer Trigger -->
@@ -249,7 +254,88 @@
         return msgDiv;
     }
 
+    // Interactive Draggable Chat History Drawer Resizer
+    function initDrawerResizer() {
+        const drawer = document.getElementById('chatSessionsDrawer');
+        const resizer = document.getElementById('chatDrawerResizer');
+        if (!drawer || !resizer) return;
+
+        // Restore saved width from localStorage (default 210px)
+        const savedWidth = localStorage.getItem('ajax_chat_drawer_width');
+        if (savedWidth && window.innerWidth > 768) {
+            drawer.style.width = `${savedWidth}px`;
+        }
+
+        let isDragging = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        const onMouseDown = (e) => {
+            if (window.innerWidth <= 768) return;
+            isDragging = true;
+            startX = e.clientX;
+            startWidth = drawer.getBoundingClientRect().width;
+            resizer.classList.add('is-dragging');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        };
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - startX;
+            let newWidth = startWidth + deltaX;
+            if (newWidth < 160) newWidth = 160;
+            if (newWidth > 460) newWidth = 460;
+            drawer.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            resizer.classList.remove('is-dragging');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            const finalWidth = Math.round(drawer.getBoundingClientRect().width);
+            localStorage.setItem('ajax_chat_drawer_width', finalWidth);
+
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        resizer.addEventListener('mousedown', onMouseDown);
+
+        // Touch drag support for tablet/touch devices
+        resizer.addEventListener('touchstart', (e) => {
+            if (window.innerWidth <= 768) return;
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            startWidth = drawer.getBoundingClientRect().width;
+            resizer.classList.add('is-dragging');
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.touches[0].clientX - startX;
+            let newWidth = startWidth + deltaX;
+            if (newWidth < 160) newWidth = 160;
+            if (newWidth > 460) newWidth = 460;
+            drawer.style.width = `${newWidth}px`;
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            resizer.classList.remove('is-dragging');
+            const finalWidth = Math.round(drawer.getBoundingClientRect().width);
+            localStorage.setItem('ajax_chat_drawer_width', finalWidth);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        initDrawerResizer();
         loadSessions();
         document.getElementById('fullChatInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {

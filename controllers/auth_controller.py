@@ -129,16 +129,6 @@ async def login_user(payload: LoginRequest, response: Response):
             content={"success": False, "message": "Account has been suspended by an administrator."}
         )
 
-    # Enforce role restriction if logging into the Admin Portal
-    if payload.mode == "admin" and user.get("role") != "admin":
-        return JSONResponse(
-            status_code=403,
-            content={
-                "success": False,
-                "message": "Access Denied: This portal requires Administrator privileges. Please use User Login."
-            }
-        )
-
     # Issue session
     token = create_session(user)
     update_user_last_login(user["id"])

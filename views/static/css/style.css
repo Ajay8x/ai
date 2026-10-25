@@ -1936,12 +1936,56 @@ body {
 }
 
 .chat-sessions-panel {
-    width: 270px;
+    width: 210px;
+    min-width: 160px;
+    max-width: 460px;
     display: flex;
     flex-direction: column;
-    padding: 14px;
+    padding: 12px 10px;
     margin-bottom: 0;
     flex-shrink: 0;
+    transition: width 0.05s ease-out;
+}
+
+/* Chat Drawer Resizer */
+.chat-drawer-resizer {
+    width: 10px;
+    margin: 0 -5px;
+    cursor: col-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.chat-drawer-resizer:hover,
+.chat-drawer-resizer.is-dragging {
+    background: rgba(0, 242, 254, 0.2);
+    border-radius: 4px;
+}
+
+.chat-drawer-resizer .resizer-knob {
+    width: 4px;
+    height: 36px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.25);
+    transition: all 0.2s ease;
+}
+
+.chat-drawer-resizer:hover .resizer-knob,
+.chat-drawer-resizer.is-dragging .resizer-knob {
+    background: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.9);
+    height: 52px;
+}
+
+@media (max-width: 768px) {
+    .chat-drawer-resizer {
+        display: none !important;
+    }
 }
 
 .chat-drawer-close-btn {
@@ -2727,6 +2771,107 @@ body {
     font-size: 16px;
     cursor: pointer;
     padding: 4px;
+}
+
+/* ==============================================================================
+   Light Theme System & Theme Toggle Button
+   ============================================================================== */
+body.light-theme {
+    --bg-primary: #f1f5f9;
+    --bg-sidebar: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.92);
+    --bg-input: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-card: rgba(0, 0, 0, 0.12);
+    --border-active: rgba(0, 180, 216, 0.6);
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+}
+
+body.light-theme .glass-panel,
+body.light-theme .top-header,
+body.light-theme .sidebar-nav {
+    background: var(--bg-card);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .chat-input-deck,
+body.light-theme .chat-input-textarea {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+body.light-theme .session-item-card {
+    background: rgba(0, 0, 0, 0.04);
+    color: #1e293b;
+}
+
+/* Theme Toggle Button (Dark / Light) */
+.theme-toggle-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: var(--accent-cyan);
+    transform: scale(1.06);
+}
+
+body.light-theme .theme-toggle-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Header Auth Button (Sign In / Logout) */
+.header-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(56, 189, 248, 0.15));
+    border: 1px solid rgba(0, 242, 254, 0.4);
+    color: var(--accent-cyan);
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.header-auth-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.28), rgba(56, 189, 248, 0.28));
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 14px rgba(0, 242, 254, 0.35);
+    transform: translateY(-1px);
+}
+
+.header-auth-btn.logged-in {
+    background: rgba(244, 63, 94, 0.12);
+    border-color: rgba(244, 63, 94, 0.35);
+    color: var(--accent-rose);
+}
+
+.header-auth-btn.logged-in:hover {
+    background: rgba(244, 63, 94, 0.22);
+    border-color: var(--accent-rose);
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);
 }
 
 

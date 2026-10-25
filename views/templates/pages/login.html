@@ -1,79 +1,275 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AJAX AI - Sign In & Registration</title>
+    <meta name="description" content="Sign in or create an account for AJAX AI Autonomous Platform">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css?v=3.5">
+    <style>
+        /* Standalone Outside Auth Page Layout */
+        body.auth-standalone-page {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            width: 100%;
+            background-color: var(--bg-primary, #07090e);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(13, 18, 29, 0.5) 0%, transparent 70%);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+        }
 
-{% block title %}AJAX AI - Sign In & Authentication Portal{% endblock %}
-{% block header_title %}Authentication & User Access{% endblock %}
-{% block header_subtitle %}Sign in to your account, register new profile, or access Administrator Command Center{% endblock %}
+        .auth-standalone-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 28px;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
 
-{% block content %}
-<div class="auth-page-container">
-    <div class="auth-card glass-panel">
-        <!-- Brand Header -->
-        <div class="auth-header">
-            <div class="auth-brand-icon">⚡</div>
-            <h2 class="auth-title">AJAX AI Access Portal</h2>
-            <p class="auth-subtitle">Unified Autonomous Intelligence & Multi-User Platform</p>
-        </div>
+        .auth-standalone-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-main, #f8fafc);
+        }
 
-        <!-- Notification Banner (for redirects/errors) -->
-        <div id="authNoticeBanner" class="auth-notice-banner" style="display:none;"></div>
+        .auth-logo-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-cyan, #00f2fe), var(--accent-blue, #38bdf8));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 16px rgba(0, 242, 254, 0.4);
+        }
 
-        <!-- One-Tab Segmented Selector (User vs Admin) -->
-        <div class="auth-portal-selector">
-            <button type="button" class="portal-tab-btn active" id="tabUserPortal" onclick="switchPortalTab('user')">
-                <span class="portal-icon">👤</span>
-                <span class="portal-label">User Portal</span>
+        .auth-logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent-cyan, #00f2fe));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-standalone-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-center-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px 40px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .auth-card-standalone {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(13, 18, 30, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 242, 254, 0.08);
+            padding: 32px 28px;
+            position: relative;
+        }
+
+        body.light-theme .auth-card-standalone {
+            background: rgba(255, 255, 255, 0.94);
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-header-standalone {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-header-standalone .auth-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main, #f8fafc);
+            margin-bottom: 6px;
+        }
+
+        .auth-header-standalone .auth-subtitle {
+            font-size: 13px;
+            color: var(--text-muted, #94a3b8);
+            line-height: 1.4;
+        }
+
+        /* 2-Tab Switcher: Sign In & Create Account */
+        .auth-tabs-segmented {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 22px;
+            gap: 4px;
+        }
+
+        body.light-theme .auth-tabs-segmented {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .auth-tab-btn {
+            flex: 1;
+            padding: 9px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted, #94a3b8);
+            font-size: 13.5px;
+            font-weight: 600;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .auth-tab-btn.active {
+            background: rgba(0, 242, 254, 0.18);
+            color: var(--accent-cyan, #00f2fe);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body.light-theme .auth-tab-btn.active {
+            background: #ffffff;
+            color: #0284c7;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Toast Container */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 90vw;
+        }
+
+        .toast-msg {
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease;
+        }
+
+        .toast-msg.success { border-color: var(--accent-emerald, #10b981); color: #34d399; }
+        .toast-msg.error { border-color: var(--accent-rose, #f43f5e); color: #f87171; }
+        .toast-msg.info { border-color: var(--accent-cyan, #00f2fe); color: #38bdf8; }
+        .toast-msg.warning { border-color: var(--accent-amber, #f59e0b); color: #fbbf24; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="auth-standalone-page">
+
+    <!-- Standalone Top Bar (Outside Dashboard) -->
+    <header class="auth-standalone-nav">
+        <a href="/AJAX/login" class="auth-standalone-logo">
+            <div class="auth-logo-icon">⚡</div>
+            <div class="auth-logo-text">AJAX AI</div>
+        </a>
+
+        <div class="auth-standalone-actions">
+            <!-- Theme Switcher (Dark / Light) -->
+            <button class="theme-toggle-btn" id="loginThemeBtn" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
+                <span id="loginThemeIcon">🌙</span>
             </button>
-            <button type="button" class="portal-tab-btn" id="tabAdminPortal" onclick="switchPortalTab('admin')">
-                <span class="portal-icon">🛡️</span>
-                <span class="portal-label">Admin Portal</span>
-            </button>
         </div>
+    </header>
 
-        <!-- ============================================================== -->
-        <!-- 1. USER PORTAL (Login & Register Sub-modes)                    -->
-        <!-- ============================================================== -->
-        <div id="userPortalSection" class="portal-content-section active">
-            <!-- User Sub-Mode Switch (Login vs Create Account) -->
-            <div class="sub-mode-toggle">
-                <button type="button" class="sub-toggle-btn active" id="subUserLoginBtn" onclick="switchUserSubMode('login')">
+    <!-- Center Card Wrapper -->
+    <main class="auth-center-wrapper">
+        <div class="auth-card-standalone">
+            <!-- Header -->
+            <div class="auth-header-standalone">
+                <h1 class="auth-title">Welcome to AJAX AI</h1>
+                <p class="auth-subtitle">Autonomous AI Platform • Enter your credentials to continue</p>
+            </div>
+
+            <!-- Notice / Error Banner -->
+            <div id="authNoticeBanner" class="auth-notice-banner" style="display:none;"></div>
+
+            <!-- Single Segmented Switch: Sign In vs Create Account -->
+            <div class="auth-tabs-segmented">
+                <button type="button" class="auth-tab-btn active" id="tabSignInBtn" onclick="switchAuthMode('login')">
                     Sign In
                 </button>
-                <button type="button" class="sub-toggle-btn" id="subUserRegisterBtn" onclick="switchUserSubMode('register')">
+                <button type="button" class="auth-tab-btn" id="tabRegisterBtn" onclick="switchAuthMode('register')">
                     Create Account
                 </button>
             </div>
 
-            <!-- USER LOGIN FORM -->
-            <form id="userLoginForm" onsubmit="handleUserLogin(event)" class="auth-form">
+            <!-- ============================================================== -->
+            <!-- SINGLE UNIFIED LOGIN FORM (FOR BOTH USERS & ADMINS)            -->
+            <!-- ============================================================== -->
+            <form id="unifiedLoginForm" onsubmit="handleUnifiedLogin(event)" class="auth-form">
                 <div class="form-group">
-                    <label class="form-label" for="userLoginUsername">Username</label>
+                    <label class="form-label" for="loginUsername">Username</label>
                     <div class="input-icon-wrapper">
                         <span class="field-icon">👤</span>
-                        <input type="text" id="userLoginUsername" class="form-input with-icon" placeholder="Enter your username" required autocomplete="username">
+                        <input type="text" id="loginUsername" class="form-input with-icon" placeholder="Enter your username" required autocomplete="username">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="userLoginPassword">Password</label>
+                    <label class="form-label" for="loginPassword">Password</label>
                     <div class="input-icon-wrapper">
                         <span class="field-icon">🔒</span>
-                        <input type="password" id="userLoginPassword" class="form-input with-icon" placeholder="Enter your password" required autocomplete="current-password">
+                        <input type="password" id="loginPassword" class="form-input with-icon" placeholder="Enter your password" required autocomplete="current-password">
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary auth-submit-btn" id="userLoginSubmitBtn">
-                    <span>Sign In to AJAX AI</span>
+                <button type="submit" class="btn-primary auth-submit-btn" id="loginSubmitBtn">
+                    <span>Sign In</span>
                     <span>➔</span>
                 </button>
 
                 <div class="auth-footer-help">
-                    Don't have an account yet?
-                    <a href="javascript:void(0)" onclick="switchUserSubMode('register')" class="auth-link">Create an account</a>
+                    Don't have an account?
+                    <a href="javascript:void(0)" onclick="switchAuthMode('register')" class="auth-link">Create Account</a>
                 </div>
             </form>
 
-            <!-- USER REGISTRATION FORM (Create Account) -->
-            <form id="userRegisterForm" onsubmit="handleUserRegister(event)" class="auth-form" style="display:none;">
+            <!-- ============================================================== -->
+            <!-- REGISTRATION FORM (CREATE ACCOUNT)                             -->
+            <!-- ============================================================== -->
+            <form id="registerForm" onsubmit="handleRegistration(event)" class="auth-form" style="display:none;">
                 <div class="form-group">
                     <label class="form-label" for="regFullName">Full Name</label>
                     <div class="input-icon-wrapper">
@@ -114,245 +310,187 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary auth-submit-btn" id="userRegisterSubmitBtn">
+                <button type="submit" class="btn-primary auth-submit-btn" id="registerSubmitBtn">
                     <span>Create Account & Sign In</span>
                     <span>🚀</span>
                 </button>
 
                 <div class="auth-footer-help">
-                    Already registered?
-                    <a href="javascript:void(0)" onclick="switchUserSubMode('login')" class="auth-link">Sign In</a>
+                    Already have an account?
+                    <a href="javascript:void(0)" onclick="switchAuthMode('login')" class="auth-link">Sign In</a>
                 </div>
             </form>
         </div>
+    </main>
 
-        <!-- ============================================================== -->
-        <!-- 2. ADMIN PORTAL (Restricted Administrator Authentication)       -->
-        <!-- ============================================================== -->
-        <div id="adminPortalSection" class="portal-content-section" style="display:none;">
-            <div class="admin-notice-pill">
-                <span>🛡️</span>
-                <span>RESTRICTED ACCESS • ADMINISTRATORS ONLY</span>
-            </div>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
 
-            <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="auth-form">
-                <div class="form-group">
-                    <label class="form-label" for="adminUsername">Administrator Username</label>
-                    <div class="input-icon-wrapper">
-                        <span class="field-icon">👑</span>
-                        <input type="text" id="adminUsername" class="form-input with-icon" placeholder="Admin username" required autocomplete="username">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="adminPassword">Administrator Password</label>
-                    <div class="input-icon-wrapper">
-                        <span class="field-icon">🔑</span>
-                        <input type="password" id="adminPassword" class="form-input with-icon" placeholder="Admin password" required autocomplete="current-password">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary auth-submit-btn admin-theme-btn" id="adminLoginSubmitBtn">
-                    <span>Authenticate as Administrator</span>
-                    <span>⚡</span>
-                </button>
-
-                <!-- Quick Demo Fill Chip -->
-                <div class="demo-credential-chip" onclick="fillAdminDemoCredentials()">
-                    <span>💡 Click to fill default Admin: <strong>admin / admin123</strong></span>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    let activePortal = 'user';
-    let userSubMode = 'login';
-
-    function switchPortalTab(portal) {
-        activePortal = portal;
-        const userBtn = document.getElementById('tabUserPortal');
-        const adminBtn = document.getElementById('tabAdminPortal');
-        const userSec = document.getElementById('userPortalSection');
-        const adminSec = document.getElementById('adminPortalSection');
-
-        if (portal === 'user') {
-            userBtn.classList.add('active');
-            adminBtn.classList.remove('active');
-            userSec.style.display = 'block';
-            adminSec.style.display = 'none';
-        } else {
-            adminBtn.classList.add('active');
-            userBtn.classList.remove('active');
-            userSec.style.display = 'none';
-            adminSec.style.display = 'block';
+    <script>
+        // Toast notification helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
-    }
+        window.showToast = showToast;
 
-    function switchUserSubMode(mode) {
-        userSubMode = mode;
-        const loginBtn = document.getElementById('subUserLoginBtn');
-        const regBtn = document.getElementById('subUserRegisterBtn');
-        const loginForm = document.getElementById('userLoginForm');
-        const regForm = document.getElementById('userRegisterForm');
-
-        if (mode === 'login') {
-            loginBtn.classList.add('active');
-            regBtn.classList.remove('active');
-            loginForm.style.display = 'flex';
-            regForm.style.display = 'none';
-        } else {
-            regBtn.classList.add('active');
-            loginBtn.classList.remove('active');
-            loginForm.style.display = 'none';
-            regForm.style.display = 'flex';
-        }
-    }
-
-    function fillAdminDemoCredentials() {
-        document.getElementById('adminUsername').value = 'admin';
-        document.getElementById('adminPassword').value = 'admin123';
-        window.showToast('Filled default credentials: admin / admin123', 'info');
-    }
-
-    async function handleUserLogin(e) {
-        e.preventDefault();
-        const username = document.getElementById('userLoginUsername').value.trim();
-        const password = document.getElementById('userLoginPassword').value;
-        const btn = document.getElementById('userLoginSubmitBtn');
-
-        if (!username || !password) return;
-
-        btn.disabled = true;
-        btn.innerHTML = '<span>Signing In...</span>';
-        if (window.showLoader) window.showLoader('Authenticating user...');
-
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, mode: 'user' })
-            });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                window.showToast(data.message || 'Signed in successfully!', 'success');
-                const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/AJAX/dashboard';
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 400);
+        // Theme Switcher (Dark / Light)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ajax_theme') || 'dark';
+            const icon = document.getElementById('loginThemeIcon');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                if (icon) icon.textContent = '☀️';
             } else {
-                window.showToast(data.message || 'Sign in failed.', 'error');
+                document.body.classList.remove('light-theme');
+                if (icon) icon.textContent = '🌙';
             }
-        } catch (err) {
-            window.showToast(`Error: ${err.message}`, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<span>Sign In to AJAX AI</span><span>➔</span>';
-            if (window.hideLoader) window.hideLoader();
-        }
-    }
-
-    async function handleUserRegister(e) {
-        e.preventDefault();
-        const fullName = document.getElementById('regFullName').value.trim();
-        const username = document.getElementById('regUsername').value.trim();
-        const email = document.getElementById('regEmail').value.trim();
-        const password = document.getElementById('regPassword').value;
-        const confirm = document.getElementById('regPasswordConfirm').value;
-        const btn = document.getElementById('userRegisterSubmitBtn');
-
-        if (password !== confirm) {
-            window.showToast('Passwords do not match. Please re-check.', 'warning');
-            return;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span>Creating Account...</span>';
-        if (window.showLoader) window.showLoader('Registering account...');
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            const newTheme = isLight ? 'light' : 'dark';
+            localStorage.setItem('ajax_theme', newTheme);
+            const icon = document.getElementById('loginThemeIcon');
+            if (icon) icon.textContent = isLight ? '☀️' : '🌙';
+            showToast(`Theme switched to: ${isLight ? 'Light Mode ☀️' : 'Dark Mode 🌙'}`, 'info');
+        }
 
-        try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    full_name: fullName,
-                    username: username,
-                    email: email,
-                    password: password
-                })
-            });
-            const data = await res.json();
+        // Mode Switcher: Sign In vs Create Account
+        function switchAuthMode(mode) {
+            const signBtn = document.getElementById('tabSignInBtn');
+            const regBtn = document.getElementById('tabRegisterBtn');
+            const loginForm = document.getElementById('unifiedLoginForm');
+            const regForm = document.getElementById('registerForm');
 
-            if (res.ok && data.success) {
-                window.showToast(data.message || 'Account created successfully!', 'success');
-                setTimeout(() => {
-                    window.location.href = '/AJAX/dashboard';
-                }, 400);
+            if (mode === 'login') {
+                signBtn.classList.add('active');
+                regBtn.classList.remove('active');
+                loginForm.style.display = 'flex';
+                regForm.style.display = 'none';
             } else {
-                window.showToast(data.message || 'Registration failed.', 'error');
+                regBtn.classList.add('active');
+                signBtn.classList.remove('active');
+                loginForm.style.display = 'none';
+                regForm.style.display = 'flex';
             }
-        } catch (err) {
-            window.showToast(`Error: ${err.message}`, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<span>Create Account & Sign In</span><span>🚀</span>';
-            if (window.hideLoader) window.hideLoader();
         }
-    }
 
-    async function handleAdminLogin(e) {
-        e.preventDefault();
-        const username = document.getElementById('adminUsername').value.trim();
-        const password = document.getElementById('adminPassword').value;
-        const btn = document.getElementById('adminLoginSubmitBtn');
+        // Single Unified Login (Both User & Admin)
+        async function handleUnifiedLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginSubmitBtn');
 
-        if (!username || !password) return;
+            if (!username || !password) return;
 
-        btn.disabled = true;
-        btn.innerHTML = '<span>Verifying Admin Credentials...</span>';
-        if (window.showLoader) window.showLoader('Verifying Administrator privileges...');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Signing In...</span>';
 
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, mode: 'admin' })
-            });
-            const data = await res.json();
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
 
-            if (res.ok && data.success) {
-                window.showToast('Administrator authenticated. Redirecting to Admin Panel...', 'success');
-                const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/AJAX/admin';
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 400);
-            } else {
-                window.showToast(data.message || 'Admin authentication failed.', 'error');
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Signed in successfully!', 'success');
+                    
+                    // Determine redirect destination based on role and query param
+                    const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+                    let targetUrl = '/AJAX/dashboard';
+                    if (data.user && data.user.role === 'admin') {
+                        targetUrl = redirectParam && !redirectParam.includes('/login') ? redirectParam : '/AJAX/admin';
+                    } else {
+                        targetUrl = redirectParam && !redirectParam.includes('/login') ? redirectParam : '/AJAX/dashboard';
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = targetUrl;
+                    }, 400);
+                } else {
+                    showToast(data.message || 'Invalid username or password.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Sign In</span><span>➔</span>';
             }
-        } catch (err) {
-            window.showToast(`Error: ${err.message}`, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<span>Authenticate as Administrator</span><span>⚡</span>';
-            if (window.hideLoader) window.hideLoader();
         }
-    }
 
-    // Check for reason in URL params (e.g. ?reason=admin_required)
-    document.addEventListener('DOMContentLoaded', () => {
-        const params = new URLSearchParams(window.location.search);
-        const reason = params.get('reason');
-        const noticeEl = document.getElementById('authNoticeBanner');
+        // Handle Registration
+        async function handleRegistration(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regPasswordConfirm').value;
+            const btn = document.getElementById('registerSubmitBtn');
 
-        if (reason === 'admin_required') {
-            noticeEl.textContent = '🔒 Administrator privileges required to access the Admin Panel. Please sign in as an Administrator.';
-            noticeEl.style.display = 'block';
-            switchPortalTab('admin');
+            if (password !== confirm) {
+                showToast('Passwords do not match. Please re-check.', 'warning');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Creating Account...</span>';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        username: username,
+                        email: email,
+                        password: password
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Account created successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/AJAX/dashboard';
+                    }, 400);
+                } else {
+                    showToast(data.message || 'Registration failed.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Create Account & Sign In</span><span>🚀</span>';
+            }
         }
-    });
-</script>
-{% endblock %}
+
+        // On Load Check (Notice banner for required permissions)
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            const params = new URLSearchParams(window.location.search);
+            const reason = params.get('reason');
+            const noticeEl = document.getElementById('authNoticeBanner');
+
+            if (reason === 'admin_required') {
+                noticeEl.textContent = '🔒 Access Denied: Administrator credentials required for the requested page.';
+                noticeEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
