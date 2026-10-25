@@ -167,6 +167,11 @@
             aiMsgDiv.textContent = `Connection error: ${err.message}`;
         } finally {
             isStreaming = false;
+
+            // Speak response if voice is enabled
+            if (window.ajaxState && window.ajaxState.isVoiceEnabled() && fullText && window.speakText) {
+                window.speakText(fullText, lang);
+            }
         }
     }
 

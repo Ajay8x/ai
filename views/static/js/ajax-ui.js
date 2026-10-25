@@ -217,10 +217,109 @@
                 return marked.parse(withThoughts);
             } catch (e) {
                 return withThoughts;
-            }
-        }
-        return withThoughts;
+    // -------------------------------------------------------------------------
+    // 5. Global Speech Synthesis (Text-to-Speech Engine)
+    // -------------------------------------------------------------------------
+    let availableVoices = [];
+
+    function loadVoices() {
+        if (!('speechSynthesis' in window)) return;
+        try {
+            availableVoices = window.speechSynthesis.getVoices();
+        } catch (_) {}
     }
+
+    if ('speechSynthesis' in window) {
+        loadVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+    }
+
+    function cleanTextForSpeech(text) {
+        if (!text) return '';
+        return text
+            // Strip thinking blocks <think>...</think>
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/<think>[\s\S]*$/gi, '')
+            // Strip code blocks ```...```
+            .replace(/```[\s\S]*?```/gi, ' Code block omitted. ')
+            // Strip inline code `...`
+            .replace(/`([^`]+)`/g, '$1')
+            // Strip HTML tags
+            .replace(/<[^>]+>/g, '')
+            // Strip markdown formatting symbols
+            .replace(/[*#_~>]/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            // Collapse whitespaces
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    window.speakText = function(text, lang = null) {
+        if (!('speechSynthesis' in window)) {
+            console.warn('Speech synthesis not supported in this browser.');
+            return;
+        }
+
+        try {
+            // Cancel any pending speech
+            window.speechSynthesis.cancel();
+
+            if (!availableVoices || availableVoices.length === 0) {
+                loadVoices();
+            }
+
+            const clean = cleanTextForSpeech(text);
+            if (!clean) return;
+
+            // Take first 500 characters for fluid conversational speech without browser lockup
+            const speechSnippet = clean.length > 500 ? clean.substring(0, 500) + '...' : clean;
+
+            const utterance = new SpeechSynthesisUtterance(speechSnippet);
+
+            // Determine language preference
+            const currentLang = lang || (window.ajaxState ? window.ajaxState.getLanguage() : 'en');
+            const targetLangCode = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+            utterance.lang = targetLangCode;
+            utterance.rate = 1.05;
+            utterance.pitch = 1.0;
+
+            // Pick matching voice
+            if (availableVoices && availableVoices.length > 0) {
+                let matchedVoice = null;
+                if (currentLang === 'hi') {
+                    matchedVoice = availableVoices.find(v => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('kalpana') || v.name.toLowerCase().includes('hemant'));
+                } else {
+                    matchedVoice = availableVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Zira') || v.name.includes('Jenny') || v.default));
+                }
+                if (matchedVoice) {
+                    utterance.voice = matchedVoice;
+                }
+            }
+
+            // Chrome audio unpause fix
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
+
+            utterance.onerror = (e) => {
+                console.warn('SpeechSynthesis utterance error:', e);
+            };
+
+            window.speechSynthesis.speak(utterance);
+        } catch (err) {
+            console.error('SpeechSynthesis error:', err);
+        }
+    };
+
+    window.stopSpeech = function() {
+        if ('speechSynthesis' in window) {
+            try {
+                window.speechSynthesis.cancel();
+            } catch (_) {}
+        }
+    };
 
     window.formatThinkingBlocks = formatThinkingBlocks;
     window.renderMarkdown = renderMarkdown;
@@ -230,5 +329,6 @@
         ensureLoaderDom();
         ensureToastContainer();
         ensureConfirmModalDom();
+        loadVoices();
     });
 })();

@@ -221,6 +221,11 @@
             isFullStreaming = false;
             ind.textContent = 'Ready';
             loadSessions();
+
+            // Speak response if voice is enabled
+            if (window.ajaxState && window.ajaxState.isVoiceEnabled() && fullResponse && window.speakText) {
+                window.speakText(fullResponse, window.ajaxState.getLanguage());
+            }
         }
     }
 

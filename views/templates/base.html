@@ -174,10 +174,10 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/ajax-state.js?v=3.3"></script>
-    <script src="/js/ajax-ui.js?v=3.3"></script>
-    <script src="/js/ajax-client.js?v=3.3"></script>
-    <script src="/js/ajax-minichat.js?v=3.3"></script>
+    <script src="/js/ajax-state.js?v=3.6"></script>
+    <script src="/js/ajax-ui.js?v=3.6"></script>
+    <script src="/js/ajax-client.js?v=3.6"></script>
+    <script src="/js/ajax-minichat.js?v=3.6"></script>
 
     <script>
         // Initialize Theme (Dark by default, toggles to Light)
@@ -322,7 +322,16 @@
             const voiceIcon = document.getElementById('globalVoiceIcon');
             if (voiceStatus) voiceStatus.textContent = isVoice ? 'ON' : 'OFF';
             if (voiceIcon) voiceIcon.textContent = isVoice ? '🔊' : '🔈';
-            window.showToast(`Voice replies: ${isVoice ? 'Enabled' : 'Disabled'}`, 'info');
+            
+            if (isVoice) {
+                window.showToast('Voice replies: Enabled 🔊', 'success');
+                const lang = window.ajaxState.getLanguage();
+                const confirmation = lang === 'hi' ? 'वॉयस रिस्पांस चालू हो गया है।' : 'Voice output enabled.';
+                if (window.speakText) window.speakText(confirmation, lang);
+            } else {
+                window.showToast('Voice replies: Disabled 🔈', 'info');
+                if (window.stopSpeech) window.stopSpeech();
+            }
         }
     </script>
     {% block extra_scripts %}{% endblock %}
