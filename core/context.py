@@ -16,7 +16,8 @@ class ContextManager:
         conversation_id: str,
         current_query: str,
         rag_context: str = "",
-        language: str = "en"
+        language: str = "en",
+        intent_context: str = ""
     ) -> List[Dict[str, str]]:
         # 1. Fetch relevant memories
         memories = search_memories(query=current_query, limit=5)
@@ -24,8 +25,13 @@ class ContextManager:
         if memories:
             memories_str = "\n".join([f"- {m['key_text']}: {m['value_text']}" for m in memories])
 
-        # 2. Build system prompt with language mode
-        system_prompt = format_system_prompt(memories_context=memories_str, rag_context=rag_context, language=language)
+        # 2. Build system prompt with language mode and neural intent
+        system_prompt = format_system_prompt(
+            memories_context=memories_str,
+            rag_context=rag_context,
+            language=language,
+            intent_context=intent_context
+        )
         
         messages = [{"role": "system", "content": system_prompt}]
 

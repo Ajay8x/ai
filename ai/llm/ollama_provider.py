@@ -19,7 +19,7 @@ class OllamaProvider(BaseLLMProvider):
 
     def _verify_or_select_model(self):
         try:
-            r = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            r = requests.get(f"{self.base_url}/api/tags", timeout=0.6)
             if r.status_code == 200:
                 available = [m.get("name") for m in r.json().get("models", [])]
                 if self.model not in available and available:
@@ -64,7 +64,7 @@ class OllamaProvider(BaseLLMProvider):
             payload["tools"] = tools
 
         try:
-            resp = requests.post(url, json=payload, timeout=(2.0, 45.0))
+            resp = requests.post(url, json=payload, timeout=(0.8, 45.0))
             if resp.status_code != 200:
                 raise Exception(f"Ollama Error {resp.status_code}: {resp.text}")
 

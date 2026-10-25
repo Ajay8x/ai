@@ -226,7 +226,8 @@ class RequestRouter:
 
         # Step 3: LLM Brain Reasoning + Tool Calling
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
-        messages = context_manager.build_context(conversation_id, effective_query, language=language)
+        intent_ctx = f"Predicted Intent: {intent} (Confidence: {confidence:.2f})" + (f", Entities: {json.dumps(entities)}" if entities else "")
+        messages = context_manager.build_context(conversation_id, effective_query, language=language, intent_context=intent_ctx)
         
         # If user is asking a conversational / factual / wiki question, generate written text directly without tool overhead
         q_lower = query.lower().strip()
@@ -405,7 +406,8 @@ class RequestRouter:
 
         # Streaming LLM Response
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
-        messages = context_manager.build_context(conversation_id, effective_query, language=language)
+        intent_ctx = f"Predicted Intent: {intent} (Confidence: {confidence:.2f})" + (f", Entities: {json.dumps(entities)}" if entities else "")
+        messages = context_manager.build_context(conversation_id, effective_query, language=language, intent_context=intent_ctx)
 
         full_text = ""
         try:

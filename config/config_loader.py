@@ -51,6 +51,7 @@ class LLMConfig:
     cpu_threads: int = int(os.getenv("CPU_THREADS", "12"))
     api_key: str = os.getenv("OPENAI_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
