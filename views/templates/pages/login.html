@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Sign In & Authentication Portal{% endblock %}
+{% block header_title %}Authentication & User Access{% endblock %}
+{% block header_subtitle %}Sign in to your account, register new profile, or access Administrator Command Center{% endblock %}
+
+{% block content %}
+<div class="auth-page-container">
+    <div class="auth-card glass-panel">
+        <!-- Brand Header -->
+        <div class="auth-header">
+            <div class="auth-brand-icon">⚡</div>
+            <h2 class="auth-title">AJAX AI Access Portal</h2>
+            <p class="auth-subtitle">Unified Autonomous Intelligence & Multi-User Platform</p>
+        </div>
+
+        <!-- Notification Banner (for redirects/errors) -->
+        <div id="authNoticeBanner" class="auth-notice-banner" style="display:none;"></div>
+
+        <!-- One-Tab Segmented Selector (User vs Admin) -->
+        <div class="auth-portal-selector">
+            <button type="button" class="portal-tab-btn active" id="tabUserPortal" onclick="switchPortalTab('user')">
+                <span class="portal-icon">👤</span>
+                <span class="portal-label">User Portal</span>
+            </button>
+            <button type="button" class="portal-tab-btn" id="tabAdminPortal" onclick="switchPortalTab('admin')">
+                <span class="portal-icon">🛡️</span>
+                <span class="portal-label">Admin Portal</span>
+            </button>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- 1. USER PORTAL (Login & Register Sub-modes)                    -->
+        <!-- ============================================================== -->
+        <div id="userPortalSection" class="portal-content-section active">
+            <!-- User Sub-Mode Switch (Login vs Create Account) -->
+            <div class="sub-mode-toggle">
+                <button type="button" class="sub-toggle-btn active" id="subUserLoginBtn" onclick="switchUserSubMode('login')">
+                    Sign In
+                </button>
+                <button type="button" class="sub-toggle-btn" id="subUserRegisterBtn" onclick="switchUserSubMode('register')">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- USER LOGIN FORM -->
+            <form id="userLoginForm" onsubmit="handleUserLogin(event)" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="userLoginUsername">Username</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">👤</span>
+                        <input type="text" id="userLoginUsername" class="form-input with-icon" placeholder="Enter your username" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="userLoginPassword">Password</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">🔒</span>
+                        <input type="password" id="userLoginPassword" class="form-input with-icon" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit-btn" id="userLoginSubmitBtn">
+                    <span>Sign In to AJAX AI</span>
+                    <span>➔</span>
+                </button>
+
+                <div class="auth-footer-help">
+                    Don't have an account yet?
+                    <a href="javascript:void(0)" onclick="switchUserSubMode('register')" class="auth-link">Create an account</a>
+                </div>
+            </form>
+
+            <!-- USER REGISTRATION FORM (Create Account) -->
+            <form id="userRegisterForm" onsubmit="handleUserRegister(event)" class="auth-form" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label" for="regFullName">Full Name</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">🏷️</span>
+                        <input type="text" id="regFullName" class="form-input with-icon" placeholder="e.g. Ajay Singh" required autocomplete="name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="regUsername">Username</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">👤</span>
+                        <input type="text" id="regUsername" class="form-input with-icon" placeholder="Choose a unique username" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="regEmail">Email Address (Optional)</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">✉️</span>
+                        <input type="email" id="regEmail" class="form-input with-icon" placeholder="user@example.com" autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="regPassword">Password</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">🔒</span>
+                        <input type="password" id="regPassword" class="form-input with-icon" placeholder="Create a strong password (min 4 chars)" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="regPasswordConfirm">Confirm Password</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">🛡️</span>
+                        <input type="password" id="regPasswordConfirm" class="form-input with-icon" placeholder="Re-type your password" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit-btn" id="userRegisterSubmitBtn">
+                    <span>Create Account & Sign In</span>
+                    <span>🚀</span>
+                </button>
+
+                <div class="auth-footer-help">
+                    Already registered?
+                    <a href="javascript:void(0)" onclick="switchUserSubMode('login')" class="auth-link">Sign In</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- 2. ADMIN PORTAL (Restricted Administrator Authentication)       -->
+        <!-- ============================================================== -->
+        <div id="adminPortalSection" class="portal-content-section" style="display:none;">
+            <div class="admin-notice-pill">
+                <span>🛡️</span>
+                <span>RESTRICTED ACCESS • ADMINISTRATORS ONLY</span>
+            </div>
+
+            <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="adminUsername">Administrator Username</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">👑</span>
+                        <input type="text" id="adminUsername" class="form-input with-icon" placeholder="Admin username" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="adminPassword">Administrator Password</label>
+                    <div class="input-icon-wrapper">
+                        <span class="field-icon">🔑</span>
+                        <input type="password" id="adminPassword" class="form-input with-icon" placeholder="Admin password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit-btn admin-theme-btn" id="adminLoginSubmitBtn">
+                    <span>Authenticate as Administrator</span>
+                    <span>⚡</span>
+                </button>
+
+                <!-- Quick Demo Fill Chip -->
+                <div class="demo-credential-chip" onclick="fillAdminDemoCredentials()">
+                    <span>💡 Click to fill default Admin: <strong>admin / admin123</strong></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let activePortal = 'user';
+    let userSubMode = 'login';
+
+    function switchPortalTab(portal) {
+        activePortal = portal;
+        const userBtn = document.getElementById('tabUserPortal');
+        const adminBtn = document.getElementById('tabAdminPortal');
+        const userSec = document.getElementById('userPortalSection');
+        const adminSec = document.getElementById('adminPortalSection');
+
+        if (portal === 'user') {
+            userBtn.classList.add('active');
+            adminBtn.classList.remove('active');
+            userSec.style.display = 'block';
+            adminSec.style.display = 'none';
+        } else {
+            adminBtn.classList.add('active');
+            userBtn.classList.remove('active');
+            userSec.style.display = 'none';
+            adminSec.style.display = 'block';
+        }
+    }
+
+    function switchUserSubMode(mode) {
+        userSubMode = mode;
+        const loginBtn = document.getElementById('subUserLoginBtn');
+        const regBtn = document.getElementById('subUserRegisterBtn');
+        const loginForm = document.getElementById('userLoginForm');
+        const regForm = document.getElementById('userRegisterForm');
+
+        if (mode === 'login') {
+            loginBtn.classList.add('active');
+            regBtn.classList.remove('active');
+            loginForm.style.display = 'flex';
+            regForm.style.display = 'none';
+        } else {
+            regBtn.classList.add('active');
+            loginBtn.classList.remove('active');
+            loginForm.style.display = 'none';
+            regForm.style.display = 'flex';
+        }
+    }
+
+    function fillAdminDemoCredentials() {
+        document.getElementById('adminUsername').value = 'admin';
+        document.getElementById('adminPassword').value = 'admin123';
+        window.showToast('Filled default credentials: admin / admin123', 'info');
+    }
+
+    async function handleUserLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('userLoginUsername').value.trim();
+        const password = document.getElementById('userLoginPassword').value;
+        const btn = document.getElementById('userLoginSubmitBtn');
+
+        if (!username || !password) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span>Signing In...</span>';
+        if (window.showLoader) window.showLoader('Authenticating user...');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, mode: 'user' })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                window.showToast(data.message || 'Signed in successfully!', 'success');
+                const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/AJAX/dashboard';
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 400);
+            } else {
+                window.showToast(data.message || 'Sign in failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Sign In to AJAX AI</span><span>➔</span>';
+            if (window.hideLoader) window.hideLoader();
+        }
+    }
+
+    async function handleUserRegister(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('regFullName').value.trim();
+        const username = document.getElementById('regUsername').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirm = document.getElementById('regPasswordConfirm').value;
+        const btn = document.getElementById('userRegisterSubmitBtn');
+
+        if (password !== confirm) {
+            window.showToast('Passwords do not match. Please re-check.', 'warning');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span>Creating Account...</span>';
+        if (window.showLoader) window.showLoader('Registering account...');
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    username: username,
+                    email: email,
+                    password: password
+                })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                window.showToast(data.message || 'Account created successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/AJAX/dashboard';
+                }, 400);
+            } else {
+                window.showToast(data.message || 'Registration failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Create Account & Sign In</span><span>🚀</span>';
+            if (window.hideLoader) window.hideLoader();
+        }
+    }
+
+    async function handleAdminLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('adminUsername').value.trim();
+        const password = document.getElementById('adminPassword').value;
+        const btn = document.getElementById('adminLoginSubmitBtn');
+
+        if (!username || !password) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span>Verifying Admin Credentials...</span>';
+        if (window.showLoader) window.showLoader('Verifying Administrator privileges...');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, mode: 'admin' })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                window.showToast('Administrator authenticated. Redirecting to Admin Panel...', 'success');
+                const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/AJAX/admin';
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 400);
+            } else {
+                window.showToast(data.message || 'Admin authentication failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Authenticate as Administrator</span><span>⚡</span>';
+            if (window.hideLoader) window.hideLoader();
+        }
+    }
+
+    // Check for reason in URL params (e.g. ?reason=admin_required)
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const reason = params.get('reason');
+        const noticeEl = document.getElementById('authNoticeBanner');
+
+        if (reason === 'admin_required') {
+            noticeEl.textContent = '🔒 Administrator privileges required to access the Admin Panel. Please sign in as an Administrator.';
+            noticeEl.style.display = 'block';
+            switchPortalTab('admin');
+        }
+    });
+</script>
+{% endblock %}

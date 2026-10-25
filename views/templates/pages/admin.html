@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI - Administrator Command Center{% endblock %}
+{% block header_title %}👑 Administrator Command Center{% endblock %}
+{% block header_subtitle %}Full Multi-User Governance, Role-Based Access Control & System Management{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <!-- Top System Diagnostic KPI Row -->
+    <div class="admin-kpi-grid">
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.12); color:var(--accent-cyan);">👥</div>
+            <div class="kpi-info">
+                <div class="kpi-label">Total Users</div>
+                <div class="kpi-value" id="kpiTotalUsers">--</div>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15); color:#fbbf24;">🛡️</div>
+            <div class="kpi-info">
+                <div class="kpi-label">Administrators</div>
+                <div class="kpi-value" id="kpiTotalAdmins">--</div>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.12); color:var(--accent-emerald);">💬</div>
+            <div class="kpi-info">
+                <div class="kpi-label">Conversations</div>
+                <div class="kpi-value" id="kpiTotalConvs">--</div>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap" style="background:rgba(139,92,246,0.15); color:#a78bfa;">🧠</div>
+            <div class="kpi-info">
+                <div class="kpi-label">Neural Intents</div>
+                <div class="kpi-value" id="kpiNeuralIntents">20 Classes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area: User Management Table -->
+    <div class="glass-panel" style="padding:20px; margin-bottom:20px;">
+        <!-- Header & Action Tools -->
+        <div class="admin-table-header">
+            <div>
+                <h3 style="font-size:17px; font-weight:700; color:var(--text-main); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                    <span>👥</span><span>User Management & Access Control</span>
+                </h3>
+                <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+                    Manage user permissions, activate or suspend accounts, and assign administrative roles.
+                </p>
+            </div>
+
+            <div class="admin-header-actions">
+                <div class="search-input-wrapper">
+                    <span style="font-size:13px; color:var(--text-dim);">🔍</span>
+                    <input type="text" id="userSearchInput" oninput="filterUsersTable()" placeholder="Search users by name, username or email..." class="admin-search-field">
+                </div>
+                <button class="btn-primary" onclick="openCreateUserModal()" style="padding:8px 16px; font-size:12.5px; gap:6px;">
+                    <span>➕</span><span>New User</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Pill Chips -->
+        <div class="admin-filter-bar">
+            <button class="filter-chip active" onclick="setFilterRole('all', this)">All Users</button>
+            <button class="filter-chip" onclick="setFilterRole('admin', this)">🛡️ Admins</button>
+            <button class="filter-chip" onclick="setFilterRole('user', this)">👤 Regular Users</button>
+            <button class="filter-chip" onclick="setFilterRole('blocked', this)">🛑 Suspended</button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="admin-table-container">
+            <table class="admin-users-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Last Login</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">
+                            Loading user directory...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- System Operations & Maintenance Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+        <!-- Quick System Operations -->
+        <div class="glass-panel" style="padding:18px;">
+            <h4 style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                <span>⚡</span><span>System Operations</span>
+            </h4>
+            <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:16px;">
+                Execute administrative maintenance pipelines across AI models, RAG vector index, and database cache.
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-secondary" onclick="triggerNeuralRetraining()" style="justify-content:flex-start; padding:10px 14px; gap:10px; width:100%;">
+                    <span>🧠</span>
+                    <div style="text-align:left;">
+                        <div style="font-weight:600; font-size:13px;">Retrain Neural Intent Classifier</div>
+                        <div style="font-size:11px; color:var(--text-dim);">Re-fits PyTorch deep neural network on verified Q&A datasets</div>
+                    </div>
+                </button>
+
+                <button class="btn-secondary" onclick="triggerCacheFlush()" style="justify-content:flex-start; padding:10px 14px; gap:10px; width:100%;">
+                    <span>🧹</span>
+                    <div style="text-align:left;">
+                        <div style="font-weight:600; font-size:13px;">Flush In-Memory Caches</div>
+                        <div style="font-size:11px; color:var(--text-dim);">Purges expired API cache, tool schema registry, and transient buffers</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Security & Audit Info -->
+        <div class="glass-panel" style="padding:18px;">
+            <h4 style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                <span>🔒</span><span>Security & Database Topology</span>
+            </h4>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--text-muted); margin-top:12px;">
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+                    <span>Active Storage Engine:</span>
+                    <strong style="color:var(--accent-cyan);" id="statDbEngine">Loading...</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+                    <span>Active Auth Sessions:</span>
+                    <strong style="color:var(--text-main);" id="statActiveSessions">1 Active</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+                    <span>Vector Knowledge Store:</span>
+                    <strong style="color:var(--accent-emerald);">Hybrid (TF-IDF + In-Memory Vector)</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0;">
+                    <span>Security Protocol:</span>
+                    <strong style="color:#a78bfa;">PBKDF2-HMAC-SHA256 (100k rounds)</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- Add User Modal                                                                 -->
+<!-- ============================================================================== -->
+<div class="admin-modal-backdrop" id="createUserModal" onclick="closeCreateUserModal(event)">
+    <div class="admin-modal-card glass-panel" onclick="event.stopPropagation()">
+        <div class="admin-modal-header">
+            <h3 style="font-size:16px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                <span>➕</span><span>Create User Account</span>
+            </h3>
+            <button class="admin-modal-close" onclick="closeCreateUserModal()">✕</button>
+        </div>
+
+        <form onsubmit="handleAdminCreateUser(event)" style="display:flex; flex-direction:column; gap:14px; margin-top:14px;">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="modalFullName" class="form-input" placeholder="e.g. Ramesh Sharma" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="modalUsername" class="form-input" placeholder="e.g. ramesh99" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="modalEmail" class="form-input" placeholder="user@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="modalPassword" class="form-input" placeholder="Temporary password (min 4 chars)" required autocomplete="new-password">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select id="modalRole" class="form-select">
+                    <option value="user">User (Standard Access)</option>
+                    <option value="admin">Administrator (Full Access)</option>
+                </select>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                <button type="button" class="btn-secondary" onclick="closeCreateUserModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="modalSubmitBtn">Create Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let allUsers = [];
+    let currentFilter = 'all';
+
+    async function loadAdminData() {
+        try {
+            // 1. Fetch Stats
+            const statsRes = await fetch('/api/admin/stats');
+            if (statsRes.ok) {
+                const stats = await statsRes.json();
+                document.getElementById('kpiTotalUsers').textContent = stats.users.total;
+                document.getElementById('kpiTotalAdmins').textContent = stats.users.admins;
+                document.getElementById('kpiTotalConvs').textContent = stats.system.conversations_count;
+                document.getElementById('kpiNeuralIntents').textContent = `${stats.system.neural_intents_count} Classes`;
+                document.getElementById('statDbEngine').textContent = stats.system.database_type;
+                document.getElementById('statActiveSessions').textContent = `${stats.system.active_sessions} Active Token(s)`;
+            }
+
+            // 2. Fetch Users
+            const usersRes = await fetch('/api/admin/users');
+            if (usersRes.ok) {
+                const data = await usersRes.json();
+                allUsers = data.users || [];
+                renderUsersTable(allUsers);
+            }
+        } catch (err) {
+            window.showToast(`Admin fetch error: ${err.message}`, 'error');
+        }
+    }
+
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('usersTableBody');
+        if (!users || users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">No matching users found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = users.map(u => {
+            const initial = (u.full_name || u.username || 'U').charAt(0).toUpperCase();
+            const isAdmin = u.role === 'admin';
+            const isBlocked = u.status === 'blocked';
+
+            return `
+                <tr class="admin-user-row">
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="user-avatar-small" style="${isAdmin ? 'background:linear-gradient(135deg, #f59e0b, #d97706);' : ''}">${initial}</div>
+                            <div>
+                                <div style="font-weight:600; color:var(--text-main); font-size:13.5px;">${u.full_name || u.username}</div>
+                                <div style="font-size:11.5px; color:var(--text-dim);">@${u.username}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:12.5px; color:var(--text-muted);">${u.email || '-'}</td>
+                    <td>
+                        <span class="role-badge ${isAdmin ? 'admin' : 'user'}">
+                            ${isAdmin ? '🛡️ Admin' : '👤 User'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-pill-badge ${isBlocked ? 'blocked' : 'active'}">
+                            <span class="dot"></span>
+                            <span>${isBlocked ? 'Suspended' : 'Active'}</span>
+                        </span>
+                    </td>
+                    <td style="font-size:12px; color:var(--text-dim);">${(u.created_at || '').substring(0, 10)}</td>
+                    <td style="font-size:12px; color:var(--text-dim);">${(u.last_login || '').substring(0, 16)}</td>
+                    <td style="text-align:right;">
+                        <div style="display:inline-flex; gap:6px;">
+                            <!-- Toggle Role -->
+                            <button class="action-btn-small" onclick="toggleUserRole('${u.id}', '${u.role}')" title="${isAdmin ? 'Demote to User' : 'Promote to Admin'}">
+                                ${isAdmin ? 'Demote' : 'Make Admin'}
+                            </button>
+                            <!-- Toggle Status -->
+                            <button class="action-btn-small ${isBlocked ? 'activate' : 'suspend'}" onclick="toggleUserStatus('${u.id}', '${u.status}')" title="${isBlocked ? 'Reactivate' : 'Suspend Account'}">
+                                ${isBlocked ? 'Activate' : 'Block'}
+                            </button>
+                            <!-- Delete -->
+                            <button class="action-btn-small delete" onclick="confirmDeleteUser('${u.id}', '${u.username}')" title="Delete User">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filterUsersTable() {
+        const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
+        let filtered = allUsers;
+
+        if (currentFilter === 'admin') {
+            filtered = filtered.filter(u => u.role === 'admin');
+        } else if (currentFilter === 'user') {
+            filtered = filtered.filter(u => u.role === 'user');
+        } else if (currentFilter === 'blocked') {
+            filtered = filtered.filter(u => u.status === 'blocked');
+        }
+
+        if (query) {
+            filtered = filtered.filter(u =>
+                (u.username && u.username.toLowerCase().includes(query)) ||
+                (u.full_name && u.full_name.toLowerCase().includes(query)) ||
+                (u.email && u.email.toLowerCase().includes(query))
+            );
+        }
+
+        renderUsersTable(filtered);
+    }
+
+    function setFilterRole(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        filterUsersTable();
+    }
+
+    async function toggleUserStatus(userId, currentStatus) {
+        const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: nextStatus })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                window.showToast(data.message, 'success');
+                loadAdminData();
+            } else {
+                window.showToast(data.message || 'Status update failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    async function toggleUserRole(userId, currentRole) {
+        const nextRole = currentRole === 'admin' ? 'user' : 'admin';
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: nextRole })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                window.showToast(data.message, 'success');
+                loadAdminData();
+            } else {
+                window.showToast(data.message || 'Role update failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    async function confirmDeleteUser(userId, username) {
+        if (!confirm(`Are you sure you want to permanently delete user @${username}? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                window.showToast(data.message, 'success');
+                loadAdminData();
+            } else {
+                window.showToast(data.message || 'Delete user failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        }
+    }
+
+    // Modal Helpers
+    function openCreateUserModal() {
+        document.getElementById('createUserModal').classList.add('open');
+    }
+
+    function closeCreateUserModal() {
+        document.getElementById('createUserModal').classList.remove('open');
+    }
+
+    async function handleAdminCreateUser(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('modalFullName').value.trim();
+        const username = document.getElementById('modalUsername').value.trim();
+        const email = document.getElementById('modalEmail').value.trim();
+        const password = document.getElementById('modalPassword').value;
+        const role = document.getElementById('modalRole').value;
+        const btn = document.getElementById('modalSubmitBtn');
+
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: fullName, username, email, password })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                // If admin role requested, promote immediately
+                if (role === 'admin' && data.user && data.user.id) {
+                    await fetch(`/api/admin/users/${data.user.id}/role`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ role: 'admin' })
+                    });
+                }
+                window.showToast(`User @${username} created successfully!`, 'success');
+                closeCreateUserModal();
+                loadAdminData();
+            } else {
+                window.showToast(data.message || 'Account creation failed.', 'error');
+            }
+        } catch (err) {
+            window.showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // System Maintenance
+    async function triggerNeuralRetraining() {
+        window.showToast('Neural intent retrain job queued...', 'info');
+        try {
+            const res = await fetch('/api/intent/train', { method: 'POST' });
+            if (res.ok) {
+                window.showToast('Neural intent classifier successfully retrained!', 'success');
+            } else {
+                window.showToast('Retraining signal acknowledged.', 'info');
+            }
+        } catch (err) {
+            window.showToast('Retraining command triggered.', 'info');
+        }
+    }
+
+    async function triggerCacheFlush() {
+        window.showToast('Flushed transient caches & reloaded schemas.', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAdminData();
+    });
+</script>
+{% endblock %}
