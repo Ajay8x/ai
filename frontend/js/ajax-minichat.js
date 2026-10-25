@@ -11,15 +11,22 @@
     function ensureMiniChatDom() {
         if (miniChatDrawer) return;
 
-        // Create Trigger Button
+        // Don't show floating mini-chat on any chat page or on mobile devices (< 768px)
+        const path = window.location.pathname.toLowerCase();
+        const isChatPage = path.includes('chat') || document.querySelector('.chat-message') !== null;
+        const isMobile = window.innerWidth <= 768;
+        if (isChatPage || isMobile) {
+            const existing = document.getElementById('miniChatTrigger');
+            if (existing) existing.remove();
+            return;
+        }
+
+        // Create Trigger Button (compact 38px icon-only)
         const triggerBtn = document.createElement('button');
         triggerBtn.id = 'miniChatTrigger';
         triggerBtn.className = 'minichat-floating-trigger';
         triggerBtn.title = 'Open AJAX AI Assistant';
-        triggerBtn.innerHTML = `
-            <span class="trigger-icon">⚡</span>
-            <span>Ask AJAX AI</span>
-        `;
+        triggerBtn.innerHTML = `<span class="trigger-icon">⚡</span>`;
         document.body.appendChild(triggerBtn);
 
         // Create Drawer

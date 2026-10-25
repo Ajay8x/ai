@@ -161,6 +161,70 @@
         });
     };
 
+    // -------------------------------------------------------------------------
+    // 4. Markdown & Chain-of-Thought (Thinking Box) Renderer
+    // -------------------------------------------------------------------------
+    function formatThinkingBlocks(text) {
+        if (!text) return "";
+        let processed = text;
+
+        // 1. Fully closed <think>...</think> blocks
+        processed = processed.replace(/<think>([\s\S]*?)<\/think>/gi, (match, thought) => {
+            const thoughtClean = thought.trim();
+            const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
+            return `<details class="thought-accordion">
+                <summary class="thought-summary">
+                    <span class="thought-icon">💡</span>
+                    <span class="thought-title">Reasoning Process</span>
+                    <span class="thought-badge">Chain of Thought</span>
+                </summary>
+                <div class="thought-content">${thoughtHtml}</div>
+            </details>\n\n`;
+        });
+
+        // 2. Active open <think> during live streaming
+        processed = processed.replace(/<think>([\s\S]*?)$/gi, (match, thought) => {
+            const thoughtClean = thought.trim();
+            const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
+            return `<details class="thought-accordion is-thinking" open>
+                <summary class="thought-summary">
+                    <span class="thought-icon thought-pulsing">⚡</span>
+                    <span class="thought-title">Reasoning & Planning...</span>
+                    <span class="thought-badge">Thinking</span>
+                </summary>
+                <div class="thought-content">${thoughtHtml}</div>
+            </details>\n\n`;
+        });
+
+        return processed;
+    }
+
+    function renderMarkdown(raw) {
+        if (!raw) return "";
+        const withThoughts = formatThinkingBlocks(raw);
+        if (window.marked) {
+            try {
+                marked.setOptions({
+                    highlight: (code, lang) => {
+                        if (window.hljs && hljs.getLanguage(lang)) {
+                            return hljs.highlight(code, { language: lang }).value;
+                        }
+                        return code;
+                    },
+                    breaks: true,
+                    gfm: true
+                });
+                return marked.parse(withThoughts);
+            } catch (e) {
+                return withThoughts;
+            }
+        }
+        return withThoughts;
+    }
+
+    window.formatThinkingBlocks = formatThinkingBlocks;
+    window.renderMarkdown = renderMarkdown;
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
         ensureLoaderDom();

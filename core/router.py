@@ -133,6 +133,38 @@ def _execute_live_web_search(query: str, norm_query: str = "", core_topic: str =
     else:
         return f"I searched the web for **'{query}'**, but could not retrieve live snippets at this moment.\n\nDirect Search Link: [DuckDuckGo Search: {query}](https://duckduckgo.com/?q={encoded_q})"
 
+def _format_fast_path_thought(
+    query: str,
+    intent: str,
+    confidence: float,
+    tool: Optional[str] = None,
+    entities: Optional[Dict[str, Any]] = None,
+    language: str = "en"
+) -> str:
+    """Generates a structured Chain-of-Thought scratchpad when Thinking Mode is active."""
+    from config.config_loader import config
+    if not getattr(config.llm, "thinking_mode", True):
+        return ""
+
+    intent_label = intent.replace("_", " ").title()
+    lang_label = "Hindi (हिन्दी)" if language == "hi" else "English"
+    lines = [
+        "<think>",
+        f"• User Query: \"{query}\"",
+        f"• Neural Intent Classification: {intent_label} (Confidence: {confidence * 100:.1f}%)",
+        f"• Multilingual Context: {lang_label}"
+    ]
+    if tool:
+        tool_name = tool.replace("_", " ").title()
+        params = json.dumps(entities) if entities else "None"
+        lines.append(f"• Autonomous Tool Route: `{tool}` ({tool_name})")
+        lines.append(f"• Parameter Extraction: {params}")
+        lines.append(f"• Execution: Executing native autonomous tool and formatting response")
+    else:
+        lines.append(f"• Strategy: Providing instant conversational {lang_label} response")
+    lines.append("</think>\n\n")
+    return "\n".join(lines)
+
 class RequestRouter:
     def process_query(
         self,
@@ -159,7 +191,9 @@ class RequestRouter:
 
         # Explicit Web Search Mode Activated by User
         if web_search:
-            resp_text = _execute_live_web_search(query, norm_query, core_topic)
+            raw_search_res = _execute_live_web_search(query, norm_query, core_topic)
+            thought = _format_fast_path_thought(query, "SEARCH_WEB", 1.0, tool="search_web", entities={"query": core_topic or query}, language=language)
+            resp_text = (thought + raw_search_res) if thought else raw_search_res
             add_message(conversation_id, "assistant", resp_text)
             record_qa_interaction(query, resp_text, "SEARCH_WEB", modality=modality, tool="search_web")
             return {
@@ -195,11 +229,14 @@ class RequestRouter:
                 tool_result = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user)
                 
                 if tool_result.metadata.get("confirmation_needed"):
-                    resp_text = tool_result.error or "Confirmation required."
+                    raw_text = tool_result.error or "Confirmation required."
                 elif tool_result.success:
-                    resp_text = str(tool_result.output)
+                    raw_text = str(tool_result.output)
                 else:
-                    resp_text = f"Action failed: {tool_result.error}"
+                    raw_text = f"Action failed: {tool_result.error}"
+
+                thought = _format_fast_path_thought(query, intent, confidence, tool=direct_tool, entities=entities, language=language)
+                resp_text = (thought + raw_text) if thought else raw_text
 
                 add_message(conversation_id, "assistant", resp_text)
                 record_qa_interaction(query, resp_text, intent, modality=modality, tool=direct_tool)
@@ -213,7 +250,9 @@ class RequestRouter:
                 }
         
         if confidence >= 0.90 and prediction.get("predefined_response"):
-            resp_text = prediction["predefined_response"]
+            raw_text = prediction["predefined_response"]
+            thought = _format_fast_path_thought(query, intent, confidence, language=language)
+            resp_text = (thought + raw_text) if thought else raw_text
             add_message(conversation_id, "assistant", resp_text)
             record_qa_interaction(query, resp_text, intent, modality=modality)
             return {
@@ -316,6 +355,10 @@ class RequestRouter:
 
         # Pure Conversational LLM Response
         resp_text = llm_resp.content or "I processed your request."
+        thought = _format_fast_path_thought(query, intent, confidence, language=language)
+        if thought and "<think>" not in resp_text:
+            resp_text = thought + resp_text
+
         add_message(conversation_id, "assistant", resp_text)
         record_qa_interaction(query, resp_text, intent, modality=modality)
         return {
@@ -350,16 +393,18 @@ class RequestRouter:
         # Explicit Web Search Mode Activated by User
         if web_search:
             yield f"data: {json.dumps({'type': 'meta', 'intent': 'SEARCH_WEB', 'confidence': 1.0, 'tool': 'search_web'})}\n\n"
-            resp_text = _execute_live_web_search(query, norm_query, core_topic)
-            add_message(conversation_id, "assistant", resp_text)
-            record_qa_interaction(query, resp_text, "SEARCH_WEB", modality=modality, tool="search_web")
+            raw_search_res = _execute_live_web_search(query, norm_query, core_topic)
+            thought = _format_fast_path_thought(query, "SEARCH_WEB", 1.0, tool="search_web", entities={"query": core_topic or query}, language=language)
+            full_resp = (thought + raw_search_res) if thought else raw_search_res
+            add_message(conversation_id, "assistant", full_resp)
+            record_qa_interaction(query, full_resp, "SEARCH_WEB", modality=modality, tool="search_web")
 
             import re
-            parts = re.split(r'(\s+)', resp_text)
+            parts = re.split(r'(\s+)', full_resp)
             for p in parts:
                 if p:
                     yield f"data: {json.dumps({'type': 'token', 'token': p})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'response': resp_text, 'tool': 'search_web', 'intent': 'SEARCH_WEB'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'response': full_resp, 'tool': 'search_web', 'intent': 'SEARCH_WEB'})}\n\n"
             return
 
         prediction = intent_classifier.predict(query)
@@ -384,24 +429,40 @@ class RequestRouter:
             if tool_obj:
                 tool_res = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user)
                 if tool_res.metadata.get("confirmation_needed"):
-                    resp_text = tool_res.error or "Confirmation required."
+                    raw_text = tool_res.error or "Confirmation required."
                 elif tool_res.success:
-                    resp_text = str(tool_res.output)
+                    raw_text = str(tool_res.output)
                 else:
-                    resp_text = f"Action failed: {tool_res.error}"
+                    raw_text = f"Action failed: {tool_res.error}"
 
-                add_message(conversation_id, "assistant", resp_text)
-                record_qa_interaction(query, resp_text, intent, modality=modality, tool=direct_tool)
-                yield f"data: {json.dumps({'type': 'token', 'token': resp_text, 'tool': direct_tool})}\n\n"
-                yield f"data: {json.dumps({'type': 'done', 'response': resp_text, 'tool': direct_tool, 'intent': intent})}\n\n"
+                thought = _format_fast_path_thought(query, intent, confidence, tool=direct_tool, entities=entities, language=language)
+                full_resp = (thought + raw_text) if thought else raw_text
+
+                add_message(conversation_id, "assistant", full_resp)
+                record_qa_interaction(query, full_resp, intent, modality=modality, tool=direct_tool)
+
+                import re
+                parts = re.split(r'(\s+)', full_resp)
+                for p in parts:
+                    if p:
+                        yield f"data: {json.dumps({'type': 'token', 'token': p, 'tool': direct_tool})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'response': full_resp, 'tool': direct_tool, 'intent': intent})}\n\n"
                 return
 
         if confidence >= 0.90 and prediction.get("predefined_response"):
-            resp_text = prediction["predefined_response"]
-            add_message(conversation_id, "assistant", resp_text)
-            record_qa_interaction(query, resp_text, intent, modality=modality)
-            yield f"data: {json.dumps({'type': 'token', 'token': resp_text})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'response': resp_text, 'intent': intent})}\n\n"
+            raw_text = prediction["predefined_response"]
+            thought = _format_fast_path_thought(query, intent, confidence, language=language)
+            full_resp = (thought + raw_text) if thought else raw_text
+
+            add_message(conversation_id, "assistant", full_resp)
+            record_qa_interaction(query, full_resp, intent, modality=modality)
+
+            import re
+            parts = re.split(r'(\s+)', full_resp)
+            for p in parts:
+                if p:
+                    yield f"data: {json.dumps({'type': 'token', 'token': p})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'response': full_resp, 'intent': intent})}\n\n"
             return
 
         # Streaming LLM Response
@@ -410,13 +471,22 @@ class RequestRouter:
         messages = context_manager.build_context(conversation_id, effective_query, language=language, intent_context=intent_ctx)
 
         full_text = ""
+        # In thinking mode, yield the structured reasoning block first
+        thought_block = _format_fast_path_thought(query, intent, confidence, language=language)
+        if thought_block:
+            full_text += thought_block
+            import re
+            for p in re.split(r'(\s+)', thought_block):
+                if p:
+                    yield f"data: {json.dumps({'type': 'token', 'token': p})}\n\n"
+
         try:
             for token in llm_brain.stream_generate(messages):
                 full_text += token
                 yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
         except Exception as e:
-            full_text = f"Error generating stream: {e}"
-            yield f"data: {json.dumps({'type': 'token', 'token': full_text})}\n\n"
+            full_text += f"\nError generating stream: {e}"
+            yield f"data: {json.dumps({'type': 'token', 'token': f' {e}'})}\n\n"
 
         if not full_text.strip():
             full_text = "I processed your request."

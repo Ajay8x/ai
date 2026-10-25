@@ -561,6 +561,10 @@ function renderMarkdown(raw) {
     return withThoughts;
 }
 
+// Expose globally for chat.html and other pages
+window.formatThinkingBlocks = formatThinkingBlocks;
+window.renderMarkdown = renderMarkdown;
+
 function applyCodeCopyButtons(container) {
     container.querySelectorAll('pre').forEach(pre => {
         if (!pre.querySelector('.copy-code-btn')) {

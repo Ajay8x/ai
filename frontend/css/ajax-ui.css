@@ -396,31 +396,34 @@
    ------------------------------------------------------------------------------ */
 .minichat-floating-trigger {
     position: fixed;
-    bottom: 24px;
-    right: 28px;
+    bottom: 18px;
+    right: 18px;
     z-index: 990;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    border-radius: var(--radius-full);
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
     color: #07090e;
     font-weight: 700;
     font-size: 14px;
     border: none;
     cursor: pointer;
-    box-shadow: 0 10px 25px rgba(0, 242, 254, 0.35);
+    box-shadow: 0 4px 14px rgba(0, 242, 254, 0.28);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .minichat-floating-trigger:hover {
-    transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 14px 35px rgba(0, 242, 254, 0.5);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 8px 22px rgba(0, 242, 254, 0.45);
 }
 
 .minichat-floating-trigger .trigger-icon {
-    font-size: 18px;
+    font-size: 16px;
+    line-height: 1;
 }
 
 .minichat-drawer {
@@ -820,4 +823,115 @@
     max-height: 400px;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* ------------------------------------------------------------------------------
+   Chain-of-Thought (Thinking Box) Accordion Styling
+   ------------------------------------------------------------------------------ */
+.thought-accordion {
+    margin: 8px 0 14px 0;
+    border: 1px solid rgba(0, 242, 254, 0.28);
+    background: linear-gradient(135deg, rgba(8, 14, 26, 0.85) 0%, rgba(13, 20, 36, 0.65) 100%);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.thought-accordion:hover {
+    border-color: rgba(0, 242, 254, 0.45);
+    box-shadow: 0 4px 16px rgba(0, 242, 254, 0.08);
+}
+
+.thought-accordion[open] {
+    background: linear-gradient(135deg, rgba(13, 20, 36, 0.92) 0%, rgba(17, 24, 39, 0.8) 100%);
+}
+
+.thought-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-main);
+    user-select: none;
+    outline: none;
+    list-style: none;
+}
+
+.thought-summary::-webkit-details-marker {
+    display: none;
+}
+
+.thought-icon {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thought-title {
+    font-size: 12.5px;
+    font-family: var(--font-sans);
+    color: var(--accent-cyan);
+    flex-grow: 1;
+}
+
+.thought-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(0, 242, 254, 0.12);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.thought-content {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: #94a3b8;
+    white-space: pre-wrap;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.thought-content p {
+    margin: 4px 0;
+}
+
+@keyframes brainPulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 6px #00f2fe); }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+.thought-pulsing {
+    display: inline-block;
+    animation: brainPulse 1.2s infinite ease-in-out;
+}
+
+/* ------------------------------------------------------------------------------
+   Mobile Responsive Rules for ajax-ui
+   ------------------------------------------------------------------------------ */
+@media (max-width: 768px) {
+    .minichat-floating-trigger {
+        display: none !important;
+    }
+    .minichat-drawer {
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+    }
 }
