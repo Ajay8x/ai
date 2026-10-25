@@ -1746,4 +1746,101 @@ body {
     color: #4ade80;
 }
 
+/* ==============================================================================
+   CHAIN-OF-THOUGHT "THINKING" MODE ACCORDION
+   ============================================================================== */
+
+.thought-accordion {
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, rgba(13, 20, 36, 0.8) 0%, rgba(17, 24, 39, 0.65) 100%);
+    border: 1px solid rgba(0, 242, 254, 0.25);
+    border-left: 3px solid var(--accent-cyan);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 12.5px;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.thought-accordion:hover {
+    border-color: rgba(0, 242, 254, 0.45);
+    box-shadow: 0 4px 16px rgba(0, 242, 254, 0.08);
+}
+
+.thought-accordion[open] {
+    background: linear-gradient(135deg, rgba(13, 20, 36, 0.92) 0%, rgba(17, 24, 39, 0.8) 100%);
+}
+
+.thought-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-main);
+    user-select: none;
+    outline: none;
+    list-style: none;
+}
+
+.thought-summary::-webkit-details-marker {
+    display: none;
+}
+
+.thought-icon {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thought-title {
+    font-size: 12.5px;
+    font-family: var(--font-sans);
+    color: var(--accent-cyan);
+    flex-grow: 1;
+}
+
+.thought-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(0, 242, 254, 0.12);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.thought-content {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: #94a3b8;
+    white-space: pre-wrap;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.thought-content p {
+    margin: 4px 0;
+}
+
+/* Pulsing thinking animation */
+@keyframes brainPulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 6px #00f2fe); }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+.thought-pulsing {
+    display: inline-block;
+    animation: brainPulse 1.2s infinite ease-in-out;
+}
+
+
 

@@ -2,6 +2,8 @@
 AJAX AI - Prompts and Persona Management (ChatGPT-Style Conversational Intelligence)
 """
 
+from typing import Optional
+
 AJAX_SYSTEM_PROMPT = """You are AJAX AI, an advanced, highly intelligent conversational AI assistant designed to operate just like ChatGPT, with added autonomous PC execution capabilities.
 
 ### CORE BEHAVIOR & CAPABILITIES:
@@ -25,8 +27,29 @@ AJAX_SYSTEM_PROMPT = """You are AJAX AI, an advanced, highly intelligent convers
    - Use Markdown formatting (bold text, bullet points, headers, numbered steps, code blocks) to make responses readable and engaging.
 """
 
-def format_system_prompt(memories_context: str = "", rag_context: str = "", language: str = "en", intent_context: str = "") -> str:
+def format_system_prompt(
+    memories_context: str = "",
+    rag_context: str = "",
+    language: str = "en",
+    intent_context: str = "",
+    thinking_mode: Optional[bool] = None
+) -> str:
+    from config.config_loader import config
+    is_thinking = thinking_mode if thinking_mode is not None else getattr(config.llm, "thinking_mode", True)
+
     prompt = AJAX_SYSTEM_PROMPT
+    
+    if is_thinking:
+        prompt += (
+            "\n\n--- CHAIN-OF-THOUGHT REASONING MODE ---\n"
+            "Before providing your final response, write your step-by-step reasoning inside <think>...</think> tags.\n"
+            "In this internal scratchpad:\n"
+            "- Analyze the user's core intent, nuances, and constraints.\n"
+            "- Outline key concepts, algorithms, edge cases, or calculations needed.\n"
+            "- Plan a structured, intuitive, and complete response.\n"
+            "After the closing </think> tag, output your polished, formatted response directly to the user."
+        )
+
     if intent_context:
         prompt += f"\n\n--- NEURAL INTENT CONTEXT ---\n{intent_context}"
     if memories_context:

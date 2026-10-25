@@ -500,10 +500,47 @@ async function sendMessage() {
 }
 
 /* ==============================================================================
-   MARKDOWN RENDERING & CODE COPY
+   MARKDOWN RENDERING & CHAIN-OF-THOUGHT "THINKING" PARSING
    ============================================================================== */
 
+function formatThinkingBlocks(raw) {
+    if (!raw) return "";
+    let processed = raw;
+
+    // 1. Complete closed <think>...</think> blocks
+    processed = processed.replace(/<think>([\s\S]*?)<\/think>/gi, (match, thought) => {
+        const thoughtClean = thought.trim();
+        const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
+        return `<details class="thought-accordion" open>
+            <summary class="thought-summary">
+                <span class="thought-icon">🧠</span>
+                <span class="thought-title">Thought Process & Step-by-Step Reasoning</span>
+                <span class="thought-badge">Chain of Thought</span>
+            </summary>
+            <div class="thought-content">${thoughtHtml}</div>
+        </details>\n\n`;
+    });
+
+    // 2. Active open <think> during live streaming
+    processed = processed.replace(/<think>([\s\S]*?)$/gi, (match, thought) => {
+        const thoughtClean = thought.trim();
+        const thoughtHtml = window.marked ? marked.parse(thoughtClean) : thoughtClean.replace(/\n/g, '<br>');
+        return `<details class="thought-accordion is-thinking" open>
+            <summary class="thought-summary">
+                <span class="thought-icon thought-pulsing">⚡</span>
+                <span class="thought-title">Reasoning & Planning...</span>
+                <span class="thought-badge">Thinking</span>
+            </summary>
+            <div class="thought-content">${thoughtHtml}</div>
+        </details>\n\n`;
+    });
+
+    return processed;
+}
+
 function renderMarkdown(raw) {
+    if (!raw) return "";
+    const withThoughts = formatThinkingBlocks(raw);
     if (window.marked) {
         try {
             marked.setOptions({
@@ -516,12 +553,12 @@ function renderMarkdown(raw) {
                 breaks: true,
                 gfm: true
             });
-            return marked.parse(raw);
+            return marked.parse(withThoughts);
         } catch (e) {
-            return raw;
+            return withThoughts;
         }
     }
-    return raw;
+    return withThoughts;
 }
 
 function applyCodeCopyButtons(container) {

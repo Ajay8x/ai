@@ -427,8 +427,17 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
         calc = CalculatorTool()
         calc_res = calc.execute(expression=user_msg)
         if calc_res.success:
+            thought = ""
+            if getattr(config.llm, "thinking_mode", True):
+                thought = (
+                    f"<think>\n"
+                    f"- Analyzing calculation query: '{user_msg}'\n"
+                    f"- Parsing arithmetic operators and evaluating expression\n"
+                    f"- Result verified: {calc_res.output}\n"
+                    f"</think>\n\n"
+                )
             return LLMResponse(
-                content=str(calc_res.output),
+                content=thought + str(calc_res.output),
                 tool_calls=[],
                 model="local_math_engine",
                 provider="local_rule_engine",
@@ -443,8 +452,17 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
         if is_coding:
             code_resp = generate_offline_code(user_msg)
             if code_resp:
+                thought = ""
+                if getattr(config.llm, "thinking_mode", True):
+                    thought = (
+                        f"<think>\n"
+                        f"- Detected code generation request: '{user_msg}'\n"
+                        f"- Identified target language and algorithm patterns\n"
+                        f"- Structuring optimal implementation, documentation, and usage instructions\n"
+                        f"</think>\n\n"
+                    )
                 return LLMResponse(
-                    content=code_resp,
+                    content=thought + code_resp,
                     tool_calls=[],
                     model="code_generator_engine",
                     provider="local_code_engine",

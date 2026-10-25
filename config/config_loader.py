@@ -56,6 +56,7 @@ class LLMConfig:
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     local_model_path: str = os.getenv("LOCAL_MODEL_PATH", "")
+    thinking_mode: bool = os.getenv("LLM_THINKING_MODE", "true").lower() == "true"
 
 @dataclass
 class VoiceConfig:

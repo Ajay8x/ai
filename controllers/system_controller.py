@@ -29,6 +29,7 @@ class SettingsUpdateRequest(BaseModel):
     openrouter_api_key: Optional[str] = None
     ollama_base_url: Optional[str] = None
     default_language: Optional[str] = None
+    thinking_mode: Optional[bool] = None
 
 class NeuralPredictRequest(BaseModel):
     query: str
@@ -81,6 +82,7 @@ async def get_settings():
             "openai_key_masked": mask_key(config.llm.api_key),
             "has_deepseek_key": bool(config.llm.deepseek_api_key),
             "has_openrouter_key": bool(config.llm.openrouter_api_key),
+            "thinking_mode": getattr(config.llm, "thinking_mode", True),
             "brain_status": brain_status
         },
         "neural": neural_diag,
@@ -108,6 +110,9 @@ async def update_settings(req: SettingsUpdateRequest):
     if req.llm_max_tokens is not None:
         config.llm.max_tokens = int(req.llm_max_tokens)
         updated.append(f"max_tokens={req.llm_max_tokens}")
+    if req.thinking_mode is not None:
+        config.llm.thinking_mode = bool(req.thinking_mode)
+        updated.append(f"thinking_mode={req.thinking_mode}")
     if req.gemini_api_key is not None and req.gemini_api_key.strip():
         config.llm.gemini_api_key = req.gemini_api_key.strip()
         updated.append("gemini_api_key")
