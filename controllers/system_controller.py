@@ -4,7 +4,7 @@ AJAX AI - MVC Controller: System Diagnostics, Health Checks, Settings & Neural T
 
 import os
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -14,6 +14,7 @@ from core.logger import LOGS_DIR, ajax_logger
 from config.config_loader import config
 from ai.neural.intent_classifier import intent_classifier
 from ai.llm.factory import llm_brain
+from controllers.auth_controller import require_authenticated_user, require_admin
 
 system_router = APIRouter(prefix="/api", tags=["System, Settings & Neural Diagnostics"])
 
@@ -35,15 +36,15 @@ class NeuralPredictRequest(BaseModel):
     query: str
 
 @system_router.get("/status")
-async def get_system_status():
+async def get_system_status(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     return system_monitor.get_full_diagnostics()
 
 @system_router.get("/diagnostics")
-async def get_system_diagnostics():
+async def get_system_diagnostics(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     return diagnostics.run_health_check()
 
 @system_router.get("/logs")
-async def get_recent_logs():
+async def get_recent_logs(admin: Dict[str, Any] = Depends(require_admin)):
     log_file = os.path.join(LOGS_DIR, "ajax.log")
     lines = []
     if os.path.exists(log_file):
@@ -56,7 +57,7 @@ async def get_recent_logs():
 
 # ----------------- SETTINGS & LLM CONFIGURATION ----------------- #
 @system_router.get("/settings")
-async def get_settings():
+async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
     """Retrieve active system, LLM, and Neural engine settings."""
     neural_diag = intent_classifier.get_diagnostics()
     brain_status = llm_brain.get_status()
@@ -95,7 +96,7 @@ async def get_settings():
     }
 
 @system_router.post("/settings")
-async def update_settings(req: SettingsUpdateRequest):
+async def update_settings(req: SettingsUpdateRequest, admin: Dict[str, Any] = Depends(require_admin)):
     """Update runtime LLM and assistant configuration."""
     updated = []
     if req.llm_provider is not None:
@@ -137,7 +138,7 @@ async def update_settings(req: SettingsUpdateRequest):
 
 # ----------------- NEURAL LIVE PLAYGROUND & PREDICTION ----------------- #
 @system_router.post("/neural/predict")
-async def predict_neural_intent(req: NeuralPredictRequest):
+async def predict_neural_intent(req: NeuralPredictRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Real-time neural intent classifier testing endpoint."""
     if not req.query.strip():
         return JSONResponse(status_code=400, content={"error": "Empty query provided"})
@@ -158,7 +159,7 @@ async def predict_neural_intent(req: NeuralPredictRequest):
     }
 
 @system_router.get("/brain/diagnostics")
-async def get_brain_diagnostics():
+async def get_brain_diagnostics(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Consolidated telemetry for AI Brain & Neural subsystem."""
     return {
         "neural": intent_classifier.get_diagnostics(),

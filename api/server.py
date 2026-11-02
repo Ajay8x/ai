@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +23,7 @@ from controllers.tools_controller import tools_router
 from controllers.memory_controller import memory_router
 from controllers.pages_controller import pages_router
 from controllers.auth_controller import auth_router
+from controllers.auth_controller import require_admin
 from database.db import init_db
 from core.logger import ajax_logger
 
@@ -93,7 +94,7 @@ async def health_check():
 
 # Serverless Diagnosis Endpoint
 @app.get("/api/debug")
-async def debug_endpoint():
+async def debug_endpoint(admin: dict = Depends(require_admin)):
     import traceback
     info = {
         "cwd": os.getcwd(),

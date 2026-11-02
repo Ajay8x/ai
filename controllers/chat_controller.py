@@ -2,10 +2,12 @@
 AJAX AI - MVC Controller: Chat & Conversation Endpoints
 """
 
-from fastapi import APIRouter
+from typing import Dict, Any
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from models.schemas import ChatRequest, ChatResponse
 from core.router import router
+from controllers.auth_controller import require_authenticated_user
 from database.crud import (
     create_conversation,
     list_conversations,
@@ -16,7 +18,7 @@ from database.crud import (
 chat_router = APIRouter(prefix="/api", tags=["Chat & Intelligence"])
 
 @chat_router.post("/chat", response_model=ChatResponse)
-async def process_chat_message(req: ChatRequest):
+async def process_chat_message(req: ChatRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     conv_id = req.conversation_id or create_conversation("API Chat")
     result = router.process_query(
         req.query,
@@ -28,7 +30,7 @@ async def process_chat_message(req: ChatRequest):
     return JSONResponse(content=result, status_code=200)
 
 @chat_router.post("/chat/stream")
-async def process_chat_message_stream(req: ChatRequest):
+async def process_chat_message_stream(req: ChatRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Server-Sent Events (SSE) real-time token streaming endpoint."""
     conv_id = req.conversation_id or create_conversation("Web Chat")
     return StreamingResponse(
@@ -43,19 +45,19 @@ async def process_chat_message_stream(req: ChatRequest):
     )
 
 @chat_router.get("/conversations")
-async def get_all_conversations():
+async def get_all_conversations(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Retrieve recent chat sessions for sidebar history."""
     convs = list_conversations(limit=40)
     return {"conversations": convs}
 
 @chat_router.get("/conversations/{conv_id}")
-async def get_conversation_history(conv_id: str):
+async def get_conversation_history(conv_id: str, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Retrieve full message history for a specific conversation session."""
     messages = get_conversation_messages(conv_id, limit=100)
     return {"conversation_id": conv_id, "messages": messages}
 
 @chat_router.delete("/conversations/{conv_id}")
-async def remove_conversation(conv_id: str):
+async def remove_conversation(conv_id: str, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Delete a conversation session and all its messages."""
     success = delete_conversation(conv_id)
     return {"success": success, "conversation_id": conv_id}

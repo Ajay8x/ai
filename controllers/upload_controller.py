@@ -4,11 +4,13 @@ AJAX AI - MVC Controller: Document Upload & RAG Processing
 
 import os
 import base64
-from fastapi import APIRouter, HTTPException
+from typing import Dict, Any
+from fastapi import APIRouter, Depends, HTTPException
 from models.schemas import UploadRequest, UploadResponse
 from ai.rag.store import rag_store
 from config.config_loader import config
 from core.logger import ajax_logger, error_logger
+from controllers.auth_controller import require_authenticated_user
 
 upload_router = APIRouter(prefix="/api", tags=["Document Processing & RAG"])
 
@@ -23,7 +25,7 @@ except OSError:
     pass
 
 @upload_router.post("/upload", response_model=UploadResponse)
-async def upload_document(req: UploadRequest):
+async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     if not req.content_base64:
         raise HTTPException(status_code=400, detail="No base64 file content provided.")
     try:

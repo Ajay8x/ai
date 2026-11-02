@@ -113,11 +113,16 @@ def get_current_user_from_request(request: Request) -> Optional[Dict[str, Any]]:
 
     return user
 
-def require_admin(request: Request) -> Dict[str, Any]:
-    """Dependency for strictly protecting admin endpoints."""
+def require_authenticated_user(request: Request) -> Dict[str, Any]:
+    """Dependency that requires a valid login session for protected APIs."""
     user = get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required. Please sign in.")
+    return user
+
+def require_admin(request: Request) -> Dict[str, Any]:
+    """Dependency for strictly protecting admin endpoints."""
+    user = require_authenticated_user(request)
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Forbidden. Administrator privileges required.")
     return user
