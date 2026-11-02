@@ -75,27 +75,27 @@ class OpenApplicationTool(BaseTool):
             webbrowser.open(url)
             return ToolResult(success=True, output=f"Opened {app_name} ({url}) in browser.")
 
-        target = COMMON_APPS.get(app_clean, app_clean)
-        
+        target = COMMON_APPS.get(app_clean)
+        if not target:
+            return ToolResult(
+                success=False,
+                output=None,
+                error=f"Application '{app_name}' is not in the approved application list."
+            )
+
         try:
             if target.startswith("start "):
-                os.system(target)
+                # URI launch targets are fixed allowlisted values, never user input.
+                if os.name == "nt":
+                    os.startfile(target[6:])
+                else:
+                    subprocess.Popen([target[6:]], shell=False)
             else:
-                # Use os.startfile or subprocess for clean launching without hanging
-                try:
-                    os.startfile(target)
-                except Exception:
-                    subprocess.Popen(target, shell=True)
+                subprocess.Popen([target], shell=False)
                     
             return ToolResult(success=True, output=f"Launched {app_name} successfully.")
         except Exception as e:
-            # Fallback to direct shell execution of the query or web browser
-            try:
-                os.system(f"start {app_name}")
-                return ToolResult(success=True, output=f"Launched {app_name}.")
-            except Exception:
-                webbrowser.open(f"https://www.google.com/search?q={app_name}")
-                return ToolResult(success=True, output=f"Searched and opened {app_name} in browser.")
+            return ToolResult(success=False, output=None, error=f"Could not launch '{app_name}': {e}")
 
 class CloseApplicationTool(BaseTool):
     name = "close_application"

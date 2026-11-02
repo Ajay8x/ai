@@ -83,7 +83,7 @@ class DatabaseConfig:
     postgres_host: str = os.getenv("POSTGRES_HOST", "localhost")
     postgres_port: int = int(os.getenv("POSTGRES_PORT", "5432"))
     postgres_user: str = os.getenv("POSTGRES_USER", "postgres")
-    postgres_password: str = os.getenv("POSTGRES_PASSWORD", "postgres")
+    postgres_password: str = os.getenv("POSTGRES_PASSWORD", "")
     postgres_db: str = os.getenv("POSTGRES_DB", "ajax_ai")
 
 @dataclass
@@ -108,7 +108,10 @@ class AppConfig:
     cloud_api_secret: str = os.getenv("CLOUD_API_SECRET", "")
     jwt_secret: str = os.getenv("JWT_SECRET", "")
     admin_username: str = os.getenv("ADMIN_USERNAME", "admin")
-    admin_password: str = os.getenv("ADMIN_PASSWORD", "admin123")
+    admin_password: str = os.getenv("ADMIN_PASSWORD", "")
+    demo_login_enabled: bool = os.getenv("DEMO_LOGIN_ENABLED", "false").lower() == "true"
+    demo_username: str = os.getenv("DEMO_USERNAME", "demo")
+    demo_password: str = os.getenv("DEMO_PASSWORD", "")
     max_upload_size_mb: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "15"))
 
     def save_to_file(self):

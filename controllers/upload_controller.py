@@ -4,7 +4,11 @@ AJAX AI - MVC Controller: Document Upload & RAG Processing
 
 import os
 import base64
-from typing import Dict, Any
+import binascii
+import re
+import uuid
+from pathlib import Path, PurePosixPath
+from typing import Dict, Any, Tuple
 from fastapi import APIRouter, Depends, HTTPException
 from models.schemas import UploadRequest, UploadResponse
 from ai.rag.store import rag_store
@@ -24,12 +28,57 @@ try:
 except OSError:
     pass
 
+UPLOAD_ROOT = Path(UPLOAD_DIR).resolve()
+ALLOWED_UPLOAD_EXTENSIONS = {
+    ".txt", ".md", ".py", ".json", ".csv", ".yaml", ".yml",
+    ".html", ".js", ".ts", ".css", ".pdf", ".docx", ".doc"
+}
+
+
+def _build_safe_upload_path(filename: str) -> Tuple[Path, str]:
+    """Return a randomized path guaranteed to remain inside the upload root."""
+    if not filename or "\x00" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename.")
+
+    # Normalize both Windows and POSIX separators before taking the basename.
+    original_name = PurePosixPath(filename.replace("\\", "/")).name.strip()
+    if not original_name or original_name in {".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid filename.")
+    if len(original_name) > 255:
+        raise HTTPException(status_code=400, detail="Filename is too long.")
+
+    extension = Path(original_name).suffix.lower()
+    if extension not in ALLOWED_UPLOAD_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_UPLOAD_EXTENSIONS))
+        raise HTTPException(status_code=415, detail=f"Unsupported file type. Allowed extensions: {allowed}")
+
+    stem = Path(original_name).stem
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._") or "upload"
+    stored_name = f"{uuid.uuid4().hex}_{safe_stem[:80]}{extension}"
+    candidate = (UPLOAD_ROOT / stored_name).resolve()
+
+    # Defense in depth: reject any path that escapes the resolved upload root.
+    if candidate.parent != UPLOAD_ROOT:
+        raise HTTPException(status_code=400, detail="Unsafe upload path.")
+
+    return candidate, original_name
+
 @upload_router.post("/upload", response_model=UploadResponse)
 async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     if not req.content_base64:
         raise HTTPException(status_code=400, detail="No base64 file content provided.")
     try:
-        file_bytes = base64.b64decode(req.content_base64)
+        file_path_obj, original_filename = _build_safe_upload_path(req.filename)
+        encoded_content = req.content_base64
+        if encoded_content.startswith("data:") and "," in encoded_content:
+            encoded_content = encoded_content.split(",", 1)[1]
+        try:
+            file_bytes = base64.b64decode(encoded_content, validate=True)
+        except (binascii.Error, ValueError):
+            raise HTTPException(status_code=400, detail="Invalid base64 file content.")
+        if not file_bytes:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
         max_bytes = config.max_upload_size_mb * 1024 * 1024
         if len(file_bytes) > max_bytes:
             actual_mb = len(file_bytes) / (1024 * 1024)
@@ -38,8 +87,8 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
                 detail=f"File exceeds maximum upload limit of {config.max_upload_size_mb} MB (Your file is {actual_mb:.2f} MB)."
             )
 
-        file_path = os.path.join(UPLOAD_DIR, req.filename)
-        with open(file_path, "wb") as f:
+        file_path = str(file_path_obj)
+        with open(file_path_obj, "xb") as f:
             f.write(file_bytes)
 
         # Cloudinary cloud backup if configured
@@ -69,13 +118,13 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
         rag_store.index_file(file_path)
         chunks_count = sum(1 for d in rag_store.documents if d.get("source") == file_path)
         
-        ajax_logger.info(f"Uploaded and indexed '{req.filename}' with {chunks_count} chunks.")
-        msg = f"Document '{req.filename}' indexed successfully."
+        ajax_logger.info(f"Uploaded and indexed '{original_filename}' with {chunks_count} chunks.")
+        msg = f"Document '{original_filename}' indexed successfully."
         if cloud_url:
             msg += f" Stored in Cloudinary ({cloud_url})."
         return {
             "success": True,
-            "filename": req.filename,
+            "filename": original_filename,
             "chunks": chunks_count,
             "message": msg
         }

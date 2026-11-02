@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from database.db import get_db_connection, get_mongo_db, is_mongo_active, DB_LOCK
 from core.logger import ajax_logger, error_logger
+from config.config_loader import config
 
 # ----------------- CONVERSATIONS & MESSAGES ----------------- #
 
@@ -599,30 +600,45 @@ def update_user_last_login(user_id: str) -> bool:
         return True
 
 def seed_default_admin():
-    """Seeds default administrator account (admin / admin123) if none exists."""
-    admin_user = get_user_by_username("admin")
+    """Seeds an administrator only when a strong environment password is configured."""
+    username = config.admin_username.strip().lower()
+    password = config.admin_password
+    if not username or len(password) < 12 or password.lower() in {"admin123", "password", "changeme"}:
+        ajax_logger.warning("Administrator seeding skipped: set a strong ADMIN_PASSWORD (12+ characters).")
+        return
+
+    admin_user = get_user_by_username(username)
     if not admin_user:
         create_user(
-            username="admin",
-            password="admin123",
+            username=username,
+            password=password,
             full_name="Ajay Singh (Administrator)",
-            email="admin@ajax.ai",
+            email=f"{username}@ajax.ai",
             role="admin"
         )
-        ajax_logger.info("Default administrator account seeded: 'admin' / 'admin123'")
+        ajax_logger.info("Configured administrator account seeded from environment settings.")
 
 def seed_default_demo_user():
-    """Seeds default demo user account (demo / demo123) if none exists."""
-    demo_user = get_user_by_username("demo")
+    """Seeds a demo user only when explicitly enabled with a strong password."""
+    if not config.demo_login_enabled:
+        return
+
+    username = config.demo_username.strip().lower()
+    password = config.demo_password
+    if not username or len(password) < 12:
+        ajax_logger.warning("Demo user seeding skipped: set a strong DEMO_PASSWORD (12+ characters).")
+        return
+
+    demo_user = get_user_by_username(username)
     if not demo_user:
         create_user(
-            username="demo",
-            password="demo123",
+            username=username,
+            password=password,
             full_name="Demo User",
-            email="demo@ajax.ai",
+            email=f"{username}@ajax.ai",
             role="user"
         )
-        ajax_logger.info("Default demo account seeded: 'demo' / 'demo123'")
+        ajax_logger.info("Configured demo account seeded from environment settings.")
 
 
 # ----------------- PERSISTENT AUTH SESSIONS ----------------- #

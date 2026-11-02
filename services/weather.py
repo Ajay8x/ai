@@ -1,3 +1,4 @@
+import os
 import requests
 
 def get_weather(query):
@@ -20,8 +21,11 @@ def get_weather(query):
             except Exception:
                 city = 'Delhi'
 
-        API_KEY = "f4d4f4928815879a3f757eb82a3c08d4"
-        url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
+        api_key = os.getenv("WEATHER_API_KEY", "").strip()
+        if not api_key:
+            return "Weather service is not configured. Set WEATHER_API_KEY first."
+
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
         res = requests.get(url, timeout=5)
         data = res.json()
         

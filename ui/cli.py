@@ -5,7 +5,9 @@ Provides rich interactive terminal sessions with slash commands and full convers
 
 import sys
 import os
-import readline if sys.platform != "win32" else None
+import subprocess
+if sys.platform != "win32":
+    import readline
 from core.router import router
 from database.crud import create_conversation, list_conversations, get_conversation_messages, save_memory, search_memories
 from core.diagnostics import diagnostics
@@ -98,7 +100,10 @@ class AJAXCli:
             print(HELP_TEXT)
 
         elif cmd == "/clear":
-            os.system("cls" if os.name == "nt" else "clear")
+            if os.name == "nt":
+                subprocess.run(["cmd.exe", "/c", "cls"], check=False, shell=False)
+            else:
+                subprocess.run(["clear"], check=False, shell=False)
 
         elif cmd == "/chat":
             if not arg:

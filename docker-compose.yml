@@ -25,11 +25,11 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=ajax_user
-      - POSTGRES_PASSWORD=ajax_secure_password
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       - POSTGRES_DB=ajax_db
       # GraphRAG & Fast Search Configuration
       - MEILISEARCH_HOST=http://meilisearch:7700
-      - MEILISEARCH_KEY=${MEILISEARCH_KEY:-ajax_master_key_123}
+      - MEILISEARCH_KEY=${MEILISEARCH_KEY:?Set MEILISEARCH_KEY in .env}
     volumes:
       - ajax_data:/app/data
       - ajax_logs:/app/logs
@@ -49,7 +49,7 @@ services:
     container_name: ajax-meilisearch
     restart: unless-stopped
     environment:
-      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:-ajax_master_key_123}
+      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:?Set MEILISEARCH_KEY in .env}
       - MEILI_ENV=production
       - MEILI_NO_ANALYTICS=true
     ports:
@@ -68,7 +68,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=ajax_user
-      - POSTGRES_PASSWORD=ajax_secure_password
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       - POSTGRES_DB=ajax_db
     ports:
       - "5432:5432"

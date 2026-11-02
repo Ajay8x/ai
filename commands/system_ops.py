@@ -1,5 +1,6 @@
 import os
 import datetime
+import subprocess
 try:
     import pyautogui
 except ImportError:
@@ -34,13 +35,17 @@ def get_date(speak_func):
 def system_power(command, speak_func):
     if 'shutdown' in command:
         speak_func("Shutting down the computer.")
-        os.system("shutdown /s /t 5")
+        subprocess.run(["shutdown.exe", "/s", "/t", "5"], check=False, shell=False)
     elif 'restart' in command:
         speak_func("Restarting the computer.")
-        os.system("shutdown /r /t 5")
+        subprocess.run(["shutdown.exe", "/r", "/t", "5"], check=False, shell=False)
     elif 'sleep' in command:
         speak_func("Going to sleep mode.")
-        os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+        subprocess.run(
+            ["rundll32.exe", "powrprof.dll,SetSuspendState", "0,1,0"],
+            check=False,
+            shell=False,
+        )
 
 def volume_control(command, speak_func):
     if 'volume up' in command:
@@ -82,11 +87,21 @@ def open_app(query, speak_func):
             webbrowser.open(site[1])
             return True
 
-    # Try app_cmd.py
-    command_to_run = app_commands.get(app_name, app_name)
+    # Only launch explicitly allowlisted applications or URI handlers.
+    command_to_run = app_commands.get(app_name)
+    if not command_to_run:
+        speak_func(f"Sorry, I don't know how to open {app_name}.")
+        return False
     speak_func(f"Opening {app_name}")
-    os.system(f"start {command_to_run}")
-    return True
+    try:
+        if os.name == "nt":
+            os.startfile(command_to_run)
+        else:
+            subprocess.Popen([command_to_run], shell=False)
+        return True
+    except Exception:
+        speak_func(f"I couldn't open {app_name}.")
+        return False
 
 def close_app(query, speak_func):
     app_name = query.replace('close ', '').strip()
@@ -94,8 +109,12 @@ def close_app(query, speak_func):
     
     if process_name:
         speak_func(f"Closing {app_name}")
-        os.system(f"taskkill /f /im {process_name}")
-        return True
+        result = subprocess.run(
+            ["taskkill.exe", "/f", "/im", process_name],
+            check=False,
+            shell=False,
+        )
+        return result.returncode == 0
 
     # Check in sites.py
     is_site = False

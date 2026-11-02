@@ -65,7 +65,7 @@ You can pass environment variables in `.env` or via Docker Compose:
 | `POSTGRES_HOST` | `postgres` | PostgreSQL hostname |
 | `POSTGRES_PORT` | `5432` | PostgreSQL port |
 | `POSTGRES_USER` | `ajax_user` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | `ajax_secure_password` | PostgreSQL password |
+| `POSTGRES_PASSWORD` | Required; no default | PostgreSQL password |
 | `POSTGRES_DB` | `ajax_db` | PostgreSQL database name |
 
 ---

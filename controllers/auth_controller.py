@@ -32,6 +32,7 @@ from database.crud import (
     delete_auth_session
 )
 from core.logger import ajax_logger
+from config.config_loader import config
 
 auth_router = APIRouter(prefix="/api", tags=["Authentication & Administration"])
 
@@ -209,18 +210,23 @@ async def login_user(payload: LoginRequest, response: Response):
 @auth_router.post("/auth/demo-login")
 @auth_router.get("/auth/demo-login")
 async def demo_quick_login(response: Response):
-    """Instant 1-Click Demo User login for visitors."""
+    """Instant demo login when explicitly enabled and configured."""
     from database.crud import seed_default_demo_user
+
+    if not config.demo_login_enabled:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "message": "Demo login is disabled."}
+        )
+
     seed_default_demo_user()
 
-    user = get_user_by_username("demo")
+    demo_username = config.demo_username.strip().lower()
+    user = get_user_by_username(demo_username)
     if not user:
-        user = create_user(
-            username="demo",
-            password="demo123",
-            full_name="Demo User",
-            email="demo@ajax.ai",
-            role="user"
+        return JSONResponse(
+            status_code=503,
+            content={"success": False, "message": "Demo login is enabled but not configured correctly."}
         )
 
     token = create_session(user)

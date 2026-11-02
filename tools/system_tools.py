@@ -162,19 +162,26 @@ class SystemPowerTool(BaseTool):
     }
 
     def execute(self, action: str, **kwargs) -> ToolResult:
-        try:
-            if action == "lock":
-                os.system("rundll32.exe user32.dll,LockWorkStation")
-                return ToolResult(success=True, output="PC locked successfully.")
-            elif action == "sleep":
-                os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
-                return ToolResult(success=True, output="PC putting to sleep.")
-            elif action == "restart":
-                os.system("shutdown /r /t 5")
-                return ToolResult(success=True, output="PC restarting in 5 seconds.")
-            elif action == "shutdown":
-                os.system("shutdown /s /t 5")
-                return ToolResult(success=True, output="PC shutting down in 5 seconds.")
+        commands = {
+            "lock": ["rundll32.exe", "user32.dll,LockWorkStation"],
+            "sleep": ["rundll32.exe", "powrprof.dll,SetSuspendState", "0,1,0"],
+            "restart": ["shutdown.exe", "/r", "/t", "5"],
+            "shutdown": ["shutdown.exe", "/s", "/t", "5"],
+        }
+        command = commands.get(action)
+        if not command:
             return ToolResult(success=False, output=None, error=f"Unknown power action: {action}")
+
+        try:
+            completed = subprocess.run(command, check=False, shell=False)
+            if completed.returncode != 0:
+                return ToolResult(success=False, output=None, error=f"Power command exited with code {completed.returncode}.")
+            messages = {
+                "lock": "PC locked successfully.",
+                "sleep": "PC putting to sleep.",
+                "restart": "PC restarting in 5 seconds.",
+                "shutdown": "PC shutting down in 5 seconds.",
+            }
+            return ToolResult(success=True, output=messages[action])
         except Exception as e:
             return ToolResult(success=False, output=None, error=f"Power command failed: {str(e)}")
