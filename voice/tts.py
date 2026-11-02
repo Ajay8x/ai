@@ -23,6 +23,7 @@ class TTSEngine:
         if self.initialized:
             return
         self.engine = None
+        self._speech_thread = None
         self._init_engine()
         self.initialized = True
 
@@ -39,16 +40,18 @@ class TTSEngine:
 
     def stop(self):
         """Interrupt and immediately cancel any currently playing speech."""
-        with self._lock:
-            if self.engine:
-                try:
-                    self.engine.stop()
-                except Exception:
-                    pass
+        # Do not wait on the synthesis lock here; waiting would defeat interruption.
+        if self.engine:
+            try:
+                self.engine.stop()
+            except Exception:
+                pass
 
     def speak_async(self, text: str):
         """Speak asynchronously in background without blocking caller thread."""
-        threading.Thread(target=self.speak, args=(text, False), daemon=True).start()
+        self.stop()
+        self._speech_thread = threading.Thread(target=self.speak, args=(text, False), daemon=True)
+        self._speech_thread.start()
 
     def speak(self, text: str, async_mode: bool = False):
         """Speak the provided text aloud in a thread-safe manner."""

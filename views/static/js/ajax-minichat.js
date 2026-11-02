@@ -133,7 +133,7 @@
         const aiMsgDiv = appendMessage('ai', '⚡ Thinking...');
 
         try {
-            const response = await fetch('/api/chat/stream', {
+            const response = await window.ajaxApiFetch('/api/chat/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -146,7 +146,12 @@
             });
 
             if (!response.ok) {
-                aiMsgDiv.textContent = `Error: Server returned HTTP ${response.status}`;
+                let detail = `HTTP ${response.status}`;
+                try {
+                    const errorBody = await response.json();
+                    detail = errorBody.detail || errorBody.message || detail;
+                } catch (_) {}
+                aiMsgDiv.textContent = `Error: ${detail}`;
                 return;
             }
 

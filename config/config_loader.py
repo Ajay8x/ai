@@ -65,6 +65,8 @@ class VoiceConfig:
     wake_word_enabled: bool = os.getenv("WAKE_WORD_ENABLED", "true").lower() == "true"
     tts_engine: str = os.getenv("TTS_ENGINE", "pyttsx3")
     stt_engine: str = os.getenv("STT_ENGINE", "speech_recognition")
+    stt_language: str = os.getenv("STT_LANGUAGE", "en-IN")
+    stt_fallback_languages: str = os.getenv("STT_FALLBACK_LANGUAGES", "hi-IN")
     rate: int = int(os.getenv("VOICE_RATE", "180"))
     volume: float = float(os.getenv("VOICE_VOLUME", "1.0"))
 

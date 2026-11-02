@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "description": "Curated Hindi, Hinglish, synonym, and spelling-variant intent phrases kept separate from the base dataset.",
+  "intents": [
+    {
+      "intent": "GREETING",
+      "patterns": [
+        "hii ajax",
+        "hiii assistant",
+        "hello ji",
+        "namaste ji",
+        "kya scene hai",
+        "sun rahe ho ajax"
+      ]
+    },
+    {
+      "intent": "OPEN_APPLICATION",
+      "patterns": [
+        "chrome kholna",
+        "browser chalu kar",
+        "calculator khol do",
+        "vs code chalu karo",
+        "notepad launch karo",
+        "app kholo",
+        "edge khol do"
+      ]
+    },
+    {
+      "intent": "CLOSE_APPLICATION",
+      "patterns": [
+        "chrome band kar",
+        "browser close karo",
+        "notepad bandh karo",
+        "app band kar do",
+        "calculator close karna",
+        "window band karo"
+      ]
+    },
+    {
+      "intent": "SYSTEM_INFO",
+      "patterns": [
+        "mera pc status batao",
+        "ram kitni use ho rahi hai",
+        "cpu usage dikhao",
+        "laptop ki health batao",
+        "system ka haal batao",
+        "battery kitni hai"
+      ]
+    },
+    {
+      "intent": "TIME",
+      "patterns": [
+        "abhi kitne baje hain",
+        "samay kya hai",
+        "time kya chal raha hai",
+        "aaj ki tareekh kya hai",
+        "current waqt batao",
+        "kitna time hua"
+      ]
+    },
+    {
+      "intent": "SEARCH_WEB",
+      "patterns": [
+        "internet par dhundho",
+        "web pe search karo",
+        "google mein dekhna",
+        "online khojo",
+        "latest news dhundho",
+        "net par pata karo"
+      ]
+    },
+    {
+      "intent": "SEARCH_WIKIPEDIA",
+      "patterns": [
+        "wikipedia pe batao",
+        "is vyakti ki wikipedia jankari",
+        "encyclopedia mein khojo",
+        "is topic ka wikipedia summary",
+        "wiki par search karo",
+        "wikipedia se jaankari do"
+      ]
+    },
+    {
+      "intent": "PLAY_YOUTUBE",
+      "patterns": [
+        "youtube par gana bajao",
+        "youtube video chalao",
+        "music play kar do",
+        "youtube pe arijit chalao",
+        "video laga do",
+        "gaana chala do"
+      ]
+    },
+    {
+      "intent": "OPEN_WEBSITE",
+      "patterns": [
+        "website kholo",
+        "github website open karo",
+        "google ki site kholo",
+        "chatgpt website chalu karo",
+        "instagram khol do",
+        "website launch karo"
+      ]
+    },
+    {
+      "intent": "SCREENSHOT",
+      "patterns": [
+        "screen ka photo lo",
+        "desktop capture kar do",
+        "screenshot bana do",
+        "screen snap le lo",
+        "display ka snapshot chahiye",
+        "screen ki image save karo"
+      ]
+    },
+    {
+      "intent": "VOLUME_CONTROL",
+      "patterns": [
+        "awaaz tez karo",
+        "sound kam kar do",
+        "volume mute karna",
+        "aawaz badha do",
+        "media pause karo",
+        "sound unmute karo"
+      ]
+    },
+    {
+      "intent": "WEATHER",
+      "patterns": [
+        "aaj mausam kaisa hai",
+        "delhi ka mausam batao",
+        "baarish hogi kya",
+        "temperature kitna hai",
+        "mausam ka haal batao",
+        "kal ka weather dekho"
+      ]
+    },
+    {
+      "intent": "SET_TIMER",
+      "patterns": [
+        "10 minute baad yaad dilana",
+        "timer laga do",
+        "countdown chalu karo",
+        "paanch minute ka timer",
+        "mujhe 30 minute mein alert karna",
+        "timer set karna hai"
+      ]
+    },
+    {
+      "intent": "SET_ALARM",
+      "patterns": [
+        "subah 7 baje alarm lagao",
+        "alarm baja dena",
+        "mujhe jagana",
+        "kal ke liye alarm set karo",
+        "wake up alarm laga do",
+        "alarm schedule kar do"
+      ]
+    },
+    {
+      "intent": "SYSTEM_POWER",
+      "patterns": [
+        "computer shutdown karo",
+        "pc restart karna",
+        "laptop sleep mein daal do",
+        "system lock karo",
+        "machine band kar do",
+        "restart kar do"
+      ]
+    },
+    {
+      "intent": "SEARCH_FILE",
+      "patterns": [
+        "meri files mein khojo",
+        "document dhundh do",
+        "folder mein file search karo",
+        "computer par pdf dhundho",
+        "file ka pata lagao",
+        "koi note file dhoondo"
+      ]
+    },
+    {
+      "intent": "READ_FILE",
+      "patterns": [
+        "file ka content padho",
+        "document khol kar batao",
+        "is file mein kya likha hai",
+        "text file dikhao",
+        "pdf padhkar sunao",
+        "file ke andar dekho"
+      ]
+    },
+    {
+      "intent": "HELP",
+      "patterns": [
+        "madad chahiye",
+        "tum kya kar sakte ho",
+        "commands batao",
+        "help menu kholo",
+        "meri sahayata karo",
+        "available options dikhao"
+      ]
+    },
+    {
+      "intent": "MEMORY_SAVE",
+      "patterns": [
+        "ye baat yaad rakhna",
+        "is fact ko save karo",
+        "meri preference note karo",
+        "isse memory mein daal do",
+        "yaad rakhna ki",
+        "store this information"
+      ]
+    },
+    {
+      "intent": "MEMORY_RECALL",
+      "patterns": [
+        "meri saved baatein batao",
+        "tumhe mere baare mein kya yaad hai",
+        "memory check karo",
+        "saved facts dikhao",
+        "jo maine yaad rakhne ko bola tha woh batao",
+        "meri preferences yaad hain"
+      ]
+    }
+  ]
+}

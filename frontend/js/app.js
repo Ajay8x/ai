@@ -5,6 +5,8 @@ const API_BASE = window.location.origin.startsWith('http') && !window.location.o
     ? '' 
     : 'http://127.0.0.1:8000';
 
+window.ajaxApiFetch = window.ajaxApiFetch || ((endpoint, options = {}) => fetch(endpoint, options));
+
 let convId = "web_session_" + Date.now();
 let voiceReplyEnabled = false;
 let isRecording = false;
@@ -135,7 +137,7 @@ async function loadConversationsList() {
     if (!listEl) return;
 
     try {
-        const res = await fetch(`${API_BASE}/api/conversations`);
+        const res = await window.ajaxApiFetch(`${API_BASE}/api/conversations`);
         const data = await res.json();
         if (data.conversations && data.conversations.length > 0) {
             listEl.innerHTML = data.conversations.map(c => `
@@ -162,7 +164,7 @@ async function selectConversation(selectedId) {
     chat.innerHTML = '<div class="message ai-msg"><div class="loading-phase-container"><div class="loading-spinner"></div><span>Loading messages from MongoDB Atlas...</span></div></div>';
 
     try {
-        const res = await fetch(`${API_BASE}/api/conversations/${selectedId}`);
+        const res = await window.ajaxApiFetch(`${API_BASE}/api/conversations/${selectedId}`);
         const data = await res.json();
         chat.innerHTML = '';
         if (data.messages && data.messages.length > 0) {
@@ -195,7 +197,7 @@ async function selectConversation(selectedId) {
 async function deleteConversation(targetId, event) {
     if (event) event.stopPropagation();
     try {
-        await fetch(`${API_BASE}/api/conversations/${targetId}`, { method: 'DELETE' });
+        await window.ajaxApiFetch(`${API_BASE}/api/conversations/${targetId}`, { method: 'DELETE' });
         if (convId === targetId) {
             startNewChat();
         } else {
@@ -323,6 +325,15 @@ async function handleFileSelected(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
 
+    const allowedExtensions = ['.txt', '.md', '.py', '.json', '.csv', '.yaml', '.yml', '.html', '.js', '.ts', '.css', '.pdf', '.docx', '.doc'];
+    const extension = file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
+    if (!allowedExtensions.includes(extension)) {
+        const message = `Unsupported file type. Allowed types: ${allowedExtensions.join(', ')}`;
+        if (window.showToast) window.showToast(message, 'error'); else alert(message);
+        input.value = '';
+        return;
+    }
+
     // Enforce 15 MB Upload Limit
     const MAX_UPLOAD_MB = 15;
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
@@ -336,8 +347,9 @@ async function handleFileSelected(input) {
 
     reader.onload = async (e) => {
         const base64Data = e.target.result.split(',')[1];
+        if (window.showLoader) window.showLoader(`Uploading ${file.name}...`);
         try {
-            const res = await fetch(`${API_BASE}/api/upload`, {
+            const res = await window.ajaxApiFetch(`${API_BASE}/api/upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -346,7 +358,7 @@ async function handleFileSelected(input) {
                 })
             });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
                 attachedDocs.push({ name: file.name, chunks: data.chunks });
                 renderAttachedDocs();
 
@@ -357,7 +369,7 @@ async function handleFileSelected(input) {
 
                     chat.innerHTML += `
                         <div class="message ai-msg">
-                            📄 <strong>${file.name}</strong> uploaded and indexed successfully into RAG & Cloudinary (${data.chunks} text chunks ready). You can now ask questions about this document.
+                            📄 <strong>${escapeHtml(file.name)}</strong> uploaded and indexed successfully into RAG & Cloudinary (${data.chunks} text chunks ready). You can now ask questions about this document.
                         </div>
                     `;
                     chat.scrollTop = chat.scrollHeight;
@@ -367,6 +379,8 @@ async function handleFileSelected(input) {
             }
         } catch (err) {
             alert('Error uploading file: ' + err);
+        } finally {
+            if (window.hideLoader) window.hideLoader();
         }
     };
     reader.readAsDataURL(file);
@@ -432,7 +446,7 @@ async function sendMessage() {
     let detectedIntent = null;
 
     try {
-        const response = await fetch(`${API_BASE}/api/chat/stream`, {
+        const response = await window.ajaxApiFetch(`${API_BASE}/api/chat/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

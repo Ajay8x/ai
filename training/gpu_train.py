@@ -22,6 +22,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from ai.neural.dataset_loader import load_intent_dataset
 
 INTENTS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "intents.json")
 MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
@@ -75,8 +76,7 @@ def train_gpu_intent_model(epochs: int = 40, batch_size: int = 32, lr: float = 0
         print("Intents dataset missing.")
         return
 
-    with open(INTENTS_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = load_intent_dataset(INTENTS_FILE)
 
     intents = data.get("intents", [])
     intent_labels = [item["intent"] for item in intents]

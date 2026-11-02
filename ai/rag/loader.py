@@ -4,7 +4,8 @@ Extracts text from PDF, TXT, Markdown, DOCX, and Code files.
 """
 
 import os
-from typing import List, Dict, Any
+import re
+from typing import List
 
 class DocumentLoader:
     @staticmethod
@@ -33,15 +34,57 @@ class DocumentLoader:
         return ""
 
     @staticmethod
-    def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+    def chunk_text(text: str, chunk_size: int = 700, overlap: int = 100) -> List[str]:
+        """Split text on paragraph boundaries while preserving overlap for retrieval."""
         if not text:
             return []
+
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
+        overlap = max(0, min(overlap, chunk_size // 3))
+
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        blocks = [
+            re.sub(r"[ \t]+", " ", block).strip()
+            for block in re.split(r"\n\s*\n", normalized)
+            if block.strip()
+        ]
+
         chunks = []
-        start = 0
-        while start < len(text):
-            end = start + chunk_size
-            chunks.append(text[start:end])
-            start += chunk_size - overlap
+        current = ""
+
+        def flush_current():
+            nonlocal current
+            if current.strip():
+                chunks.append(current.strip())
+            current = ""
+
+        for block in blocks:
+            if len(block) <= chunk_size:
+                candidate = f"{current}\n\n{block}".strip() if current else block
+                if len(candidate) <= chunk_size:
+                    current = candidate
+                else:
+                    flush_current()
+                    current = block
+                continue
+
+            flush_current()
+            start = 0
+            while start < len(block):
+                end = min(start + chunk_size, len(block))
+                if end < len(block):
+                    boundary = max(block.rfind(" ", start, end), block.rfind("\n", start, end))
+                    if boundary > start + (chunk_size // 2):
+                        end = boundary
+                piece = block[start:end].strip()
+                if piece:
+                    chunks.append(piece)
+                if end >= len(block):
+                    break
+                start = max(end - overlap, start + 1)
+
+        flush_current()
         return chunks
 
 doc_loader = DocumentLoader()

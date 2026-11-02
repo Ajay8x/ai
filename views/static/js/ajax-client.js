@@ -8,20 +8,50 @@
             this.baseUrl = window.location.origin;
         }
 
+        authHeaders(extraHeaders = {}) {
+            const token = window.localStorage.getItem('ajax_session_token');
+            return {
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                ...extraHeaders
+            };
+        }
+
+        async fetch(endpoint, options = {}) {
+            const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
+            const headers = this.authHeaders(options.headers || {});
+            if (options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 45000);
+            try {
+                const res = await window.fetch(url, {
+                    ...options,
+                    headers,
+                    credentials: 'same-origin',
+                    signal: options.signal || controller.signal
+                });
+                if (res.status === 401 && !url.includes('/api/auth/me')) {
+                    window.dispatchEvent(new CustomEvent('ajax:unauthorized'));
+                }
+                return res;
+            } finally {
+                clearTimeout(timeout);
+            }
+        }
+
         async request(endpoint, options = {}, loaderMessage = null) {
             if (loaderMessage) {
                 window.showLoader(loaderMessage);
             }
             try {
-                const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
-                const headers = {
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                };
-
-                const res = await fetch(url, {
+                const res = await this.fetch(endpoint, {
                     ...options,
-                    headers
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {})
+                    }
                 });
 
                 if (!res.ok) {
@@ -79,4 +109,5 @@
     }
 
     window.ajaxClient = new AjaxClient();
+    window.ajaxApiFetch = (endpoint, options = {}) => window.ajaxClient.fetch(endpoint, options);
 })();

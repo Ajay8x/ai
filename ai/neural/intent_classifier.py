@@ -16,6 +16,7 @@ import time
 from typing import Dict, Any, List, Optional, Tuple
 
 from core.logger import ajax_logger
+from ai.neural.dataset_loader import load_intent_dataset
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -193,13 +194,16 @@ class IntentClassifier:
             ajax_logger.warning(f"Could not load PyTorch neural intent model ({e}); falling back to cosine similarity.")
 
     def load_dataset(self):
-        """Loads or reloads the reference intents.json dataset."""
+        """Loads the base dataset plus curated supplemental vocabulary."""
         if os.path.exists(self.dataset_path):
             try:
-                with open(self.dataset_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.intents = data.get("intents", [])
-                ajax_logger.info(f"Loaded {len(self.intents)} intents into IntentClassifier.")
+                data = load_intent_dataset(self.dataset_path)
+                self.intents = data.get("intents", [])
+                merged = data.get("supplemental_patterns_merged", 0)
+                ajax_logger.info(
+                    f"Loaded {len(self.intents)} intents into IntentClassifier "
+                    f"({merged} supplemental patterns merged)."
+                )
             except Exception as e:
                 ajax_logger.error(f"Failed to load intents dataset: {e}")
 

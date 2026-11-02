@@ -4,6 +4,7 @@ Enables querying indexed project or local documents.
 """
 
 from typing import Dict, Any, Optional
+import os
 from tools.base import BaseTool, ToolResult
 from core.permissions import PermissionLevel, ToolCategory
 from ai.rag.store import rag_store
@@ -28,7 +29,9 @@ class QueryDocumentsTool(BaseTool):
 
         formatted = []
         for i, res in enumerate(results, 1):
-            formatted.append(f"[{i}] Source: {res['source']}\n{res['chunk']}")
+            citation = res.get("citation") or f"{res.get('title', 'Document')} — {os.path.basename(res.get('source', ''))}"
+            score = res.get("score", 0.0)
+            formatted.append(f"[{i}] {citation} (relevance: {score:.4f})\n{res['chunk']}")
 
         output = "Relevant context from documents:\n\n" + "\n\n---\n\n".join(formatted)
         return ToolResult(success=True, output=output, metadata={"results": results})
