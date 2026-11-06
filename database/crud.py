@@ -40,23 +40,27 @@ def get_conversation(conversation_id: str, user_id: Optional[str] = None) -> Opt
     return dict(row) if row else None
 
 
-def create_conversation(title: str = "New Conversation", user_id: Optional[str] = None) -> str:
-    conv_id = str(uuid.uuid4())
+def create_conversation(title: str = "New Conversation", user_id: Optional[str] = None, conversation_id: Optional[str] = None) -> str:
+    conv_id = str(conversation_id or uuid.uuid4())
     owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            db.conversations.insert_one({
-                "id": conv_id,
-                "user_id": owner_id,
-                "title": title,
-                "created_at": now_str,
-                "updated_at": now_str,
-                "is_archived": 0,
-                "is_pinned": 0
-            })
+            db.conversations.update_one(
+                {"id": conv_id, "user_id": owner_id},
+                {"$setOnInsert": {
+                    "id": conv_id,
+                    "user_id": owner_id,
+                    "title": title,
+                    "created_at": now_str,
+                    "updated_at": now_str,
+                    "is_archived": 0,
+                    "is_pinned": 0
+                }},
+                upsert=True
+            )
             return conv_id
         except Exception as e:
             error_logger.error(f"MongoDB create_conversation error: {e}")
@@ -64,11 +68,13 @@ def create_conversation(title: str = "New Conversation", user_id: Optional[str] 
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO conversations (id, user_id, title) VALUES (?, ?, ?)",
-            (conv_id, owner_id, title)
-        )
-        conn.commit()
+        cursor.execute("SELECT id FROM conversations WHERE id = ? AND user_id = ?", (conv_id, owner_id))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO conversations (id, user_id, title) VALUES (?, ?, ?)",
+                (conv_id, owner_id, title)
+            )
+            conn.commit()
         conn.close()
     return conv_id
 

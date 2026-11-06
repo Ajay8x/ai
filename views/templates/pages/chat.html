@@ -667,10 +667,16 @@
 
         fullChatAbortController = new AbortController();
 
+        const localToken = localStorage.getItem('ajax_session_token');
+        const reqHeaders = { 'Content-Type': 'application/json' };
+        if (localToken) {
+            reqHeaders['Authorization'] = 'Bearer ' + localToken;
+        }
+
         try {
             const response = await fetch('/api/chat/stream', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: reqHeaders,
                 signal: fullChatAbortController.signal,
                 body: JSON.stringify({
                     query: text,
@@ -687,13 +693,16 @@
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
+            let sseBuffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
+                sseBuffer += decoder.decode(value, { stream: true });
+                const lines = sseBuffer.split('\n');
+                sseBuffer = lines.pop(); // Keep incomplete line in buffer
+
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const dataStr = line.replace('data: ', '').trim();

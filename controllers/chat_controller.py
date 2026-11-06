@@ -21,10 +21,13 @@ chat_router = APIRouter(prefix="/api", tags=["Chat & Intelligence"])
 
 @chat_router.post("/chat", response_model=ChatResponse)
 async def process_chat_message(req: ChatRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
-    conv_id = req.conversation_id or create_conversation("API Chat", user_id=current_user["id"])
-    if req.conversation_id and not get_conversation(conv_id, user_id=current_user["id"]):
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Conversation not found.")
+    user_id = current_user["id"]
+    conv_id = req.conversation_id
+    if not conv_id:
+        conv_id = create_conversation("API Chat", user_id=user_id)
+    elif not get_conversation(conv_id, user_id=user_id):
+        create_conversation("API Chat", user_id=user_id, conversation_id=conv_id)
+
     result = await run_in_threadpool(
         router.process_query,
         req.query,
@@ -32,17 +35,20 @@ async def process_chat_message(req: ChatRequest, current_user: Dict[str, Any] = 
         modality=req.modality or "api",
         web_search=bool(req.web_search),
         language=req.language or "en",
-        user_id=current_user["id"]
+        user_id=user_id
     )
     return JSONResponse(content=result, status_code=200)
 
 @chat_router.post("/chat/stream")
 async def process_chat_message_stream(req: ChatRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Server-Sent Events (SSE) real-time token streaming endpoint."""
-    conv_id = req.conversation_id or create_conversation("Web Chat", user_id=current_user["id"])
-    if req.conversation_id and not get_conversation(conv_id, user_id=current_user["id"]):
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Conversation not found.")
+    user_id = current_user["id"]
+    conv_id = req.conversation_id
+    if not conv_id:
+        conv_id = create_conversation("Web Chat", user_id=user_id)
+    elif not get_conversation(conv_id, user_id=user_id):
+        create_conversation("Web Chat", user_id=user_id, conversation_id=conv_id)
+
     return StreamingResponse(
         router.process_query_stream(
             req.query,
@@ -50,7 +56,7 @@ async def process_chat_message_stream(req: ChatRequest, current_user: Dict[str, 
             modality=req.modality or "web_stream",
             web_search=bool(req.web_search),
             language=req.language or "en",
-            user_id=current_user["id"]
+            user_id=user_id
         ),
         media_type="text/event-stream",
         headers={
