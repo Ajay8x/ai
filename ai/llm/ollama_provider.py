@@ -12,9 +12,9 @@ from core.logger import ajax_logger, error_logger
 from config.config_loader import config
 
 class OllamaProvider(BaseLLMProvider):
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama3.2:3b"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "qwen3.5:4b"):
         self.base_url = base_url.rstrip("/")
-        self.model = model or "llama3.2:3b"
+        self.model = model or "qwen3.5:4b"
         self._verify_or_select_model()
 
     def _verify_or_select_model(self):
@@ -24,7 +24,9 @@ class OllamaProvider(BaseLLMProvider):
                 available = [m.get("name") for m in r.json().get("models", [])]
                 if self.model not in available and available:
                     # Pick best match or first available
-                    if "llama3.2:3b" in available:
+                    if "qwen3.5:4b" in available:
+                        self.model = "qwen3.5:4b"
+                    elif "llama3.2:3b" in available:
                         self.model = "llama3.2:3b"
                     elif "gemma4:latest" in available:
                         self.model = "gemma4:latest"

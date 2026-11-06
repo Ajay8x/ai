@@ -428,7 +428,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
         calc_res = calc.execute(expression=user_msg)
         if calc_res.success:
             thought = ""
-            if getattr(config.llm, "thinking_mode", True):
+            if False:
                 thought = (
                     f"<think>\n"
                     f"- Analyzing calculation query: '{user_msg}'\n"
@@ -453,7 +453,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
             code_resp = generate_offline_code(user_msg)
             if code_resp:
                 thought = ""
-                if getattr(config.llm, "thinking_mode", True):
+                if False:
                     thought = (
                         f"<think>\n"
                         f"- Detected code generation request: '{user_msg}'\n"
@@ -597,7 +597,7 @@ def get_llm_provider() -> BaseLLMProvider:
     if (provider_name in ["gemini", "google"] or config.llm.gemini_api_key) and config.llm.gemini_api_key:
         return GeminiProvider(
             api_key=config.llm.gemini_api_key,
-            model=config.llm.model if "gemini" in config.llm.model else "gemini-1.5-flash"
+            model=config.llm.model if "gemini" in config.llm.model else config.llm.gemini_model
         )
     # Priority 2: Explicit Groq
     elif (provider_name == "groq" or (not config.llm.api_key and config.llm.groq_api_key)) and config.llm.groq_api_key:
@@ -635,7 +635,7 @@ def get_llm_provider() -> BaseLLMProvider:
     elif provider_name == "ollama":
         return OllamaProvider(
             base_url=config.llm.ollama_base_url,
-            model=config.llm.model or "llama3.2:3b"
+            model=config.llm.model or "qwen3.5:4b"
         )
     # Priority 7: Local PyTorch / Transformers
     elif provider_name in ["qwen3.5-9b", "qwen3.5", "qwen9b", "qwen-9b", "qwen", "local_hf", "transformers"]:

@@ -21,8 +21,10 @@ class ChatResponse(BaseModel):
     needs_confirmation: Optional[bool] = False
 
 class UploadRequest(BaseModel):
-    filename: str = Field(..., description="Name of the file being uploaded")
-    content_base64: str = Field(..., description="Base64 encoded file payload")
+    filename: str = Field(..., min_length=1, max_length=255, description="Name of the file being uploaded")
+    # 15 MB default binary limit plus base64 overhead. The controller applies
+    # the final environment-specific MAX_UPLOAD_SIZE_MB check after decoding.
+    content_base64: str = Field(..., max_length=21_000_000, description="Base64 encoded file payload")
 
 class UploadResponse(BaseModel):
     success: bool

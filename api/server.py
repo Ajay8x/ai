@@ -24,7 +24,8 @@ from controllers.memory_controller import memory_router
 from controllers.pages_controller import pages_router
 from controllers.auth_controller import auth_router
 from controllers.auth_controller import require_admin
-from database.db import init_db
+from database.db import init_db, is_mongo_active
+from config.config_loader import config
 from core.logger import ajax_logger
 
 VIEWS_DIR = os.path.join(BASE_DIR, "views")
@@ -38,10 +39,12 @@ app = FastAPI(
     version="3.0.0"
 )
 
-# CORS Middleware
+# CORS Middleware. Same-origin browser requests do not need CORS; only explicitly
+# configured trusted origins are allowed to send credentialed requests.
+_cors_origins = [origin.strip() for origin in config.cors_origins.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,16 +84,23 @@ async def startup_event():
         init_db()
     except Exception as e:
         ajax_logger.error(f"Startup database initialization error: {e}")
+        if os.environ.get("VERCEL"):
+            raise
 
 # Health Check Endpoint
 @app.get("/api/health")
 async def health_check():
+    mongo_required = config.database.db_type.lower() == "mongodb"
+    database_ready = is_mongo_active() if mongo_required else True
+    status = "healthy" if database_ready else "unhealthy"
     return JSONResponse({
-        "status": "healthy",
+        "status": status,
         "service": "AJAX AI",
         "version": "3.0.0",
-        "serverless": bool(os.environ.get("VERCEL"))
-    })
+        "serverless": bool(os.environ.get("VERCEL")),
+        "database": "mongodb" if mongo_required else config.database.db_type,
+        "database_ready": database_ready
+    }, status_code=200 if database_ready else 503)
 
 # Serverless Diagnosis Endpoint
 @app.get("/api/debug")

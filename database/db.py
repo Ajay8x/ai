@@ -12,6 +12,7 @@ from core.logger import ajax_logger, error_logger
 from config.config_loader import config
 
 DB_LOCK = threading.RLock()
+SYSTEM_SCOPE = "__system__"
 _IS_POSTGRES = False
 
 try:
@@ -355,19 +356,27 @@ def init_db():
                 
                 # Indexes
                 db.conversations.create_index("id", unique=True)
+                db.conversations.create_index([("user_id", 1), ("updated_at", -1)])
                 db.conversations.create_index([("is_pinned", -1), ("updated_at", -1)])
                 
                 db.messages.create_index("id", unique=True)
                 db.messages.create_index([("conversation_id", 1), ("created_at", 1)])
+                db.messages.create_index([("user_id", 1), ("conversation_id", 1), ("created_at", 1)])
                 
                 db.memories.create_index("id", unique=True)
                 db.memories.create_index([("category", 1), ("key_text", 1)])
+                db.memories.create_index([("user_id", 1), ("updated_at", -1)])
                 
                 db.tool_executions.create_index("id", unique=True)
                 db.tool_executions.create_index([("created_at", -1)])
+                db.tool_executions.create_index([("user_id", 1), ("created_at", -1)])
+
+                db.qa_history.create_index([("user_id", 1), ("timestamp", -1)])
+                db.rag_documents.create_index([("user_id", 1), ("source", 1)])
                 
                 db.training_examples.create_index("id", unique=True)
                 db.training_examples.create_index([("created_at", -1)])
+                db.training_examples.create_index([("user_id", 1), ("created_at", -1)])
 
                 db.scheduled_tasks.create_index("id", unique=True)
                 db.scheduled_tasks.create_index([("status", 1)])
@@ -396,6 +405,9 @@ def init_db():
 
                 return
             except Exception as e:
+                if not config.allow_sqlite_fallback:
+                    ajax_logger.error(f"Failed to initialize MongoDB Atlas and SQLite fallback is disabled: {e}")
+                    raise
                 ajax_logger.error(f"Failed to initialize MongoDB Atlas: {e}. Falling back to SQLite.")
 
         # 2. SQLite / PostgreSQL Initialization
@@ -410,6 +422,7 @@ def init_db():
                 """
                 CREATE TABLE IF NOT EXISTS conversations (
                     id VARCHAR(64) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL DEFAULT '__system__',
                     title TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -421,6 +434,7 @@ def init_db():
                 """
                 CREATE TABLE IF NOT EXISTS messages (
                     id VARCHAR(64) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL DEFAULT '__system__',
                     conversation_id VARCHAR(64) NOT NULL,
                     role VARCHAR(32) NOT NULL,
                     content TEXT NOT NULL,
@@ -433,6 +447,7 @@ def init_db():
                 """
                 CREATE TABLE IF NOT EXISTS memories (
                     id VARCHAR(64) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL DEFAULT '__system__',
                     category VARCHAR(64) DEFAULT 'general',
                     key_text TEXT NOT NULL,
                     value_text TEXT NOT NULL,
@@ -446,6 +461,7 @@ def init_db():
                 """
                 CREATE TABLE IF NOT EXISTS tool_executions (
                     id VARCHAR(64) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL DEFAULT '__system__',
                     tool_name VARCHAR(128) NOT NULL,
                     parameters_json TEXT,
                     result_json TEXT,
@@ -458,6 +474,7 @@ def init_db():
                 """
                 CREATE TABLE IF NOT EXISTS training_examples (
                     id VARCHAR(64) PRIMARY KEY,
+                    user_id VARCHAR(64) NOT NULL DEFAULT '__system__',
                     raw_text TEXT NOT NULL,
                     intent VARCHAR(64) NOT NULL,
                     entities_json TEXT,
@@ -661,8 +678,34 @@ def init_db():
             for table_ddl in tables:
                 cursor.execute(table_ddl)
 
+            # Add ownership columns to databases created by older AJAX AI builds.
+            # Existing records stay in the system scope and are not exposed to a
+            # normal authenticated user until explicitly migrated by an admin.
+            for table_name in ("conversations", "messages", "memories", "tool_executions", "training_examples"):
+                try:
+                    if is_pg:
+                        cursor.execute(
+                            "SELECT column_name FROM information_schema.columns "
+                            "WHERE table_name = ? AND column_name = 'user_id'",
+                            (table_name,)
+                        )
+                    else:
+                        cursor.execute(f"PRAGMA table_info({table_name})")
+                    columns = {row.get("column_name") or row.get("name") for row in cursor.fetchall()}
+                    if "user_id" not in columns:
+                        cursor.execute(
+                            f"ALTER TABLE {table_name} ADD COLUMN user_id VARCHAR(64) NOT NULL DEFAULT '__system__'"
+                        )
+                except Exception as migration_error:
+                    ajax_logger.warning(f"Ownership migration notice for {table_name}: {migration_error}")
+
             # Indexes
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_conv_user_updated ON conversations(user_id, updated_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_msg_user_conv ON messages(user_id, conversation_id, created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_mem_user_updated ON memories(user_id, updated_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tool_user_created ON tool_executions(user_id, created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_training_user_created ON training_examples(user_id, created_at)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_mem_cat ON memories(category)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON scheduled_tasks(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_prov_cat ON api_providers(category)")

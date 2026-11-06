@@ -19,10 +19,6 @@ COMMON_APPS = {
     "google chrome": "chrome",
     "edge": "msedge",
     "ms edge": "msedge",
-    "cmd": "cmd.exe",
-    "command prompt": "cmd.exe",
-    "terminal": "wt.exe",
-    "powershell": "powershell.exe",
     "explorer": "explorer.exe",
     "file explorer": "explorer.exe",
     "settings": "start ms-settings:",
@@ -101,7 +97,7 @@ class CloseApplicationTool(BaseTool):
     name = "close_application"
     description = "Close or terminate a running application on Windows."
     category = ToolCategory.APPLICATION
-    permission = PermissionLevel.SAFE
+    permission = PermissionLevel.CONFIRM_REQUIRED
     parameters_schema = {
         "type": "object",
         "properties": {
@@ -115,12 +111,20 @@ class CloseApplicationTool(BaseTool):
 
     def execute(self, app_name: str, **kwargs) -> ToolResult:
         app_clean = app_name.lower().strip().replace(".exe", "")
+        target = COMMON_APPS.get(app_clean)
+        if not target or target.startswith("start "):
+            return ToolResult(
+                success=False,
+                output=None,
+                error=f"Application '{app_name}' is not in the approved close list."
+            )
+        target_name = os.path.basename(target).lower().replace(".exe", "")
         killed = False
         
         for proc in psutil.process_iter(['name', 'pid']):
             try:
                 proc_name = proc.info['name'].lower().replace(".exe", "")
-                if app_clean in proc_name or proc_name in app_clean:
+                if proc_name == target_name:
                     proc.terminate()
                     killed = True
             except (psutil.NoSuchProcess, psutil.AccessDenied):

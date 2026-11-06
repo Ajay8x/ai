@@ -35,20 +35,10 @@ def format_system_prompt(
     thinking_mode: Optional[bool] = None
 ) -> str:
     from config.config_loader import config
-    is_thinking = thinking_mode if thinking_mode is not None else getattr(config.llm, "thinking_mode", True)
-
     prompt = AJAX_SYSTEM_PROMPT
-    
-    if is_thinking:
-        prompt += (
-            "\n\n--- CHAIN-OF-THOUGHT REASONING MODE ---\n"
-            "Before providing your final response, write your step-by-step reasoning inside <think>...</think> tags.\n"
-            "In this internal scratchpad:\n"
-            "- Analyze the user's core intent, nuances, and constraints.\n"
-            "- Outline key concepts, algorithms, edge cases, or calculations needed.\n"
-            "- Plan a structured, intuitive, and complete response.\n"
-            "After the closing </think> tag, output your polished, formatted response directly to the user."
-        )
+    # Private chain-of-thought is never requested or exposed. The model should
+    # provide only a concise, user-facing explanation or useful steps.
+    prompt += "\n\n--- RESPONSE POLICY ---\nDo not output private chain-of-thought or <think> tags. Give a concise answer with brief user-facing steps when helpful."
 
     if intent_context:
         prompt += f"\n\n--- NEURAL INTENT CONTEXT ---\n{intent_context}"

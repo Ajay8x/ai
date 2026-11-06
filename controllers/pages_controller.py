@@ -7,6 +7,7 @@ Serves clean HTML pages with automatic authentication guard:
 """
 
 import os
+from urllib.parse import urlparse
 from typing import Optional
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -64,7 +65,17 @@ async def serve_login_page(request: Request):
     if user:
         # User is already signed in! Redirect to intended destination or dashboard
         redirect_target = request.query_params.get("redirect")
-        if redirect_target and "/admin" in redirect_target and user.get("role") != "admin":
+        parsed_target = urlparse(redirect_target or "")
+        if (
+            not redirect_target
+            or not redirect_target.startswith("/")
+            or redirect_target.startswith("//")
+            or parsed_target.scheme
+            or parsed_target.netloc
+            or not redirect_target.startswith(("/AJAX/", "/ajax/"))
+        ):
+            redirect_target = None
+        if redirect_target and (redirect_target.startswith(("/AJAX/admin", "/ajax/admin"))) and user.get("role") != "admin":
             redirect_target = "/AJAX/dashboard"
         elif not redirect_target or "/login" in redirect_target:
             redirect_target = "/AJAX/admin" if user.get("role") == "admin" else "/AJAX/dashboard"

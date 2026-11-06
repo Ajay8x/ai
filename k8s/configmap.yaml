@@ -17,12 +17,14 @@ data:
 
   # AI LLM Provider
   DEFAULT_LLM_PROVIDER: "openai"
-  LLM_MODEL: "gpt-4o-mini"
+  DEFAULT_LLM_PROVIDER: "ollama"
+  LLM_MODEL: "qwen3.5:4b"
+  OLLAMA_BASE_URL: "http://ollama:11434"
   LLM_TEMPERATURE: "0.7"
   LLM_MAX_TOKENS: "2048"
 
   # Database Configuration
-  DB_TYPE: "postgres"
+  DATABASE_TYPE: "postgres"
   POSTGRES_HOST: "postgres-service"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "ajax_db"

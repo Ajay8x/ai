@@ -354,24 +354,6 @@
                     data = await res.json();
                 }
 
-                // If cookie did not authenticate, check localStorage token backup
-                const localToken = localStorage.getItem('ajax_session_token');
-                if ((!data || !data.authenticated) && localToken) {
-                    try {
-                        const tokenRes = await fetch('/api/auth/me', {
-                            headers: { 'Authorization': `Bearer ${localToken}` }
-                        });
-                        if (tokenRes.ok) {
-                            const tokenData = await tokenRes.json();
-                            if (tokenData.authenticated) {
-                                data = tokenData;
-                                // Re-set cookie if browser lost it
-                                document.cookie = `ajax_session_token=${localToken}; path=/; max-age=2592000; samesite=lax`;
-                            }
-                        }
-                    } catch (_) {}
-                }
-
                 const nameEl = document.getElementById('sidebarUserName');
                 const avatarEl = document.getElementById('sidebarUserAvatar');
                 const roleEl = document.getElementById('sidebarUserRole');
@@ -416,28 +398,20 @@
 
         async function handleAuthButtonClick() {
             try {
-                const localToken = localStorage.getItem('ajax_session_token');
-                const headers = localToken ? { 'Authorization': `Bearer ${localToken}` } : {};
-                const res = await fetch('/api/auth/me', { headers });
+                const res = await fetch('/api/auth/me');
                 const data = await res.json();
                 if (data.authenticated) {
                     if (confirm(`Signed in as @${data.user.username} (${data.user.full_name}). Do you want to sign out?`)) {
-                        await fetch('/api/auth/logout', { 
-                            method: 'POST',
-                            headers: localToken ? { 'Authorization': `Bearer ${localToken}` } : {}
-                        });
-                        try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
+                        await fetch('/api/auth/logout', { method: 'POST' });
                         if (window.showToast) window.showToast('Signed out successfully.', 'info');
                         setTimeout(() => {
                             window.location.href = '/AJAX/login';
                         }, 300);
                     }
                 } else {
-                    try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
                     window.location.href = '/AJAX/login';
                 }
             } catch (_) {
-                try { localStorage.removeItem('ajax_session_token'); } catch (_) {}
                 window.location.href = '/AJAX/login';
             }
         }

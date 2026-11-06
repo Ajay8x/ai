@@ -17,10 +17,11 @@ class ContextManager:
         current_query: str,
         rag_context: str = "",
         language: str = "en",
-        intent_context: str = ""
+        intent_context: str = "",
+        user_id: Optional[str] = None
     ) -> List[Dict[str, str]]:
         # 1. Fetch relevant memories
-        memories = search_memories(query=current_query, limit=5)
+        memories = search_memories(query=current_query, limit=5, user_id=user_id)
         memories_str = ""
         if memories:
             memories_str = "\n".join([f"- {m['key_text']}: {m['value_text']}" for m in memories])
@@ -36,7 +37,7 @@ class ContextManager:
         messages = [{"role": "system", "content": system_prompt}]
 
         # 3. Retrieve recent conversation history
-        history = get_conversation_messages(conversation_id, limit=self.max_history_turns)
+        history = get_conversation_messages(conversation_id, limit=self.max_history_turns, user_id=user_id)
         for msg in history:
             messages.append({
                 "role": msg["role"],

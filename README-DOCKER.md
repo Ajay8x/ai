@@ -61,7 +61,7 @@ You can pass environment variables in `.env` or via Docker Compose:
 | `OPENAI_API_KEY` | - | OpenAI API key |
 | `GROQ_API_KEY` | - | Groq Cloud API key |
 | `DEEPSEEK_API_KEY` | - | DeepSeek API key |
-| `DB_TYPE` | `postgres` | Database type (`postgres` or `sqlite`) |
+| `DATABASE_TYPE` | `postgres` | Database type (`postgres` or `sqlite`) |
 | `POSTGRES_HOST` | `postgres` | PostgreSQL hostname |
 | `POSTGRES_PORT` | `5432` | PostgreSQL port |
 | `POSTGRES_USER` | `ajax_user` | PostgreSQL username |

@@ -1,220 +1,347 @@
 {% extends "base.html" %}
 
-{% block title %}AJAX AI - Full Cognitive Network & Topology Diagram{% endblock %}
-{% block header_title %}Full System & GraphRAG Network Topology{% endblock %}
-{% block header_subtitle %}Interactive Physics-Driven Multi-Cluster Network Diagram: Semantic Intent Anchors, Search-Guided GraphRAG, and Knowledge Entities{% endblock %}
+{% block title %}AJAX AI — Brain & Neural Network Topology{% endblock %}
+{% block header_title %}Brain & GraphRAG Network Topology{% endblock %}
+{% block header_subtitle %}Interactive Physics-Driven Multi-Cluster Diagram: Neural Intent Anchors, Search-Guided GraphRAG & Knowledge Entities{% endblock %}
 
 {% block content %}
 <style>
-/* Full Network Topology Styles */
+/* ================================================================
+   Brain / Neural-Network Topology — Scoped Styles
+   ================================================================ */
+
+/* Page wrapper: fills the scroll-content area without overflow */
 .network-page-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     height: 100%;
+    min-height: 0;           /* allow flex-child shrink */
+    padding-bottom: 18px;
 }
 
+/* ── Toolbar ── */
 .network-toolbar {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px 18px;
-    background: linear-gradient(135deg, rgba(13, 18, 29, 0.85) 0%, rgba(17, 24, 39, 0.7) 100%);
+    gap: 10px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(13,24,37,.96) 0%, rgba(15,23,42,.82) 55%, rgba(16,22,37,.92) 100%);
     border: 1px solid var(--border-card);
     border-radius: var(--radius-md);
     backdrop-filter: blur(12px);
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(0,0,0,.22);
+    flex-shrink: 0;
 }
 
+.network-toolbar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-cyan), var(--accent-indigo), var(--accent-rose));
+    box-shadow: 0 0 18px rgba(0,242,254,.5);
+    border-radius: 2px 0 0 2px;
+}
+
+.network-toolbar-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.network-brand-mark {
+    width: 40px; height: 40px; flex: 0 0 40px;
+    display: grid; place-items: center;
+    border-radius: 11px;
+    color: var(--accent-cyan);
+    background: radial-gradient(circle at 30% 20%, rgba(0,242,254,.20), rgba(99,102,241,.08));
+    border: 1px solid rgba(0,242,254,.42);
+    box-shadow: inset 0 0 14px rgba(0,242,254,.08), 0 0 18px rgba(0,242,254,.10);
+    font-size: 17px;
+}
+
+.network-eyebrow {
+    display: flex; align-items: center; gap: 7px;
+    margin-bottom: 3px;
+    color: var(--accent-emerald);
+    font-size: 10px; font-family: var(--font-mono);
+    font-weight: 800; letter-spacing: .10em; text-transform: uppercase;
+}
+
+.network-live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-emerald);
+    box-shadow: 0 0 8px var(--accent-emerald);
+    animation: brain-blink 2.2s ease-in-out infinite;
+}
+
+@keyframes brain-blink {
+    0%,100% { opacity:1; } 50% { opacity:.35; }
+}
+
+.network-title  { margin: 0; color: var(--text-main); font-size: 15px; font-weight: 800; }
+.network-subtitle { margin-top: 3px; color: var(--text-muted); font-size: 11px; }
+
+.network-toolbar-controls {
+    display: flex; flex-wrap: wrap;
+    justify-content: flex-end; align-items: center; gap: 6px;
+}
+
+.network-search-shell { position: relative; width: 212px; }
+.network-search-shell i {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim); font-size: 11px; pointer-events: none;
+}
+.network-search-shell .form-input {
+    width: 100%; padding: 7px 10px 7px 30px;
+    font-size: 11.5px; height: 34px; box-sizing: border-box;
+}
+.network-filter-select {
+    width: 165px; padding: 7px 10px;
+    font-size: 11.5px; height: 34px; box-sizing: border-box;
+}
+.network-tool-btn {
+    height: 34px; padding: 0 11px; font-size: 11.5px;
+    gap: 5px; white-space: nowrap;
+    display: inline-flex; align-items: center;
+}
+.network-zoom-readout {
+    min-width: 40px; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 10.5px;
+    text-align: center; user-select: none;
+}
+
+/* ── Summary Cards ── */
+.network-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 10px;
+    flex-shrink: 0;
+}
+.network-summary-card {
+    position: relative; overflow: hidden;
+    padding: 13px 16px;
+    background: linear-gradient(135deg, rgba(15,23,42,.82), rgba(13,18,29,.72));
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--summary-accent, var(--accent-cyan));
+    border-radius: var(--radius-sm);
+}
+.network-summary-card::after {
+    content: "";
+    position: absolute; right: -18px; bottom: -24px;
+    width: 68px; height: 68px; border-radius: 50%;
+    background: var(--summary-glow, rgba(0,242,254,.12));
+    filter: blur(2px);
+}
+.network-summary-label,
+.network-summary-value,
+.network-summary-meta { position: relative; z-index: 1; }
+.network-summary-label {
+    color: var(--text-dim); font-size: 10px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase;
+}
+.network-summary-value {
+    margin-top: 4px; color: var(--text-main);
+    font-family: var(--font-mono); font-size: 20px; font-weight: 800;
+}
+.network-summary-meta { margin-top: 2px; color: var(--text-muted); font-size: 10.5px; }
+
+/* ── Canvas Wrapper — flex grows to fill remaining height ── */
 .network-canvas-wrapper {
     position: relative;
-    width: 100%;
-    height: calc(100vh - 250px);
-    min-height: 580px;
-    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.5) 0%, rgba(7, 9, 14, 0.95) 100%);
+    flex: 1 1 auto;
+    min-height: 430px;
+    background: radial-gradient(circle at center, rgba(15,23,42,.50) 0%, rgba(7,9,14,.96) 100%);
     border: 1px solid var(--border-card);
     border-radius: var(--radius-md);
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 28px rgba(0,0,0,.40);
 }
-
 #networkCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    cursor: grab;
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    cursor: grab; touch-action: none; display: block;
 }
+#networkCanvas:active { cursor: grabbing; }
 
-#networkCanvas:active {
-    cursor: grabbing;
-}
-
-/* Floating Overlay HUD */
+/* ── Floating HUD ── */
 .network-hud {
-    position: absolute;
-    top: 16px;
-    left: 16px;
+    position: absolute; top: 14px; left: 14px;
     pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 10;
+    display: flex; flex-direction: column; gap: 5px; z-index: 10;
 }
-
 .hud-pill {
     pointer-events: auto;
-    background: rgba(13, 18, 29, 0.8);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(8px);
+    background: rgba(7,9,14,.84); border: 1px solid var(--border-subtle);
+    border-radius: 20px; padding: 5px 11px;
+    font-size: 10.5px; font-family: var(--font-mono); color: var(--text-main);
+    display: flex; align-items: center; gap: 7px;
+    backdrop-filter: blur(10px); box-shadow: 0 4px 10px rgba(0,0,0,.20);
 }
 
-/* Floating Top Right Canvas Tools (Fullscreen Button) */
+/* ── Fullscreen Button (top-right corner of canvas) ── */
 .network-top-right-tools {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 25;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    position: absolute; top: 12px; right: 12px;
+    z-index: 25; display: flex; align-items: center; gap: 7px;
 }
-
 .fullscreen-toggle-btn {
-    background: rgba(13, 18, 29, 0.85);
-    border: 1px solid var(--border-active);
-    color: var(--accent-cyan);
-    padding: 7px 14px;
-    border-radius: 20px;
-    font-size: 12.5px;
-    font-weight: 700;
-    font-family: var(--font-sans);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    background: rgba(7,9,14,.88); border: 1px solid var(--border-active);
+    color: var(--accent-cyan); padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; font-family: var(--font-sans);
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+    backdrop-filter: blur(10px); transition: all .2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,.40);
 }
-
 .fullscreen-toggle-btn:hover {
-    background: var(--accent-cyan);
-    color: #07090e;
-    box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
-    transform: translateY(-2px);
+    background: var(--accent-cyan); color: #07090e;
+    box-shadow: 0 0 16px rgba(0,242,254,.5); transform: translateY(-1px);
 }
 
 /* Fullscreen expanded state */
 .network-canvas-wrapper.is-fullscreen {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
+    position: fixed !important; inset: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    min-height: unset !important;
     z-index: 99999 !important;
-    border-radius: 0 !important;
-    border: none !important;
-    margin: 0 !important;
+    border-radius: 0 !important; border: none !important; margin: 0 !important;
 }
 
-/* Floating Node Inspector */
+/* ── Node Inspector Floating Panel ── */
 .node-inspector-panel {
-    position: absolute;
-    top: 60px;
-    right: 16px;
-    width: 320px;
-    max-height: calc(100% - 76px);
-    overflow-y: auto;
-    background: rgba(13, 18, 29, 0.9);
-    border: 1px solid var(--border-active);
+    position: absolute; top: 54px; right: 12px;
+    width: 290px; max-height: calc(100% - 66px);
+    overflow-y: auto; overscroll-behavior: contain;
+    background: rgba(7,9,14,.94);
+    border: 1px solid rgba(0,242,254,.22);
     border-radius: var(--radius-md);
-    padding: 18px;
-    z-index: 20;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(16px);
-    transition: all 0.3s ease;
+    padding: 15px; z-index: 20;
+    box-shadow: 0 12px 32px rgba(0,0,0,.60), 0 0 20px rgba(0,242,254,.05);
+    backdrop-filter: blur(18px);
+    transition: opacity .22s ease, transform .22s ease;
 }
-
+.node-inspector-panel.is-hidden {
+    opacity: 0; pointer-events: none; transform: translateX(10px);
+}
 .inspector-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; padding-bottom: 8px;
     border-bottom: 1px solid var(--border-subtle);
 }
 
+/* ── Cluster Legend Bar ── */
 .cluster-legend-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 16px;
-    background: rgba(13, 18, 29, 0.65);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 9px 12px;
+    background: rgba(9,14,24,.70);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-    font-size: 12px;
+    flex-shrink: 0;
 }
-
 .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 10px; color: var(--text-muted);
+    background: rgba(255,255,255,.03); border: 1px solid transparent;
+    border-radius: 999px; cursor: pointer; transition: all .17s ease;
+    font-size: 11.5px; font-weight: 600;
+}
+.legend-item:hover, .legend-item.is-active {
+    color: var(--text-main); background: rgba(0,242,254,.08);
+    border-color: rgba(0,242,254,.28);
+}
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Tooltip ── */
+.network-tooltip {
+    position: absolute; display: none; z-index: 30;
+    max-width: 230px; padding: 8px 12px;
+    color: var(--text-main); background: rgba(7,9,14,.96);
+    border: 1px solid rgba(0,242,254,.35); border-radius: 8px;
+    box-shadow: 0 10px 22px rgba(0,0,0,.50);
+    backdrop-filter: blur(10px);
+    pointer-events: none; font-size: 11px; line-height: 1.5;
 }
 
-.legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+    .network-toolbar-head,
+    .network-toolbar-controls { width: 100%; }
+    .network-toolbar-controls { justify-content: flex-start; }
+}
+@media (max-width: 700px) {
+    .network-summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .network-search-shell,
+    .network-filter-select { width: 100%; flex: 1 1 130px; }
+    .node-inspector-panel {
+        top: auto; right: 8px; bottom: 8px; left: 8px;
+        width: auto; max-height: 40%;
+    }
+    .network-hud { display: none; }
 }
 </style>
 
 <div class="network-page-container">
     <!-- Top Interactive Control Bar -->
     <div class="network-toolbar">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:36px; height:36px; border-radius:8px; background:rgba(0, 242, 254, 0.1); border:1px solid rgba(0,242,254,0.3); display:flex; align-items:center; justify-content:center; font-size:18px;">
-                <i class="fa-solid fa-circle-nodes" style="color:var(--accent-cyan);"></i>
-            </div>
+        <div class="network-toolbar-head">
+            <div class="network-brand-mark"><i class="fa-solid fa-circle-nodes"></i></div>
             <div>
-                <h3 style="font-size:15px; font-weight:700; color:var(--text-main);">Neural Intent & GraphRAG Network Topology</h3>
-                <div style="font-size:12px; color:var(--text-muted);">Real-time physics graph: Drag nodes, click to inspect relations, zoom to explore chains.</div>
+                <div class="network-eyebrow"><span class="network-live-dot"></span> Live topology monitor</div>
+                <h3 class="network-title">Neural Intent & GraphRAG Network</h3>
+                <div class="network-subtitle">Drag to explore · click to inspect · scroll to zoom</div>
             </div>
         </div>
 
-        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
-            <!-- Node Search -->
-            <input type="text" id="networkSearchInput" class="form-input" placeholder="Search node (e.g. AlphaFold, Meilisearch)..." style="padding:5px 10px; font-size:12px; width:210px;" oninput="searchNetworkNode()">
+        <div class="network-toolbar-controls">
+            <div class="network-search-shell">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="networkSearchInput" class="form-input" placeholder="Find a node..." aria-label="Find a node" oninput="searchNetworkNode()">
+            </div>
 
-            <!-- Cluster Filter -->
-            <select id="clusterFilter" class="form-input" style="padding:5px 10px; font-size:12px;" onchange="filterCluster()">
+            <select id="clusterFilter" class="form-input network-filter-select" onchange="filterCluster()" aria-label="Filter network cluster">
                 <option value="ALL">All Clusters (Full System)</option>
                 <option value="BRAIN">Neural Intent & Routing</option>
                 <option value="GRAPHRAG">Search-Guided GraphRAG</option>
                 <option value="ENTITY">Knowledge Entities</option>
                 <option value="EXEC">Execution & DB Storage</option>
+                <option value="OUTPUT">Grounded LLM Output</option>
             </select>
 
-            <!-- Buttons -->
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomIn()" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="zoomOut()" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
-            <button class="btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="resetCamera()" title="Fit View"><i class="fa-solid fa-arrows-to-dot"></i> Reset</button>
-            <button class="btn-secondary" id="togglePhysicsBtn" style="padding:5px 10px; font-size:12px;" onclick="togglePhysics()"><i class="fa-solid fa-pause"></i> Pause</button>
-            <button class="btn-secondary" id="toolbarFullscreenBtn" style="padding:5px 10px; font-size:12px;" onclick="toggleCanvasFullscreen()" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i> Fullscreen</button>
-            <button class="btn-primary" style="padding:5px 12px; font-size:12px; gap:6px;" onclick="pulseAllChains()"><i class="fa-solid fa-bolt"></i> Pulse Flow</button>
+            <button class="btn-secondary network-tool-btn" onclick="zoomOut()" title="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-minus"></i></button>
+            <span class="network-zoom-readout" id="zoomReadout">100%</span>
+            <button class="btn-secondary network-tool-btn" onclick="zoomIn()" title="Zoom in" aria-label="Zoom in"><i class="fa-solid fa-plus"></i></button>
+            <button class="btn-secondary network-tool-btn" onclick="resetCamera()" title="Fit network"><i class="fa-solid fa-arrows-to-dot"></i><span>Fit</span></button>
+            <button class="btn-secondary network-tool-btn" id="togglePhysicsBtn" onclick="togglePhysics()"><i class="fa-solid fa-pause"></i><span>Pause</span></button>
+            <button class="btn-secondary network-tool-btn" id="toolbarFullscreenBtn" onclick="toggleCanvasFullscreen()" title="Toggle fullscreen"><i class="fa-solid fa-expand"></i><span>View</span></button>
+            <button class="btn-primary network-tool-btn" onclick="pulseAllChains()"><i class="fa-solid fa-bolt"></i><span>Pulse</span></button>
+        </div>
+    </div>
+
+    <div class="network-summary-grid" aria-label="Network summary">
+        <div class="network-summary-card" style="--summary-glow:rgba(0,242,254,0.14); --summary-accent:#00f2fe;">
+            <div class="network-summary-label">Active nodes</div>
+            <div class="network-summary-value" id="summaryNodeCount">19</div>
+            <div class="network-summary-meta">Interactive system components</div>
+        </div>
+        <div class="network-summary-card" style="--summary-glow:rgba(99,102,241,0.16); --summary-accent:#6366f1;">
+            <div class="network-summary-label">Topology edges</div>
+            <div class="network-summary-value" id="summaryEdgeCount">21</div>
+            <div class="network-summary-meta">Directed relationships</div>
+        </div>
+        <div class="network-summary-card" style="--summary-glow:rgba(16,185,129,0.15); --summary-accent:#10b981;">
+            <div class="network-summary-label">Clusters</div>
+            <div class="network-summary-value" id="summaryClusterCount">5</div>
+            <div class="network-summary-meta" id="summaryClusterMeta">Neural · RAG · entities · output</div>
+        </div>
+        <div class="network-summary-card" style="--summary-glow:rgba(244,63,94,0.15); --summary-accent:#f43f5e;">
+            <div class="network-summary-label">Engine status</div>
+            <div class="network-summary-value" id="summaryEngineStatus">LIVE</div>
+            <div class="network-summary-meta">Physics simulation online</div>
         </div>
     </div>
 
@@ -227,6 +354,8 @@
                 <span id="fsText">Fullscreen</span>
             </button>
         </div>
+
+        <div class="network-tooltip" id="networkTooltip"></div>
 
         <!-- Live HUD Stats (Left) -->
         <div class="network-hud">
@@ -244,8 +373,8 @@
             </div>
         </div>
 
-        <!-- Node Inspector Floating Panel (Right) -->
-        <div class="node-inspector-panel" id="nodeInspector">
+        <!-- Node Inspector Floating Panel (Right) — hidden by default, shown on node click -->
+        <div class="node-inspector-panel is-hidden" id="nodeInspector" style="display:none;">
             <div class="inspector-header">
                 <span style="font-size:11px; font-weight:800; font-family:var(--font-mono); color:var(--accent-cyan); text-transform:uppercase;" id="insCluster">Cluster: Brain</span>
                 <button class="btn-secondary" style="padding:2px 6px; font-size:11px;" onclick="deselectNode()">✕</button>
@@ -271,18 +400,33 @@
     </div>
 
     <!-- Cluster Color Legend -->
-    <div class="cluster-legend-bar">
+    <div class="cluster-legend-bar" aria-label="Network cluster filters">
         <span style="font-weight:700; color:var(--text-muted);">Network Clusters:</span>
-        <div class="legend-item"><span class="legend-dot" style="background:#00f2fe;"></span><span>Neural Intent & Ingestion</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:#6366f1;"></span><span>Search-Guided GraphRAG</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span><span>Verified Knowledge Graph Entities</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span><span>Direct Execution & Storage DB</span></div>
-        <div class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span><span>Grounded LLM Streaming Output</span></div>
+        <button class="legend-item is-active" type="button" data-cluster="ALL" onclick="setClusterFilter('ALL')"><span class="legend-dot" style="background:#94a3b8;"></span><span>All</span></button>
+        <button class="legend-item" type="button" data-cluster="BRAIN" onclick="setClusterFilter('BRAIN')"><span class="legend-dot" style="background:#00f2fe;"></span><span>Neural intent</span></button>
+        <button class="legend-item" type="button" data-cluster="GRAPHRAG" onclick="setClusterFilter('GRAPHRAG')"><span class="legend-dot" style="background:#6366f1;"></span><span>GraphRAG</span></button>
+        <button class="legend-item" type="button" data-cluster="ENTITY" onclick="setClusterFilter('ENTITY')"><span class="legend-dot" style="background:#10b981;"></span><span>Knowledge</span></button>
+        <button class="legend-item" type="button" data-cluster="EXEC" onclick="setClusterFilter('EXEC')"><span class="legend-dot" style="background:#f59e0b;"></span><span>Execution & DB</span></button>
+        <button class="legend-item" type="button" data-cluster="OUTPUT" onclick="setClusterFilter('OUTPUT')"><span class="legend-dot" style="background:#f43f5e;"></span><span>LLM output</span></button>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
+{% block extra_head %}
+<style>
+/* Brain page — let the canvas fill all available vertical space */
+.page-scroll-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;         /* no scrollbar on brain page */
+    padding-bottom: 0 !important;
+}
+.network-page-container {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+</style>
+{% endblock %}
 <script>
 // ==============================================================================
 // High-Performance Interactive Physics Network Graph Engine
@@ -369,6 +513,9 @@ let panStart = { x: 0, y: 0 };
 let physicsRunning = true;
 let pulseWave = 0;
 let activeClusterFilter = "ALL";
+let eventsBound = false;
+let animationStarted = false;
+let lastHoverId = null;
 
 class GraphNode {
     constructor(data) {
@@ -411,10 +558,27 @@ class GraphNode {
         ctx.textBaseline = "middle";
         ctx.fillText(this.icon, this.x, this.y);
 
-        // Node Label below
-        ctx.font = `600 ${isSel ? 13 : 11}px var(--font-sans)`;
-        ctx.fillStyle = isSel ? "#ffffff" : "#cbd5e1";
-        ctx.fillText(this.label, this.x, this.y + this.radius + 14);
+        // Keep the topology readable: labels appear for focus/important nodes,
+        // while hover and zoom reveal the full map without text collisions.
+        const showLabel = isSel || isHov || camera.zoom >= 1.12 || this.radius >= 28;
+        if (showLabel) {
+            const label = isSel || isHov ? this.label : (this.label.length > 24 ? `${this.label.slice(0, 22)}…` : this.label);
+            ctx.font = `${isSel ? 700 : 600} ${isSel ? 13 : 10.5}px Inter, system-ui, sans-serif`;
+            const labelWidth = Math.min(ctx.measureText(label).width + 14, 190);
+            const labelX = this.x - labelWidth / 2;
+            const labelY = this.y + this.radius + 7;
+            ctx.fillStyle = isSel ? "rgba(0, 242, 254, 0.16)" : "rgba(7, 9, 14, 0.76)";
+            ctx.beginPath();
+            ctx.roundRect(labelX, labelY, labelWidth, 20, 6);
+            ctx.fill();
+            ctx.strokeStyle = isSel ? "rgba(0, 242, 254, 0.55)" : "rgba(148, 163, 184, 0.18)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = isSel ? "#ffffff" : "#cbd5e1";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(label, this.x, labelY + 10);
+        }
 
         ctx.globalAlpha = 1.0;
     }
@@ -461,8 +625,8 @@ class GraphEdge {
         const midX = (this.source.x + this.target.x) / 2;
         const midY = (this.source.y + this.target.y) / 2;
 
-        if (camera.zoom > 0.75) {
-            ctx.font = "800 9px var(--font-mono)";
+        if (camera.zoom > 1.05 || isHighlight) {
+            ctx.font = "800 8px ui-monospace, SFMono-Regular, monospace";
             ctx.fillStyle = isHighlight ? "#00f2fe" : "rgba(148, 163, 184, 0.65)";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -490,44 +654,61 @@ class GraphEdge {
 function initNetworkGraph() {
     canvas = document.getElementById("networkCanvas");
     const wrapper = document.getElementById("canvasWrapper");
+    if (!canvas || !wrapper) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    width = wrapper.clientWidth;
-    height = wrapper.clientHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Always measure from wrapper's actual rendered size
+    width  = wrapper.clientWidth  || wrapper.offsetWidth;
+    height = wrapper.clientHeight || wrapper.offsetHeight;
+    if (width < 100 || height < 100) return; // not yet laid out
 
-    canvas.width = width * dpr;
+    canvas.width  = width  * dpr;
     canvas.height = height * dpr;
-    canvas.style.width = width + "px";
+    canvas.style.width  = width  + "px";
     canvas.style.height = height + "px";
 
     ctx = canvas.getContext("2d");
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Initial camera position centered
-    camera.x = width / 2;
-    camera.y = height / 2;
-    camera.zoom = 0.95;
+    // Initial camera position centered only on first load.
+    if (!nodes.length) {
+        camera.x = width / 2;
+        camera.y = height / 2;
+        camera.zoom = 0.95;
+    }
 
-    // Build Node instances
-    nodes = NODES_DATA.map(d => new GraphNode(d));
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+    if (!nodes.length) {
+        nodes = NODES_DATA.map(d => new GraphNode(d));
+        const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
-    // Build Edge instances
-    edges = EDGES_DATA.map(e => new GraphEdge(e, nodeMap.get(e.source), nodeMap.get(e.target)))
-        .filter(e => e.source && e.target);
+        edges = EDGES_DATA.map(e => new GraphEdge(e, nodeMap.get(e.source), nodeMap.get(e.target)))
+            .filter(e => e.source && e.target);
+    }
 
     document.getElementById("hudNodeCount").textContent = nodes.length;
     document.getElementById("hudEdgeCount").textContent = edges.length;
+    updateNetworkSummary();
 
-    setupEvents();
-    selectNode(nodes.find(n => n.id === "networkx_graph") || nodes[0]);
-    requestAnimationFrame(renderLoop);
+    if (!eventsBound) {
+        setupEvents();
+        eventsBound = true;
+    }
+    if (!selectedNode) selectNode(nodes.find(n => n.id === "networkx_graph") || nodes[0]);
+    updateZoomReadout();
+    if (!animationStarted) {
+        animationStarted = true;
+        requestAnimationFrame(renderLoop);
+    }
 }
 
 function setupEvents() {
     canvas.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    canvas.addEventListener("mouseleave", () => {
+        hoveredNode = null;
+        hideNetworkTooltip();
+    });
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
     // Touch support
@@ -590,6 +771,7 @@ function onMouseMove(e) {
         camera.y = e.clientY - panStart.y;
     } else {
         hoveredNode = findNodeAt(pos);
+        updateNetworkTooltip(hoveredNode, e);
     }
 }
 
@@ -603,17 +785,20 @@ function onWheel(e) {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
     camera.zoom = Math.max(0.4, Math.min(2.5, camera.zoom * zoomFactor));
+    updateZoomReadout();
 }
 
 function selectNode(node) {
     selectedNode = node;
     const panel = document.getElementById("nodeInspector");
     if (!node) {
-        panel.style.display = "none";
+        if (panel) { panel.classList.add("is-hidden"); panel.style.display = "none"; }
         return;
     }
 
     panel.style.display = "block";
+    // Small tick so transition runs
+    requestAnimationFrame(() => panel.classList.remove("is-hidden"));
     document.getElementById("insCluster").textContent = `Cluster: ${node.cluster}`;
     document.getElementById("insCluster").style.color = node.color;
     document.getElementById("insTitle").innerHTML = `${node.icon} ${node.label}`;
@@ -650,7 +835,9 @@ function selectNode(node) {
 }
 
 function deselectNode() {
-    selectNode(null);
+    selectedNode = null;
+    const panel = document.getElementById("nodeInspector");
+    if (panel) { panel.classList.add("is-hidden"); setTimeout(() => panel.style.display = "none", 230); }
 }
 
 function updatePhysics() {
@@ -737,20 +924,82 @@ function drawGrid(ctx) {
 }
 
 // Controller Actions
-function zoomIn() { camera.zoom = Math.min(2.5, camera.zoom * 1.25); }
-function zoomOut() { camera.zoom = Math.max(0.4, camera.zoom * 0.8); }
+function updateZoomReadout() {
+    const readout = document.getElementById("zoomReadout");
+    if (readout) readout.textContent = `${Math.round(camera.zoom * 100)}%`;
+}
+
+function updateNetworkSummary() {
+    const clusterCount = new Set(nodes.map(node => node.cluster)).size;
+    const values = {
+        summaryNodeCount: nodes.length,
+        summaryEdgeCount: edges.length,
+        summaryClusterCount: clusterCount,
+        hudNodeCount: nodes.length,
+        hudEdgeCount: edges.length
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+}
+
+function updateNetworkTooltip(node, event) {
+    const tooltip = document.getElementById("networkTooltip");
+    if (!tooltip || !node) {
+        hideNetworkTooltip();
+        return;
+    }
+    if (lastHoverId !== node.id) {
+        tooltip.textContent = `${node.label} · ${node.cluster} · ${node.latency}`;
+        lastHoverId = node.id;
+    }
+    const rect = document.getElementById("canvasWrapper").getBoundingClientRect();
+    tooltip.style.left = `${Math.min(rect.width - 245, Math.max(12, event.clientX - rect.left + 14))}px`;
+    tooltip.style.top = `${Math.min(rect.height - 48, Math.max(12, event.clientY - rect.top + 14))}px`;
+    tooltip.style.display = "block";
+}
+
+function hideNetworkTooltip() {
+    const tooltip = document.getElementById("networkTooltip");
+    if (tooltip) tooltip.style.display = "none";
+    lastHoverId = null;
+}
+
+function setClusterFilter(cluster) {
+    const select = document.getElementById("clusterFilter");
+    if (select) select.value = cluster;
+    activeClusterFilter = cluster;
+    document.querySelectorAll(".legend-item[data-cluster]").forEach(item => {
+        item.classList.toggle("is-active", item.dataset.cluster === cluster);
+    });
+    const meta = document.getElementById("summaryClusterMeta");
+    if (meta) meta.textContent = cluster === "ALL" ? "Neural · RAG · entities · output" : `${cluster} cluster focused`;
+}
+
+function zoomIn() {
+    camera.zoom = Math.min(2.5, camera.zoom * 1.25);
+    updateZoomReadout();
+}
+
+function zoomOut() {
+    camera.zoom = Math.max(0.4, camera.zoom * 0.8);
+    updateZoomReadout();
+}
 
 function resetCamera() {
     camera.x = width / 2;
     camera.y = height / 2;
     camera.zoom = 0.95;
     selectNode(nodes.find(n => n.id === "networkx_graph") || nodes[0]);
+    setClusterFilter("ALL");
+    updateZoomReadout();
 }
 
 function togglePhysics() {
     physicsRunning = !physicsRunning;
     const btn = document.getElementById("togglePhysicsBtn");
-    btn.innerHTML = physicsRunning ? "⏸️ Pause" : "▶️ Resume";
+    btn.innerHTML = physicsRunning ? '<i class="fa-solid fa-pause"></i><span>Pause</span>' : '<i class="fa-solid fa-play"></i><span>Resume</span>';
 }
 
 function pulseAllChains() {
@@ -760,12 +1009,15 @@ function pulseAllChains() {
 }
 
 function filterCluster() {
-    activeClusterFilter = document.getElementById("clusterFilter").value;
+    setClusterFilter(document.getElementById("clusterFilter").value);
 }
 
 function searchNetworkNode() {
     const q = document.getElementById("networkSearchInput").value.trim().toLowerCase();
-    if (!q) return;
+    if (!q) {
+        hideNetworkTooltip();
+        return;
+    }
 
     const matched = nodes.find(n => n.label.toLowerCase().includes(q) || n.id.toLowerCase().includes(q));
     if (matched) {
@@ -773,6 +1025,7 @@ function searchNetworkNode() {
         // Smooth pan camera to node
         camera.x = width / 2 - matched.x * camera.zoom;
         camera.y = height / 2 - matched.y * camera.zoom;
+        updateZoomReadout();
     }
 }
 
@@ -804,13 +1057,13 @@ function updateFullscreenUI(isFs) {
     const tbBtn = document.getElementById("toolbarFullscreenBtn");
 
     if (isFs) {
-        if (fsIcon) fsIcon.textContent = "🗗";
-        if (fsText) fsText.textContent = "Exit Fullscreen";
-        if (tbBtn) tbBtn.innerHTML = "🗗 Exit";
+        if (fsIcon) fsIcon.innerHTML = '<i class="fa-solid fa-compress"></i>';
+        if (fsText) fsText.textContent = "Exit fullscreen";
+        if (tbBtn) tbBtn.innerHTML = '<i class="fa-solid fa-compress"></i><span>Exit</span>';
     } else {
-        if (fsIcon) fsIcon.textContent = "⛶";
+        if (fsIcon) fsIcon.innerHTML = '<i class="fa-solid fa-expand"></i>';
         if (fsText) fsText.textContent = "Fullscreen";
-        if (tbBtn) tbBtn.innerHTML = "⛶ Fullscreen";
+        if (tbBtn) tbBtn.innerHTML = '<i class="fa-solid fa-expand"></i><span>View</span>';
     }
 
     // Smoothly re-measure canvas

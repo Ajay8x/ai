@@ -33,7 +33,7 @@ class ToolRegistry:
     def get_schemas(self) -> List[Dict[str, Any]]:
         return [tool.to_schema() for tool in self.tools.values()]
 
-    def execute_tool(self, tool_name: str, parameters: Any = None, confirmed_by_user: bool = False) -> ToolResult:
+    def execute_tool(self, tool_name: str, parameters: Any = None, confirmed_by_user: bool = False, user_id: Optional[str] = None) -> ToolResult:
         if isinstance(parameters, list):
             if parameters and isinstance(parameters[0], dict):
                 parameters = parameters[0]
@@ -63,19 +63,22 @@ class ToolRegistry:
 
         start_time = time.time()
         try:
-            result = tool.execute(**parameters)
+            execution_kwargs = dict(parameters)
+            if user_id:
+                execution_kwargs["user_id"] = user_id
+            result = tool.execute(**execution_kwargs)
             duration = (time.time() - start_time) * 1000
             status = "SUCCESS" if result.success else "ERROR"
             
             # Log execution
             tools_logger.info(f"Executed tool '{tool_name}' | Status: {status} | Duration: {duration:.2f}ms")
-            record_tool_execution(tool_name, parameters, result.to_dict(), status, duration)
+            record_tool_execution(tool_name, parameters, result.to_dict(), status, duration, user_id=user_id)
             return result
         except Exception as e:
             duration = (time.time() - start_time) * 1000
             error_msg = f"Exception executing tool '{tool_name}': {str(e)}"
             error_logger.error(error_msg)
-            record_tool_execution(tool_name, parameters, {"error": error_msg}, "ERROR", duration)
+            record_tool_execution(tool_name, parameters, {"error": error_msg}, "ERROR", duration, user_id=user_id)
             return ToolResult(success=False, output=None, error=error_msg)
 
 # Global Tool Registry

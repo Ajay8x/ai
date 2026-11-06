@@ -20,7 +20,7 @@ class MemoryManager:
     def get_short_term(self) -> List[Dict[str, str]]:
         return list(self.short_term)
 
-    def remember_fact(self, key_text: str, value_text: str, category: str = "user_fact") -> Dict[str, Any]:
+    def remember_fact(self, key_text: str, value_text: str, category: str = "user_fact", user_id: Optional[str] = None) -> Dict[str, Any]:
         """Save a long-term memory with privacy inspection."""
         key = " ".join(str(key_text or "").strip().split())
         value = " ".join(str(value_text or "").strip().split())
@@ -38,16 +38,16 @@ class MemoryManager:
             ajax_logger.warning(f"Memory storage blocked by privacy filter: {reason}")
             return {"success": False, "error": f"Memory blocked: {reason}"}
 
-        mem_id = save_memory(key_text=key, value_text=value, category=category)
+        mem_id = save_memory(key_text=key, value_text=value, category=category, user_id=user_id)
         ajax_logger.info(f"Saved long-term memory [{category}]: '{key}'")
         return {"success": True, "memory_id": mem_id, "key": key, "value": value, "category": category}
 
-    def recall(self, query: str = "", limit: int = 5) -> List[Dict[str, Any]]:
+    def recall(self, query: str = "", limit: int = 5, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         normalized_query = " ".join(str(query or "").strip().split())
         safe_limit = max(1, min(int(limit or 5), 50))
-        return search_memories(query=normalized_query, limit=safe_limit)
+        return search_memories(query=normalized_query, limit=safe_limit, user_id=user_id)
 
-    def forget(self, memory_id: str) -> bool:
-        return bool(memory_id and delete_memory(memory_id))
+    def forget(self, memory_id: str, user_id: Optional[str] = None) -> bool:
+        return bool(memory_id and delete_memory(memory_id, user_id=user_id))
 
 memory_manager = MemoryManager()

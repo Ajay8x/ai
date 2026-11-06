@@ -9,9 +9,7 @@
         }
 
         authHeaders(extraHeaders = {}) {
-            const token = window.localStorage.getItem('ajax_session_token');
             return {
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 ...extraHeaders
             };
         }

@@ -23,7 +23,7 @@ class RememberTool(BaseTool):
     }
 
     def execute(self, key: str, value: str, **kwargs) -> ToolResult:
-        res = memory_manager.remember_fact(key_text=key, value_text=value)
+        res = memory_manager.remember_fact(key_text=key, value_text=value, user_id=kwargs.get("user_id"))
         if res["success"]:
             return ToolResult(success=True, output=f"I have remembered that {key} is {value}.")
         return ToolResult(success=False, output=None, error=res.get("error", "Failed to remember."))
@@ -41,7 +41,7 @@ class RecallMemoryTool(BaseTool):
     }
 
     def execute(self, query: str = "", **kwargs) -> ToolResult:
-        memories = memory_manager.recall(query=query, limit=10)
+        memories = memory_manager.recall(query=query, limit=10, user_id=kwargs.get("user_id"))
         if memories:
             formatted = "\n".join([f"- {m['key_text']}: {m['value_text']}" for m in memories])
             return ToolResult(success=True, output=f"Found memories:\n{formatted}", metadata={"memories": memories})

@@ -17,5 +17,10 @@ async def list_registered_tools(current_user: Dict[str, Any] = Depends(require_a
 
 @tools_router.post("/tools/execute")
 async def execute_tool_action(req: ToolExecRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
-    res = registry.execute_tool(req.tool_name, parameters=req.parameters or {}, confirmed_by_user=req.confirmed or False)
+    res = registry.execute_tool(
+        req.tool_name,
+        parameters=req.parameters or {},
+        confirmed_by_user=req.confirmed or False,
+        user_id=current_user["id"]
+    )
     return res.to_dict()

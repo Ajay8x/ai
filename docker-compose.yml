@@ -15,13 +15,15 @@ services:
     environment:
       - PORT=8000
       - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-openai}
-      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-ollama}
+      - LLM_MODEL=${LLM_MODEL:-qwen3.5:4b}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       # Database Configuration (Connects to postgres container)
-      - DB_TYPE=postgres
+      - DATABASE_TYPE=postgres
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=ajax_user

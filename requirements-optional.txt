@@ -1,0 +1,6 @@
+# Optional local-PC features. Keep these out of the Vercel runtime build.
+pyautogui>=0.9.54,<1.0
+pywhatkit>=5.4,<6.0
+SpeechRecognition>=3.10,<4.0
+pyttsx3>=2.90,<3.0
+sentence-transformers>=3.0,<4.0

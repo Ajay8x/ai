@@ -15,7 +15,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 QA_LOG_JSONL = os.path.join(DATA_DIR, "qa_history.jsonl")
 QA_LOG_TXT = os.path.join(DATA_DIR, "saved_qa.txt")
 
-def auto_extract_and_save_facts(query: str):
+def auto_extract_and_save_facts(query: str, user_id: Optional[str] = None):
     """Detects personal details / user facts and saves them to SQLite memories automatically."""
     q_clean = query.strip()
     import re
@@ -23,7 +23,7 @@ def auto_extract_and_save_facts(query: str):
     name_match = re.search(r'(?:mera naam|my name is)\s+([A-Za-z\u0900-\u097F]+)', q_clean, re.IGNORECASE)
     if name_match:
         from database.crud import save_memory
-        save_memory("user_name", name_match.group(1).title(), category="user_profile", source="auto_extract")
+        save_memory("user_name", name_match.group(1).title(), category="user_profile", source="auto_extract", user_id=user_id)
         return
 
     # 2. Remember notes: e.g. 'remember that meeting is at 5pm', 'yaad rakhna ki kal exam hai'
@@ -31,7 +31,7 @@ def auto_extract_and_save_facts(query: str):
     if rem_match:
         from database.crud import save_memory
         fact = rem_match.group(1).strip()
-        save_memory("note", fact, category="user_note", source="auto_extract")
+        save_memory("note", fact, category="user_note", source="auto_extract", user_id=user_id)
         return
 
     # 3. Location: e.g. 'i live in Mumbai', 'main Delhi me rehta hoon'
@@ -40,7 +40,7 @@ def auto_extract_and_save_facts(query: str):
         from database.crud import save_memory
         loc = loc_match.group(1) or loc_match.group(2)
         if loc:
-            save_memory("location", loc.strip().title(), category="user_profile", source="auto_extract")
+            save_memory("location", loc.strip().title(), category="user_profile", source="auto_extract", user_id=user_id)
             return
 
     # 4. Favorites: e.g. 'my favorite color is blue', 'mera favorite food biryani hai'
@@ -48,13 +48,13 @@ def auto_extract_and_save_facts(query: str):
     if fav_match:
         from database.crud import save_memory
         if fav_match.group(1) and fav_match.group(2):
-            save_memory(f"favorite_{fav_match.group(1).lower().strip()}", fav_match.group(2).strip(), category="user_preference", source="auto_extract")
+            save_memory(f"favorite_{fav_match.group(1).lower().strip()}", fav_match.group(2).strip(), category="user_preference", source="auto_extract", user_id=user_id)
         elif fav_match.group(3) and fav_match.group(4):
-            save_memory(f"favorite_{fav_match.group(3).lower().strip()}", fav_match.group(4).strip(), category="user_preference", source="auto_extract")
+            save_memory(f"favorite_{fav_match.group(3).lower().strip()}", fav_match.group(4).strip(), category="user_preference", source="auto_extract", user_id=user_id)
         elif fav_match.group(5):
-            save_memory("favorite_item", fav_match.group(5).strip(), category="user_preference", source="auto_extract")
+            save_memory("favorite_item", fav_match.group(5).strip(), category="user_preference", source="auto_extract", user_id=user_id)
 
-def record_qa_interaction(query: str, response: str, intent: str, modality: str = "text", tool: Optional[str] = None):
+def record_qa_interaction(query: str, response: str, intent: str, modality: str = "text", tool: Optional[str] = None, user_id: Optional[str] = None):
     """Automatically saves and appends every Q&A pair to MongoDB Atlas (cloud) or local files (fallback)."""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -66,6 +66,8 @@ def record_qa_interaction(query: str, response: str, intent: str, modality: str 
         "tool": tool,
         "modality": modality
     }
+    if user_id:
+        record["user_id"] = user_id
 
     # 1. Primary: Save directly to MongoDB Atlas collection
     if is_mongo_active():
@@ -85,7 +87,7 @@ def record_qa_interaction(query: str, response: str, intent: str, modality: str 
 
     # 2. Auto-extract personal facts into long-term memories (persisted in MongoDB)
     try:
-        auto_extract_and_save_facts(query)
+        auto_extract_and_save_facts(query, user_id=user_id)
     except Exception as e:
         ajax_logger.warning(f"Memory auto-extraction notice: {e}")
 
@@ -141,29 +143,16 @@ def _format_fast_path_thought(
     entities: Optional[Dict[str, Any]] = None,
     language: str = "en"
 ) -> str:
-    """Generates a structured Chain-of-Thought scratchpad when Thinking Mode is active."""
-    from config.config_loader import config
-    if not getattr(config.llm, "thinking_mode", True):
-        return ""
+    """Compatibility hook; private reasoning is never emitted to users."""
+    return ""
 
-    intent_label = intent.replace("_", " ").title()
-    lang_label = "Hindi (हिन्दी)" if language == "hi" else "English"
-    lines = [
-        "<think>",
-        f"• User Query: \"{query}\"",
-        f"• Neural Intent Classification: {intent_label} (Confidence: {confidence * 100:.1f}%)",
-        f"• Multilingual Context: {lang_label}"
-    ]
-    if tool:
-        tool_name = tool.replace("_", " ").title()
-        params = json.dumps(entities) if entities else "None"
-        lines.append(f"• Autonomous Tool Route: `{tool}` ({tool_name})")
-        lines.append(f"• Parameter Extraction: {params}")
-        lines.append(f"• Execution: Executing native autonomous tool and formatting response")
-    else:
-        lines.append(f"• Strategy: Providing instant conversational {lang_label} response")
-    lines.append("</think>\n\n")
-    return "\n".join(lines)
+
+def sanitize_model_output(text: str) -> str:
+    """Remove private reasoning blocks before persistence or delivery."""
+    import re
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", str(text or ""), flags=re.IGNORECASE)
+    cleaned = re.sub(r"<think>[\s\S]*$", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
 
 class RequestRouter:
     def process_query(
@@ -173,7 +162,8 @@ class RequestRouter:
         modality: str = "text",
         confirmed_by_user: bool = False,
         web_search: bool = False,
-        language: str = "en"
+        language: str = "en",
+        user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Main query orchestration pipeline:
@@ -183,7 +173,7 @@ class RequestRouter:
         4. Response assembly and permanent persistence.
         """
         ajax_logger.info(f"Incoming Request [{modality}]: '{query}' (web_search={web_search})")
-        add_message(conversation_id, "user", query, modality=modality)
+        add_message(conversation_id, "user", query, modality=modality, user_id=user_id)
 
         # Step 1: Multilingual Normalization & Intent Classification
         from core.language import normalize_multilingual_query
@@ -194,8 +184,8 @@ class RequestRouter:
             raw_search_res = _execute_live_web_search(query, norm_query, core_topic)
             thought = _format_fast_path_thought(query, "SEARCH_WEB", 1.0, tool="search_web", entities={"query": core_topic or query}, language=language)
             resp_text = (thought + raw_search_res) if thought else raw_search_res
-            add_message(conversation_id, "assistant", resp_text)
-            record_qa_interaction(query, resp_text, "SEARCH_WEB", modality=modality, tool="search_web")
+            add_message(conversation_id, "assistant", resp_text, user_id=user_id)
+            record_qa_interaction(query, resp_text, "SEARCH_WEB", modality=modality, tool="search_web", user_id=user_id)
             return {
                 "response": resp_text,
                 "intent": "SEARCH_WEB",
@@ -219,14 +209,14 @@ class RequestRouter:
         ajax_logger.info(f"Intent Predicted: {intent} (Confidence: {confidence}) | Normalized: '{norm_query}'")
 
         # Save as candidate for continuous learning
-        add_training_example(raw_text=query, intent=intent, entities=entities, confidence=confidence, source=modality)
+        add_training_example(raw_text=query, intent=intent, entities=entities, confidence=confidence, source=modality, user_id=user_id)
 
         # Step 2: High confidence fast path
         if confidence >= 0.85 and direct_tool:
             tool_obj = registry.get_tool(direct_tool)
             if tool_obj:
                 ajax_logger.info(f"Executing Direct Tool: '{direct_tool}' with entities: {entities}")
-                tool_result = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user)
+                tool_result = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user, user_id=user_id)
                 
                 if tool_result.metadata.get("confirmation_needed"):
                     raw_text = tool_result.error or "Confirmation required."
@@ -238,8 +228,8 @@ class RequestRouter:
                 thought = _format_fast_path_thought(query, intent, confidence, tool=direct_tool, entities=entities, language=language)
                 resp_text = (thought + raw_text) if thought else raw_text
 
-                add_message(conversation_id, "assistant", resp_text)
-                record_qa_interaction(query, resp_text, intent, modality=modality, tool=direct_tool)
+                add_message(conversation_id, "assistant", resp_text, user_id=user_id)
+                record_qa_interaction(query, resp_text, intent, modality=modality, tool=direct_tool, user_id=user_id)
                 return {
                     "response": resp_text,
                     "intent": intent,
@@ -253,8 +243,8 @@ class RequestRouter:
             raw_text = prediction["predefined_response"]
             thought = _format_fast_path_thought(query, intent, confidence, language=language)
             resp_text = (thought + raw_text) if thought else raw_text
-            add_message(conversation_id, "assistant", resp_text)
-            record_qa_interaction(query, resp_text, intent, modality=modality)
+            add_message(conversation_id, "assistant", resp_text, user_id=user_id)
+            record_qa_interaction(query, resp_text, intent, modality=modality, user_id=user_id)
             return {
                 "response": resp_text,
                 "intent": intent,
@@ -266,7 +256,7 @@ class RequestRouter:
         # Step 3: LLM Brain Reasoning + Tool Calling
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
         intent_ctx = f"Predicted Intent: {intent} (Confidence: {confidence:.2f})" + (f", Entities: {json.dumps(entities)}" if entities else "")
-        messages = context_manager.build_context(conversation_id, effective_query, language=language, intent_context=intent_ctx)
+        messages = context_manager.build_context(conversation_id, effective_query, user_id=user_id, language=language, intent_context=intent_ctx)
         
         # If user is asking a conversational / factual / wiki question, generate written text directly without tool overhead
         q_lower = query.lower().strip()
@@ -302,7 +292,7 @@ class RequestRouter:
             tool_outputs = []
             for tc in llm_resp.tool_calls:
                 ajax_logger.info(f"LLM Tool Call: {tc.function_name} with args: {tc.arguments}")
-                res = registry.execute_tool(tc.function_name, parameters=tc.arguments, confirmed_by_user=confirmed_by_user)
+                res = registry.execute_tool(tc.function_name, parameters=tc.arguments, confirmed_by_user=confirmed_by_user, user_id=user_id)
                 tool_outputs.append((tc, res))
 
             # Assemble clean final answer
@@ -337,13 +327,14 @@ class RequestRouter:
                 ]
                 try:
                     synth_resp = llm_brain.generate(synth_messages, max_tokens=350)
-                    final_text = synth_resp.content.strip() if synth_resp.content else combined_summary
+                    final_text = sanitize_model_output(synth_resp.content) if synth_resp.content else combined_summary
                 except Exception:
                     final_text = combined_summary
                 
-            add_message(conversation_id, "assistant", final_text)
+            final_text = sanitize_model_output(final_text)
+            add_message(conversation_id, "assistant", final_text, user_id=user_id)
             tool_names = [tc.function_name for tc, _ in tool_outputs]
-            record_qa_interaction(query, final_text, intent, modality=modality, tool=",".join(tool_names))
+            record_qa_interaction(query, final_text, intent, modality=modality, tool=",".join(tool_names), user_id=user_id)
             return {
                 "response": final_text,
                 "intent": intent,
@@ -354,13 +345,13 @@ class RequestRouter:
             }
 
         # Pure Conversational LLM Response
-        resp_text = llm_resp.content or "I processed your request."
+        resp_text = sanitize_model_output(llm_resp.content or "I processed your request.")
         thought = _format_fast_path_thought(query, intent, confidence, language=language)
         if thought and "<think>" not in resp_text:
             resp_text = thought + resp_text
 
-        add_message(conversation_id, "assistant", resp_text)
-        record_qa_interaction(query, resp_text, intent, modality=modality)
+        add_message(conversation_id, "assistant", resp_text, user_id=user_id)
+        record_qa_interaction(query, resp_text, intent, modality=modality, user_id=user_id)
         return {
             "response": resp_text,
             "intent": intent,
@@ -376,7 +367,8 @@ class RequestRouter:
         modality: str = "text",
         confirmed_by_user: bool = False,
         web_search: bool = False,
-        language: str = "en"
+        language: str = "en",
+        user_id: Optional[str] = None
     ):
         """
         Streaming query pipeline:
@@ -384,7 +376,7 @@ class RequestRouter:
         Guarantees full 5-way auto-persistence after response finishes.
         """
         ajax_logger.info(f"Incoming Stream Request [{modality}]: '{query}' (web_search={web_search})")
-        add_message(conversation_id, "user", query, modality=modality)
+        add_message(conversation_id, "user", query, modality=modality, user_id=user_id)
 
         # Multilingual Normalization & Intent Classification
         from core.language import normalize_multilingual_query
@@ -396,8 +388,8 @@ class RequestRouter:
             raw_search_res = _execute_live_web_search(query, norm_query, core_topic)
             thought = _format_fast_path_thought(query, "SEARCH_WEB", 1.0, tool="search_web", entities={"query": core_topic or query}, language=language)
             full_resp = (thought + raw_search_res) if thought else raw_search_res
-            add_message(conversation_id, "assistant", full_resp)
-            record_qa_interaction(query, full_resp, "SEARCH_WEB", modality=modality, tool="search_web")
+            add_message(conversation_id, "assistant", full_resp, user_id=user_id)
+            record_qa_interaction(query, full_resp, "SEARCH_WEB", modality=modality, tool="search_web", user_id=user_id)
 
             import re
             parts = re.split(r'(\s+)', full_resp)
@@ -418,7 +410,7 @@ class RequestRouter:
         direct_tool = prediction.get("tool")
         entities = prediction.get("entities", {})
 
-        add_training_example(raw_text=query, intent=intent, entities=entities, confidence=confidence, source=modality)
+        add_training_example(raw_text=query, intent=intent, entities=entities, confidence=confidence, source=modality, user_id=user_id)
 
         # Notify intent metadata
         yield f"data: {json.dumps({'type': 'meta', 'intent': intent, 'confidence': confidence, 'tool': direct_tool})}\n\n"
@@ -427,7 +419,7 @@ class RequestRouter:
         if confidence >= 0.85 and direct_tool:
             tool_obj = registry.get_tool(direct_tool)
             if tool_obj:
-                tool_res = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user)
+                tool_res = registry.execute_tool(direct_tool, parameters=entities, confirmed_by_user=confirmed_by_user, user_id=user_id)
                 if tool_res.metadata.get("confirmation_needed"):
                     raw_text = tool_res.error or "Confirmation required."
                 elif tool_res.success:
@@ -438,8 +430,8 @@ class RequestRouter:
                 thought = _format_fast_path_thought(query, intent, confidence, tool=direct_tool, entities=entities, language=language)
                 full_resp = (thought + raw_text) if thought else raw_text
 
-                add_message(conversation_id, "assistant", full_resp)
-                record_qa_interaction(query, full_resp, intent, modality=modality, tool=direct_tool)
+                add_message(conversation_id, "assistant", full_resp, user_id=user_id)
+                record_qa_interaction(query, full_resp, intent, modality=modality, tool=direct_tool, user_id=user_id)
 
                 import re
                 parts = re.split(r'(\s+)', full_resp)
@@ -454,8 +446,8 @@ class RequestRouter:
             thought = _format_fast_path_thought(query, intent, confidence, language=language)
             full_resp = (thought + raw_text) if thought else raw_text
 
-            add_message(conversation_id, "assistant", full_resp)
-            record_qa_interaction(query, full_resp, intent, modality=modality)
+            add_message(conversation_id, "assistant", full_resp, user_id=user_id)
+            record_qa_interaction(query, full_resp, intent, modality=modality, user_id=user_id)
 
             import re
             parts = re.split(r'(\s+)', full_resp)
@@ -468,32 +460,32 @@ class RequestRouter:
         # Streaming LLM Response
         effective_query = norm_query if (norm_query and norm_query != query.lower().strip()) else query
         intent_ctx = f"Predicted Intent: {intent} (Confidence: {confidence:.2f})" + (f", Entities: {json.dumps(entities)}" if entities else "")
-        messages = context_manager.build_context(conversation_id, effective_query, language=language, intent_context=intent_ctx)
+        messages = context_manager.build_context(conversation_id, effective_query, user_id=user_id, language=language, intent_context=intent_ctx)
 
         full_text = ""
-        # In thinking mode, yield the structured reasoning block first
-        thought_block = _format_fast_path_thought(query, intent, confidence, language=language)
-        if thought_block:
-            full_text += thought_block
-            import re
-            for p in re.split(r'(\s+)', thought_block):
-                if p:
-                    yield f"data: {json.dumps({'type': 'token', 'token': p})}\n\n"
+        emitted_text = ""
 
         try:
+            stream_buffer = ""
             for token in llm_brain.stream_generate(messages):
-                full_text += token
-                yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
+                stream_buffer += token
+                cleaned = sanitize_model_output(stream_buffer)
+                delta = cleaned[len(emitted_text):] if cleaned.startswith(emitted_text) else cleaned
+                if delta:
+                    emitted_text = cleaned
+                    full_text = cleaned
+                    yield f"data: {json.dumps({'type': 'token', 'token': delta})}\n\n"
         except Exception as e:
-            full_text += f"\nError generating stream: {e}"
+            full_text = f"Error generating stream: {e}"
             yield f"data: {json.dumps({'type': 'token', 'token': f' {e}'})}\n\n"
 
+        full_text = sanitize_model_output(full_text)
         if not full_text.strip():
             full_text = "I processed your request."
             yield f"data: {json.dumps({'type': 'token', 'token': full_text})}\n\n"
 
-        add_message(conversation_id, "assistant", full_text)
-        record_qa_interaction(query, full_text, intent, modality=modality)
+        add_message(conversation_id, "assistant", full_text, user_id=user_id)
+        record_qa_interaction(query, full_text, intent, modality=modality, user_id=user_id)
         yield f"data: {json.dumps({'type': 'done', 'response': full_text, 'intent': intent})}\n\n"
 
 router = RequestRouter()

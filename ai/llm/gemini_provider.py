@@ -14,11 +14,11 @@ class GeminiProvider(BaseLLMProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-2.5-flash-lite",
         use_openai_endpoint: bool = True
     ):
         self.api_key = api_key.strip()
-        self.model = model or "gemini-1.5-flash"
+        self.model = model or "gemini-2.5-flash-lite"
         self.use_openai_endpoint = use_openai_endpoint
         self.openai_base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
 

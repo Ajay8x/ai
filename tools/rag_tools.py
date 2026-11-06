@@ -8,6 +8,7 @@ import os
 from tools.base import BaseTool, ToolResult
 from core.permissions import PermissionLevel, ToolCategory
 from ai.rag.store import rag_store
+from database.db import SYSTEM_SCOPE
 
 class QueryDocumentsTool(BaseTool):
     name = "query_documents"
@@ -23,7 +24,7 @@ class QueryDocumentsTool(BaseTool):
     }
 
     def execute(self, query: str, **kwargs) -> ToolResult:
-        results = rag_store.query(query, top_k=3)
+        results = rag_store.query(query, top_k=3, user_id=kwargs.get("user_id") or SYSTEM_SCOPE)
         if not results:
             return ToolResult(success=True, output="No matching information found in indexed documents.")
 

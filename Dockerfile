@@ -38,7 +38,7 @@ EXPOSE 8000
 
 # Container healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8000/api/status || exit 1
+    CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Start AJAX AI Backend & Web App
 CMD ["python", "main.py", "--no-browser", "--port", "8000"]

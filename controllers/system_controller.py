@@ -83,7 +83,7 @@ async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
             "openai_key_masked": mask_key(config.llm.api_key),
             "has_deepseek_key": bool(config.llm.deepseek_api_key),
             "has_openrouter_key": bool(config.llm.openrouter_api_key),
-            "thinking_mode": getattr(config.llm, "thinking_mode", True),
+            "thinking_mode": False,
             "brain_status": brain_status
         },
         "neural": neural_diag,
@@ -112,8 +112,8 @@ async def update_settings(req: SettingsUpdateRequest, admin: Dict[str, Any] = De
         config.llm.max_tokens = int(req.llm_max_tokens)
         updated.append(f"max_tokens={req.llm_max_tokens}")
     if req.thinking_mode is not None:
-        config.llm.thinking_mode = bool(req.thinking_mode)
-        updated.append(f"thinking_mode={req.thinking_mode}")
+        config.llm.thinking_mode = False
+        updated.append("thinking_mode=false (server enforced)")
     if req.gemini_api_key is not None and req.gemini_api_key.strip():
         config.llm.gemini_api_key = req.gemini_api_key.strip()
         updated.append("gemini_api_key")

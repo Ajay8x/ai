@@ -7,6 +7,7 @@ import base64
 import binascii
 import re
 import uuid
+import math
 from pathlib import Path, PurePosixPath
 from typing import Dict, Any, Tuple
 from fastapi import APIRouter, Depends, HTTPException
@@ -31,7 +32,7 @@ except OSError:
 UPLOAD_ROOT = Path(UPLOAD_DIR).resolve()
 ALLOWED_UPLOAD_EXTENSIONS = {
     ".txt", ".md", ".py", ".json", ".csv", ".yaml", ".yml",
-    ".html", ".js", ".ts", ".css", ".pdf", ".docx", ".doc"
+    ".html", ".js", ".ts", ".css", ".pdf", ".docx"
 }
 
 
@@ -72,6 +73,10 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
         encoded_content = req.content_base64
         if encoded_content.startswith("data:") and "," in encoded_content:
             encoded_content = encoded_content.split(",", 1)[1]
+        max_bytes = config.max_upload_size_mb * 1024 * 1024
+        max_encoded_length = math.ceil(max_bytes * 4 / 3) + 16
+        if len(encoded_content) > max_encoded_length:
+            raise HTTPException(status_code=413, detail="Encoded upload exceeds the configured size limit.")
         try:
             file_bytes = base64.b64decode(encoded_content, validate=True)
         except (binascii.Error, ValueError):
@@ -79,13 +84,18 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
         if not file_bytes:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-        max_bytes = config.max_upload_size_mb * 1024 * 1024
         if len(file_bytes) > max_bytes:
             actual_mb = len(file_bytes) / (1024 * 1024)
             raise HTTPException(
                 status_code=413,
                 detail=f"File exceeds maximum upload limit of {config.max_upload_size_mb} MB (Your file is {actual_mb:.2f} MB)."
             )
+
+        extension = file_path_obj.suffix.lower()
+        if extension == ".pdf" and not file_bytes.startswith(b"%PDF"):
+            raise HTTPException(status_code=415, detail="The uploaded file is not a valid PDF.")
+        if extension == ".docx" and not file_bytes.startswith(b"PK"):
+            raise HTTPException(status_code=415, detail="The uploaded file is not a valid Office document.")
 
         file_path = str(file_path_obj)
         with open(file_path_obj, "xb") as f:
@@ -105,18 +115,21 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
                 upload_res = cloudinary.uploader.upload(
                     file_path,
                     resource_type="auto",
-                    folder="ajax_ai_uploads",
-                    use_filename=True,
-                    unique_filename=False
+                    folder=f"ajax_ai_uploads/{current_user['id']}",
+                    use_filename=False,
+                    unique_filename=True
                 )
                 cloud_url = upload_res.get("secure_url")
                 ajax_logger.info(f"File uploaded to Cloudinary: {cloud_url}")
             except Exception as ce:
                 ajax_logger.warning(f"Cloudinary upload skipped or failed: {ce}")
         
-        # Index document into RAG vector store
-        rag_store.index_file(file_path)
-        chunks_count = sum(1 for d in rag_store.documents if d.get("source") == file_path)
+        # Index document into the user-owned RAG scope.
+        rag_store.index_file(file_path, user_id=current_user["id"])
+        chunks_count = sum(
+            1 for d in rag_store.documents
+            if d.get("source") == file_path and d.get("user_id") == current_user["id"]
+        )
         
         ajax_logger.info(f"Uploaded and indexed '{original_filename}' with {chunks_count} chunks.")
         msg = f"Document '{original_filename}' indexed successfully."
@@ -133,3 +146,9 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
     except Exception as e:
         error_logger.error(f"Failed to process file upload: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            if 'file_path_obj' in locals() and file_path_obj.exists():
+                file_path_obj.unlink()
+        except OSError as cleanup_error:
+            ajax_logger.warning(f"Upload cleanup notice: {cleanup_error}")

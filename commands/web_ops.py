@@ -1,5 +1,4 @@
 import wikipedia
-import pywhatkit
 import re
 import requests
 import xml.etree.ElementTree as ET
@@ -27,9 +26,11 @@ def search_web(query, speak_func):
     except Exception:
         speak_func("Sorry, I couldn't fetch the spoken answer.")
 
+    import pywhatkit
     pywhatkit.search(query)
 
 def play_youtube(query, speak_func):
+    import pywhatkit
     song = query.replace('play', '').strip()
     speak_func(f"Playing {song}")
     pywhatkit.playonyt(song)

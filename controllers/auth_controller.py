@@ -9,6 +9,9 @@ Unified authentication engine providing:
 
 import secrets
 import time
+import os
+import threading
+from collections import defaultdict, deque
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Request, Response, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse
@@ -39,6 +42,47 @@ auth_router = APIRouter(prefix="/api", tags=["Authentication & Administration"])
 # In-Memory Session Token Cache: token -> {user_id, role, username, expires_at}
 _SESSIONS: Dict[str, Dict[str, Any]] = {}
 SESSION_TTL_SECONDS = 30 * 24 * 3600  # 30 Days Persistent Session
+_LOGIN_FAILURES = defaultdict(deque)
+_LOGIN_RATE_LOCK = threading.Lock()
+LOGIN_WINDOW_SECONDS = 15 * 60
+LOGIN_MAX_FAILURES = 5
+
+
+def _login_key(request: Request, username: str) -> str:
+    client_host = request.client.host if request.client else "unknown"
+    return f"{client_host}:{username}"
+
+
+def _login_is_limited(key: str) -> bool:
+    now = time.time()
+    with _LOGIN_RATE_LOCK:
+        attempts = _LOGIN_FAILURES[key]
+        while attempts and now - attempts[0] > LOGIN_WINDOW_SECONDS:
+            attempts.popleft()
+        return len(attempts) >= LOGIN_MAX_FAILURES
+
+
+def _record_login_failure(key: str):
+    with _LOGIN_RATE_LOCK:
+        _LOGIN_FAILURES[key].append(time.time())
+
+
+def _clear_login_failures(key: str):
+    with _LOGIN_RATE_LOCK:
+        _LOGIN_FAILURES.pop(key, None)
+
+
+def _set_session_cookie(response: Response, token: str):
+    secure_cookie = os.getenv("SESSION_COOKIE_SECURE", "").lower() == "true" or bool(os.getenv("VERCEL"))
+    response.set_cookie(
+        key="ajax_session_token",
+        value=token,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        path="/"
+    )
 
 def create_session(user: Dict[str, Any]) -> str:
     token = secrets.token_urlsafe(32)
@@ -134,12 +178,12 @@ def require_admin(request: Request) -> Dict[str, Any]:
 # ------------------------------------------------------------------------------
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=2)
-    password: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=8)
     mode: str = Field("user", description="'user' or 'admin'")
 
 class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=32)
-    password: str = Field(..., min_length=4)
+    password: str = Field(..., min_length=12)
     full_name: str = Field(..., min_length=2)
     email: Optional[str] = None
 
@@ -154,18 +198,27 @@ class RoleUpdateRequest(BaseModel):
 # Authentication Endpoints
 # ------------------------------------------------------------------------------
 @auth_router.post("/auth/login")
-async def login_user(payload: LoginRequest, response: Response):
+async def login_user(request: Request, payload: LoginRequest, response: Response):
     """Unified Login endpoint for both Regular Users and Administrators."""
     username = payload.username.strip().lower()
+    rate_key = _login_key(request, username)
+    if _login_is_limited(rate_key):
+        return JSONResponse(
+            status_code=429,
+            headers={"Retry-After": str(LOGIN_WINDOW_SECONDS)},
+            content={"success": False, "message": "Too many failed login attempts. Try again later."}
+        )
     user = get_user_by_username(username)
 
     if not user:
+        _record_login_failure(rate_key)
         return JSONResponse(
             status_code=401,
             content={"success": False, "message": "Invalid username or password."}
         )
 
     if not verify_password(payload.password, user.get("password_hash", "")):
+        _record_login_failure(rate_key)
         return JSONResponse(
             status_code=401,
             content={"success": False, "message": "Invalid username or password."}
@@ -177,6 +230,7 @@ async def login_user(payload: LoginRequest, response: Response):
             content={"success": False, "message": "Account has been suspended by an administrator."}
         )
 
+    _clear_login_failures(rate_key)
     # Issue session
     token = create_session(user)
     update_user_last_login(user["id"])
@@ -184,7 +238,6 @@ async def login_user(payload: LoginRequest, response: Response):
     response = JSONResponse({
         "success": True,
         "message": f"Welcome back, {user.get('full_name', username)}!",
-        "token": token,
         "user": {
             "id": user["id"],
             "username": user["username"],
@@ -195,15 +248,7 @@ async def login_user(payload: LoginRequest, response: Response):
         }
     })
 
-    # Set secure HTTP-only cookie
-    response.set_cookie(
-        key="ajax_session_token",
-        value=token,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=False,  # Accessible to frontend for state sync
-        samesite="lax",
-        path="/"
-    )
+    _set_session_cookie(response, token)
     return response
 
 
@@ -235,7 +280,6 @@ async def demo_quick_login(response: Response):
     res = JSONResponse({
         "success": True,
         "message": "Welcome to AJAX AI Demo Account!",
-        "token": token,
         "user": {
             "id": user["id"],
             "username": user["username"],
@@ -246,14 +290,7 @@ async def demo_quick_login(response: Response):
         }
     })
 
-    res.set_cookie(
-        key="ajax_session_token",
-        value=token,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=False,
-        samesite="lax",
-        path="/"
-    )
+    _set_session_cookie(res, token)
     return res
 
 
@@ -290,18 +327,10 @@ async def register_user(payload: RegisterRequest, response: Response):
     response = JSONResponse({
         "success": True,
         "message": f"Account created successfully! Welcome, {created['full_name']}.",
-        "token": token,
         "user": created
     })
 
-    response.set_cookie(
-        key="ajax_session_token",
-        value=token,
-        max_age=SESSION_TTL_SECONDS,
-        httponly=False,
-        samesite="lax",
-        path="/"
-    )
+    _set_session_cookie(response, token)
     return response
 
 
@@ -432,8 +461,8 @@ async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin))
     admins_count = sum(1 for u in users if u.get("role") == "admin")
     active_count = sum(1 for u in users if u.get("status") == "active")
 
-    convs = list_conversations(limit=200)
-    memories = search_memories(limit=200)
+    convs = list_conversations(limit=200, include_all=True)
+    memories = search_memories(limit=200, include_all=True)
 
     from ai.neural.intent_classifier import intent_classifier
     num_intents = len(intent_classifier.classes) if hasattr(intent_classifier, "classes") else 20

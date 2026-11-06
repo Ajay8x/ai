@@ -44,7 +44,7 @@ if not os.path.exists(os.path.join(BASE_DIR, ".env")) and os.path.exists(os.path
 @dataclass
 class LLMConfig:
     provider: str = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-    model: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    model: str = os.getenv("LLM_MODEL", "qwen3.5:4b")
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
     ollama_num_ctx: int = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
@@ -52,11 +52,12 @@ class LLMConfig:
     api_key: str = os.getenv("OPENAI_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     local_model_path: str = os.getenv("LOCAL_MODEL_PATH", "")
-    thinking_mode: bool = os.getenv("LLM_THINKING_MODE", "true").lower() == "true"
+    thinking_mode: bool = os.getenv("LLM_THINKING_MODE", "false").lower() == "true"
 
 @dataclass
 class VoiceConfig:
@@ -78,7 +79,7 @@ class SafetyConfig:
 
 @dataclass
 class DatabaseConfig:
-    db_type: str = os.getenv("DATABASE_TYPE", "mongodb" if os.getenv("MONGODB_URI") else ("postgres" if os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PASSWORD") else "sqlite"))
+    db_type: str = os.getenv("DATABASE_TYPE", os.getenv("DB_TYPE", "mongodb" if os.getenv("MONGODB_URI") else ("postgres" if os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PASSWORD") else "sqlite")))
     mongodb_uri: str = os.getenv("MONGODB_URI", "")
     mongodb_db: str = os.getenv("MONGODB_DB", "ajax_ai")
     postgres_url: str = os.getenv("POSTGRES_URL", "")
@@ -105,6 +106,11 @@ class AppConfig:
     host: str = os.getenv("HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", "8000"))
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+    cors_origins: str = os.getenv("CORS_ORIGINS", "")
+    allow_sqlite_fallback: bool = os.getenv(
+        "ALLOW_SQLITE_FALLBACK",
+        "false" if os.getenv("VERCEL") else "true"
+    ).lower() == "true"
     cloud_name: str = os.getenv("CLOUD_NAME", "")
     cloud_api_key: str = os.getenv("CLOUD_API_KEY", "")
     cloud_api_secret: str = os.getenv("CLOUD_API_SECRET", "")
@@ -115,6 +121,11 @@ class AppConfig:
     demo_username: str = os.getenv("DEMO_USERNAME", "demo")
     demo_password: str = os.getenv("DEMO_PASSWORD", "")
     max_upload_size_mb: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "15"))
+    rag_embedding_provider: str = os.getenv("RAG_EMBEDDING_PROVIDER", "auto")
+    rag_embedding_model: str = os.getenv(
+        "RAG_EMBEDDING_MODEL",
+        "paraphrase-multilingual-MiniLM-L12-v2"
+    )
 
     def save_to_file(self):
         try:
@@ -142,6 +153,9 @@ class AppConfig:
                         for k, v in data["llm"].items():
                             if hasattr(config.llm, k):
                                 setattr(config.llm, k, v)
+                        # Never re-enable hidden chain-of-thought output from a
+                        # stale settings file.
+                        config.llm.thinking_mode = False
                     if "voice" in data:
                         for k, v in data["voice"].items():
                             if hasattr(config.voice, k):

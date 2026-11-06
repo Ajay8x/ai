@@ -9,14 +9,39 @@ import json
 import re
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
-from database.db import get_db_connection, get_mongo_db, is_mongo_active, DB_LOCK
+from database.db import get_db_connection, get_mongo_db, is_mongo_active, DB_LOCK, SYSTEM_SCOPE
 from core.logger import ajax_logger, error_logger
 from config.config_loader import config
 
 # ----------------- CONVERSATIONS & MESSAGES ----------------- #
 
-def create_conversation(title: str = "New Conversation") -> str:
+def _scope(user_id: Optional[str]) -> str:
+    """Return a non-empty ownership scope for legacy/system callers."""
+    return str(user_id or SYSTEM_SCOPE)
+
+
+def get_conversation(conversation_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Return a conversation only when it belongs to the requested scope."""
+    owner_id = _scope(user_id)
+    if is_mongo_active():
+        try:
+            return get_mongo_db().conversations.find_one(
+                {"id": conversation_id, "user_id": owner_id}, {"_id": 0}
+            )
+        except Exception as e:
+            error_logger.error(f"MongoDB get_conversation error: {e}")
+    with DB_LOCK:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM conversations WHERE id = ? AND user_id = ?", (conversation_id, owner_id))
+        row = cursor.fetchone()
+        conn.close()
+    return dict(row) if row else None
+
+
+def create_conversation(title: str = "New Conversation", user_id: Optional[str] = None) -> str:
     conv_id = str(uuid.uuid4())
+    owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
@@ -24,6 +49,7 @@ def create_conversation(title: str = "New Conversation") -> str:
             db = get_mongo_db()
             db.conversations.insert_one({
                 "id": conv_id,
+                "user_id": owner_id,
                 "title": title,
                 "created_at": now_str,
                 "updated_at": now_str,
@@ -38,18 +64,20 @@ def create_conversation(title: str = "New Conversation") -> str:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO conversations (id, title) VALUES (?, ?)",
-            (conv_id, title)
+            "INSERT INTO conversations (id, user_id, title) VALUES (?, ?, ?)",
+            (conv_id, owner_id, title)
         )
         conn.commit()
         conn.close()
     return conv_id
 
-def list_conversations(limit: int = 50) -> List[Dict[str, Any]]:
+def list_conversations(limit: int = 50, user_id: Optional[str] = None, include_all: bool = False) -> List[Dict[str, Any]]:
+    owner_id = _scope(user_id)
+    mongo_filter = {} if include_all else {"user_id": owner_id}
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            docs = list(db.conversations.find({}, {"_id": 0}).sort([("is_pinned", -1), ("updated_at", -1)]).limit(limit))
+            docs = list(db.conversations.find(mongo_filter, {"_id": 0}).sort([("is_pinned", -1), ("updated_at", -1)]).limit(limit))
             return docs
         except Exception as e:
             error_logger.error(f"MongoDB list_conversations error: {e}")
@@ -57,29 +85,34 @@ def list_conversations(limit: int = 50) -> List[Dict[str, Any]]:
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM conversations ORDER BY is_pinned DESC, updated_at DESC LIMIT ?",
-            (limit,)
-        )
+        if include_all:
+            cursor.execute("SELECT * FROM conversations ORDER BY is_pinned DESC, updated_at DESC LIMIT ?", (limit,))
+        else:
+            cursor.execute(
+                "SELECT * FROM conversations WHERE user_id = ? ORDER BY is_pinned DESC, updated_at DESC LIMIT ?",
+                (owner_id, limit)
+            )
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
     return rows
 
-def add_message(conversation_id: str, role: str, content: str, modality: str = "text", tokens: int = 0) -> str:
+def add_message(conversation_id: str, role: str, content: str, modality: str = "text", tokens: int = 0, user_id: Optional[str] = None) -> str:
     msg_id = str(uuid.uuid4())
+    owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
         try:
             db = get_mongo_db()
             # 1. Guarantee conversation exists in database
-            conv = db.conversations.find_one({"id": conversation_id})
+            conv = db.conversations.find_one({"id": conversation_id, "user_id": owner_id})
             if not conv:
                 title = (content[:45] + "...") if len(content) > 45 else content
                 if not title.strip() or role == "assistant":
                     title = "New Chat Session"
                 db.conversations.insert_one({
                     "id": conversation_id,
+                    "user_id": owner_id,
                     "title": title,
                     "created_at": now_str,
                     "updated_at": now_str,
@@ -87,11 +120,12 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
                     "is_pinned": 0
                 })
             else:
-                db.conversations.update_one({"id": conversation_id}, {"$set": {"updated_at": now_str}})
+                db.conversations.update_one({"id": conversation_id, "user_id": owner_id}, {"$set": {"updated_at": now_str}})
 
             # 2. Insert message document
             db.messages.insert_one({
                 "id": msg_id,
+                "user_id": owner_id,
                 "conversation_id": conversation_id,
                 "role": role,
                 "content": content,
@@ -108,36 +142,37 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
         cursor = conn.cursor()
         
         # 1. Guarantee conversation exists in database
-        cursor.execute("SELECT id FROM conversations WHERE id = ?", (conversation_id,))
+        cursor.execute("SELECT id FROM conversations WHERE id = ? AND user_id = ?", (conversation_id, owner_id))
         if not cursor.fetchone():
             title = (content[:45] + "...") if len(content) > 45 else content
             if not title.strip() or role == "assistant":
                 title = "New Chat Session"
             cursor.execute(
-                "INSERT INTO conversations (id, title, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
-                (conversation_id, title)
+                "INSERT INTO conversations (id, user_id, title, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                (conversation_id, owner_id, title)
             )
         else:
             cursor.execute(
-                "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                (conversation_id,)
+                "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+                (conversation_id, owner_id)
             )
 
         # 2. Insert message record
         cursor.execute(
-            """INSERT INTO messages (id, conversation_id, role, content, modality, tokens)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (msg_id, conversation_id, role, content, modality, tokens)
+            """INSERT INTO messages (id, user_id, conversation_id, role, content, modality, tokens)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (msg_id, owner_id, conversation_id, role, content, modality, tokens)
         )
         conn.commit()
         conn.close()
     return msg_id
 
-def get_conversation_messages(conversation_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+def get_conversation_messages(conversation_id: str, limit: int = 50, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    owner_id = _scope(user_id)
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            docs = list(db.messages.find({"conversation_id": conversation_id}, {"_id": 0}).sort("created_at", 1).limit(limit))
+            docs = list(db.messages.find({"conversation_id": conversation_id, "user_id": owner_id}, {"_id": 0}).sort("created_at", 1).limit(limit))
             return docs
         except Exception as e:
             error_logger.error(f"MongoDB get_conversation_messages error: {e}")
@@ -146,42 +181,45 @@ def get_conversation_messages(conversation_id: str, limit: int = 50) -> List[Dic
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
-            (conversation_id, limit)
+            "SELECT * FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC LIMIT ?",
+            (conversation_id, owner_id, limit)
         )
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
     return rows
 
-def delete_conversation(conversation_id: str) -> bool:
+def delete_conversation(conversation_id: str, user_id: Optional[str] = None) -> bool:
+    owner_id = _scope(user_id)
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            db.messages.delete_many({"conversation_id": conversation_id})
-            db.conversations.delete_one({"id": conversation_id})
-            return True
+            db.messages.delete_many({"conversation_id": conversation_id, "user_id": owner_id})
+            result = db.conversations.delete_one({"id": conversation_id, "user_id": owner_id})
+            return result.deleted_count > 0
         except Exception as e:
             error_logger.error(f"MongoDB delete_conversation error: {e}")
 
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM messages WHERE conversation_id = ?", (conversation_id,))
-        cursor.execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
+        cursor.execute("DELETE FROM messages WHERE conversation_id = ? AND user_id = ?", (conversation_id, owner_id))
+        cursor.execute("DELETE FROM conversations WHERE id = ? AND user_id = ?", (conversation_id, owner_id))
+        affected = cursor.rowcount > 0
         conn.commit()
         conn.close()
-    return True
+    return affected
 
 # ----------------- MEMORIES ----------------- #
 
-def save_memory(key_text: str, value_text: str, category: str = "general", source: str = "chat", confidence: float = 1.0) -> str:
+def save_memory(key_text: str, value_text: str, category: str = "general", source: str = "chat", confidence: float = 1.0, user_id: Optional[str] = None) -> str:
     mem_id = str(uuid.uuid4())
+    owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            existing = db.memories.find_one({"key_text": key_text, "category": category})
+            existing = db.memories.find_one({"user_id": owner_id, "key_text": key_text, "category": category})
             if existing:
                 db.memories.update_one(
                     {"_id": existing["_id"]},
@@ -196,6 +234,7 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
             else:
                 db.memories.insert_one({
                     "id": mem_id,
+                    "user_id": owner_id,
                     "category": category,
                     "key_text": key_text,
                     "value_text": value_text,
@@ -211,7 +250,7 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM memories WHERE key_text = ? AND category = ?", (key_text, category))
+        cursor.execute("SELECT id FROM memories WHERE user_id = ? AND key_text = ? AND category = ?", (owner_id, key_text, category))
         existing = cursor.fetchone()
         if existing:
             cursor.execute(
@@ -222,23 +261,25 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
             mem_id = existing["id"]
         else:
             cursor.execute(
-                """INSERT INTO memories (id, category, key_text, value_text, source, confidence)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (mem_id, category, key_text, value_text, source, confidence)
+                """INSERT INTO memories (id, user_id, category, key_text, value_text, source, confidence)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (mem_id, owner_id, category, key_text, value_text, source, confidence)
             )
         conn.commit()
         conn.close()
     return mem_id
 
-def search_memories(query: str = "", limit: int = 10) -> List[Dict[str, Any]]:
+def search_memories(query: str = "", limit: int = 10, user_id: Optional[str] = None, include_all: bool = False) -> List[Dict[str, Any]]:
+    owner_id = _scope(user_id)
     if is_mongo_active():
         try:
             db = get_mongo_db()
+            ownership = {} if include_all else {"user_id": owner_id}
             if query:
                 q_regex = {"$regex": re.escape(query), "$options": "i"}
-                filter_doc = {"$or": [{"key_text": q_regex}, {"value_text": q_regex}]}
+                filter_doc = {**ownership, "$or": [{"key_text": q_regex}, {"value_text": q_regex}]}
             else:
-                filter_doc = {}
+                filter_doc = ownership
             docs = list(db.memories.find(filter_doc, {"_id": 0}).sort("updated_at", -1).limit(limit))
             return docs
         except Exception as e:
@@ -249,23 +290,35 @@ def search_memories(query: str = "", limit: int = 10) -> List[Dict[str, Any]]:
         cursor = conn.cursor()
         if query:
             search_param = f"%{query}%"
-            cursor.execute(
-                """SELECT * FROM memories 
-                   WHERE key_text LIKE ? OR value_text LIKE ? 
-                   ORDER BY updated_at DESC LIMIT ?""",
-                (search_param, search_param, limit)
-            )
+            if include_all:
+                cursor.execute(
+                    """SELECT * FROM memories
+                       WHERE key_text LIKE ? OR value_text LIKE ?
+                       ORDER BY updated_at DESC LIMIT ?""",
+                    (search_param, search_param, limit)
+                )
+            else:
+                cursor.execute(
+                    """SELECT * FROM memories
+                       WHERE user_id = ? AND (key_text LIKE ? OR value_text LIKE ?)
+                       ORDER BY updated_at DESC LIMIT ?""",
+                    (owner_id, search_param, search_param, limit)
+                )
         else:
-            cursor.execute("SELECT * FROM memories ORDER BY updated_at DESC LIMIT ?", (limit,))
+            if include_all:
+                cursor.execute("SELECT * FROM memories ORDER BY updated_at DESC LIMIT ?", (limit,))
+            else:
+                cursor.execute("SELECT * FROM memories WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?", (owner_id, limit))
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
     return rows
 
-def delete_memory(mem_id: str) -> bool:
+def delete_memory(mem_id: str, user_id: Optional[str] = None) -> bool:
+    owner_id = _scope(user_id)
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            res = db.memories.delete_one({"id": mem_id})
+            res = db.memories.delete_one({"id": mem_id, "user_id": owner_id})
             return res.deleted_count > 0
         except Exception as e:
             error_logger.error(f"MongoDB delete_memory error: {e}")
@@ -273,7 +326,7 @@ def delete_memory(mem_id: str) -> bool:
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM memories WHERE id = ?", (mem_id,))
+        cursor.execute("DELETE FROM memories WHERE id = ? AND user_id = ?", (mem_id, owner_id))
         affected = cursor.rowcount > 0
         conn.commit()
         conn.close()
@@ -281,8 +334,9 @@ def delete_memory(mem_id: str) -> bool:
 
 # ----------------- TOOL EXECUTIONS ----------------- #
 
-def record_tool_execution(tool_name: str, parameters: Dict[str, Any], result: Dict[str, Any], status: str, duration_ms: float = 0.0) -> str:
+def record_tool_execution(tool_name: str, parameters: Dict[str, Any], result: Dict[str, Any], status: str, duration_ms: float = 0.0, user_id: Optional[str] = None) -> str:
     exec_id = str(uuid.uuid4())
+    owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
@@ -290,6 +344,7 @@ def record_tool_execution(tool_name: str, parameters: Dict[str, Any], result: Di
             db = get_mongo_db()
             db.tool_executions.insert_one({
                 "id": exec_id,
+                "user_id": owner_id,
                 "tool_name": tool_name,
                 "parameters_json": json.dumps(parameters),
                 "result_json": json.dumps(result),
@@ -305,9 +360,9 @@ def record_tool_execution(tool_name: str, parameters: Dict[str, Any], result: Di
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO tool_executions (id, tool_name, parameters_json, result_json, status, duration_ms)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (exec_id, tool_name, json.dumps(parameters), json.dumps(result), status, duration_ms)
+            """INSERT INTO tool_executions (id, user_id, tool_name, parameters_json, result_json, status, duration_ms)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (exec_id, owner_id, tool_name, json.dumps(parameters), json.dumps(result), status, duration_ms)
         )
         conn.commit()
         conn.close()
@@ -315,8 +370,9 @@ def record_tool_execution(tool_name: str, parameters: Dict[str, Any], result: Di
 
 # ----------------- TRAINING SAMPLES ----------------- #
 
-def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str, Any]] = None, confidence: float = 0.0, source: str = "user_interaction") -> str:
+def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str, Any]] = None, confidence: float = 0.0, source: str = "user_interaction", user_id: Optional[str] = None) -> str:
     ex_id = str(uuid.uuid4())
+    owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if is_mongo_active():
@@ -324,6 +380,7 @@ def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str
             db = get_mongo_db()
             db.training_examples.insert_one({
                 "id": ex_id,
+                "user_id": owner_id,
                 "raw_text": raw_text,
                 "intent": intent,
                 "entities_json": json.dumps(entities or {}),
@@ -340,9 +397,9 @@ def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO training_examples (id, raw_text, intent, entities_json, confidence, source, approved)
-               VALUES (?, ?, ?, ?, ?, ?, 0)""",
-            (ex_id, raw_text, intent, json.dumps(entities or {}), confidence, source)
+            """INSERT INTO training_examples (id, user_id, raw_text, intent, entities_json, confidence, source, approved)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 0)""",
+            (ex_id, owner_id, raw_text, intent, json.dumps(entities or {}), confidence, source)
         )
         conn.commit()
         conn.close()
@@ -643,20 +700,26 @@ def seed_default_demo_user():
 
 # ----------------- PERSISTENT AUTH SESSIONS ----------------- #
 
+def _session_token_hash(token: str) -> str:
+    """Store only a one-way digest of bearer tokens in persistent storage."""
+    return hashlib.sha256(str(token).encode("utf-8")).hexdigest()
+
+
 def save_auth_session(token: str, user: Dict[str, Any], expires_at: float) -> bool:
     """Persists auth session to database so user remains logged in across server restarts."""
     user_id = user["id"]
     username = user["username"]
     role = user.get("role", "user")
     full_name = user.get("full_name", username)
+    token_digest = _session_token_hash(token)
 
     if is_mongo_active():
         try:
             db = get_mongo_db()
             db.auth_sessions.replace_one(
-                {"token": token},
+                {"token": token_digest},
                 {
-                    "token": token,
+                    "token": token_digest,
                     "user_id": user_id,
                     "username": username,
                     "role": role,
@@ -698,11 +761,12 @@ def get_auth_session(token: str) -> Optional[Dict[str, Any]]:
     """Retrieves session from DB if valid and not expired."""
     import time
     now_ts = time.time()
+    token_digest = _session_token_hash(token)
 
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            doc = db.auth_sessions.find_one({"token": token, "expires_at": {"$gt": now_ts}}, {"_id": 0})
+            doc = db.auth_sessions.find_one({"token": token_digest, "expires_at": {"$gt": now_ts}}, {"_id": 0})
             return doc
         except Exception as e:
             error_logger.error(f"MongoDB get_auth_session error: {e}")
@@ -713,7 +777,7 @@ def get_auth_session(token: str) -> Optional[Dict[str, Any]]:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT * FROM auth_sessions WHERE token = ? AND expires_at > ?",
-                (token, now_ts)
+                (token_digest, now_ts)
             )
             row = cursor.fetchone()
             conn.close()
@@ -727,7 +791,7 @@ def delete_auth_session(token: str) -> bool:
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            db.auth_sessions.delete_one({"token": token})
+            db.auth_sessions.delete_one({"token": _session_token_hash(token)})
             return True
         except Exception as e:
             error_logger.error(f"MongoDB delete_auth_session error: {e}")
@@ -736,7 +800,7 @@ def delete_auth_session(token: str) -> bool:
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
+            cursor.execute("DELETE FROM auth_sessions WHERE token = ?", (_session_token_hash(token),))
             conn.commit()
             conn.close()
             return True

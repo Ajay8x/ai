@@ -16,7 +16,7 @@ async def get_memories(
     limit: int = Query(default=20, ge=1, le=50),
     current_user: Dict[str, Any] = Depends(require_authenticated_user)
 ):
-    mems = memory_manager.recall(query=query, limit=limit)
+    mems = memory_manager.recall(query=query, limit=limit, user_id=current_user["id"])
     return {"memories": mems}
 
 @memory_router.post("/memory")
@@ -24,7 +24,8 @@ async def store_memory(req: MemoryRequest, current_user: Dict[str, Any] = Depend
     result = memory_manager.remember_fact(
         key_text=req.key,
         value_text=req.value,
-        category=req.category or "general"
+        category=req.category or "general",
+        user_id=current_user["id"]
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Could not save memory."))
@@ -32,7 +33,7 @@ async def store_memory(req: MemoryRequest, current_user: Dict[str, Any] = Depend
 
 @memory_router.delete("/memory/{memory_id}")
 async def forget_memory(memory_id: str, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
-    deleted = memory_manager.forget(memory_id)
+    deleted = memory_manager.forget(memory_id, user_id=current_user["id"])
     if not deleted:
         raise HTTPException(status_code=404, detail="Memory not found.")
     return {"success": True, "memory_id": memory_id}

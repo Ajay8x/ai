@@ -7,6 +7,8 @@ import os
 import datetime
 import psutil
 import subprocess
+import re
+from pathlib import Path
 from typing import Dict, Any, Optional
 from tools.base import BaseTool, ToolResult
 from core.permissions import PermissionLevel, ToolCategory
@@ -130,16 +132,20 @@ class TakeScreenshotTool(BaseTool):
             if not filename:
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"screenshot_{timestamp}.png"
-            elif not filename.endswith(".png"):
-                filename += ".png"
-                
-            filepath = os.path.join(shots_dir, filename)
+            safe_name = Path(str(filename).replace("\\", "/")).name
+            safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", safe_name).strip("._") or "screenshot"
+            if not safe_name.lower().endswith(".png"):
+                safe_name += ".png"
+            shots_root = Path(shots_dir).resolve()
+            filepath_obj = (shots_root / safe_name).resolve()
+            if filepath_obj.parent != shots_root:
+                return ToolResult(success=False, output=None, error="Unsafe screenshot path.")
             screenshot = pyautogui.screenshot()
-            screenshot.save(filepath)
+            screenshot.save(str(filepath_obj))
             return ToolResult(
                 success=True,
-                output=f"Screenshot saved to: {filepath}",
-                metadata={"filepath": filepath}
+                output=f"Screenshot saved to: {filepath_obj}",
+                metadata={"filepath": str(filepath_obj)}
             )
         except Exception as e:
             return ToolResult(success=False, output=None, error=f"Screenshot failed: {str(e)}")
