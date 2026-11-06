@@ -13,6 +13,20 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
+# Only these runtime preferences may be persisted. Provider credentials,
+# database passwords, cloud secrets, and auth material must remain in the
+# process environment or an external secret manager.
+PERSISTED_LLM_FIELDS = (
+    "provider",
+    "model",
+    "temperature",
+    "max_tokens",
+    "ollama_num_ctx",
+    "cpu_threads",
+    "local_model_path",
+    "thinking_mode",
+)
+
 try:
     os.makedirs(DATA_DIR, exist_ok=True)
 except OSError:
@@ -102,10 +116,14 @@ class AppConfig:
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     meilisearch: MeiliSearchConfig = field(default_factory=MeiliSearchConfig)
-    database_path: str = os.path.join(DATA_DIR, "ajax.db")
+    database_path: str = os.getenv("DATABASE_PATH", os.path.join(DATA_DIR, "ajax.db"))
     host: str = os.getenv("HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", "8000"))
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+    api_docs_enabled: bool = os.getenv(
+        "API_DOCS_ENABLED",
+        "true" if os.getenv("DEBUG", "false").lower() == "true" else "false"
+    ).lower() == "true"
     cors_origins: str = os.getenv("CORS_ORIGINS", "")
     allow_sqlite_fallback: bool = os.getenv(
         "ALLOW_SQLITE_FALLBACK",
@@ -127,18 +145,33 @@ class AppConfig:
         "paraphrase-multilingual-MiniLM-L12-v2"
     )
 
+    def _safe_settings_payload(self) -> Dict[str, Any]:
+        """Return only non-secret settings suitable for persistence."""
+        return {
+            "llm": {
+                key: getattr(self.llm, key)
+                for key in PERSISTED_LLM_FIELDS
+                if hasattr(self.llm, key)
+            },
+            "voice": asdict(self.voice),
+            "safety": asdict(self.safety),
+        }
+
     def save_to_file(self):
+        payload = self._safe_settings_payload()
         try:
             from database.db import is_mongo_active, get_mongo_db
             if is_mongo_active():
                 db = get_mongo_db()
-                db.system_settings.update_one({"id": "app_config"}, {"$set": asdict(self)}, upsert=True)
+                db.system_settings.update_one({"id": "app_config"}, {"$set": payload}, upsert=True)
         except Exception:
             pass
 
         try:
-            with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-                json.dump(asdict(self), f, indent=4)
+            temp_file = f"{SETTINGS_FILE}.tmp"
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=4)
+            os.replace(temp_file, SETTINGS_FILE)
         except Exception as e:
             pass
 
@@ -150,9 +183,9 @@ class AppConfig:
                 with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if "llm" in data:
-                        for k, v in data["llm"].items():
-                            if hasattr(config.llm, k):
-                                setattr(config.llm, k, v)
+                        for k in PERSISTED_LLM_FIELDS:
+                            if k in data["llm"] and hasattr(config.llm, k):
+                                setattr(config.llm, k, data["llm"][k])
                         # Never re-enable hidden chain-of-thought output from a
                         # stale settings file.
                         config.llm.thinking_mode = False
@@ -164,6 +197,24 @@ class AppConfig:
                         for k, v in data["safety"].items():
                             if hasattr(config.safety, k):
                                 setattr(config.safety, k, v)
+
+                    # Scrub legacy settings files that may have stored secrets
+                    # before the allowlisted persistence format was introduced.
+                    legacy_secret_keys = {
+                        "api_key", "groq_api_key", "gemini_api_key",
+                        "deepseek_api_key", "openrouter_api_key",
+                        "database", "cloud_api_secret", "jwt_secret",
+                        "admin_password", "demo_password"
+                    }
+                    has_legacy_secrets = bool(
+                        legacy_secret_keys.intersection(data.keys())
+                        or legacy_secret_keys.intersection(data.get("llm", {}).keys())
+                    )
+                    if has_legacy_secrets:
+                        temp_file = f"{SETTINGS_FILE}.tmp"
+                        with open(temp_file, "w", encoding="utf-8") as safe_file:
+                            json.dump(config._safe_settings_payload(), safe_file, indent=4)
+                        os.replace(temp_file, SETTINGS_FILE)
             except Exception as e:
                 print(f"Error loading custom settings: {e}")
         return config

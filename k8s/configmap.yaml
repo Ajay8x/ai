@@ -16,7 +16,6 @@ data:
   PRIVACY_MODE: "false"
 
   # AI LLM Provider
-  DEFAULT_LLM_PROVIDER: "openai"
   DEFAULT_LLM_PROVIDER: "ollama"
   LLM_MODEL: "qwen3.5:4b"
   OLLAMA_BASE_URL: "http://ollama:11434"

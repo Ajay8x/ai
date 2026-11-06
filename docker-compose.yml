@@ -13,8 +13,8 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - HOST=0.0.0.0
       - PORT=8000
-      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-openai}
       - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-ollama}
       - LLM_MODEL=${LLM_MODEL:-qwen3.5:4b}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}

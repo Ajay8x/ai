@@ -11,6 +11,7 @@ import math
 from pathlib import Path, PurePosixPath
 from typing import Dict, Any, Tuple
 from fastapi import APIRouter, Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
 from models.schemas import UploadRequest, UploadResponse
 from ai.rag.store import rag_store
 from config.config_loader import config
@@ -66,6 +67,11 @@ def _build_safe_upload_path(filename: str) -> Tuple[Path, str]:
 
 @upload_router.post("/upload", response_model=UploadResponse)
 async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Depends(require_authenticated_user)):
+    """Run CPU/disk/network-heavy indexing outside FastAPI's event loop."""
+    return await run_in_threadpool(_process_upload_document, req, current_user)
+
+
+def _process_upload_document(req: UploadRequest, current_user: Dict[str, Any]):
     if not req.content_base64:
         raise HTTPException(status_code=400, detail="No base64 file content provided.")
     try:
@@ -145,7 +151,7 @@ async def upload_document(req: UploadRequest, current_user: Dict[str, Any] = Dep
         raise
     except Exception as e:
         error_logger.error(f"Failed to process file upload: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="File processing failed. Please try again.")
     finally:
         try:
             if 'file_path_obj' in locals() and file_path_obj.exists():

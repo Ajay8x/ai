@@ -8,6 +8,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    HOST=0.0.0.0 \
     PORT=8000 \
     DEBIAN_FRONTEND=noninteractive
 

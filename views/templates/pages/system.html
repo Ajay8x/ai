@@ -1,76 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}AJAX AI - System Diagnostics & Monitoring{% endblock %}
+{% block title %}AJAX AI - System Logs & Live Monitoring{% endblock %}
 {% block header_title %}System Health & Live Monitoring{% endblock %}
-{% block header_subtitle %}CPU, RAM, Subsystem Self-Diagnostics & Real-Time Operational Logs{% endblock %}
+{% block header_subtitle %}Real-Time Server Application Logs & System Telemetry{% endblock %}
 
 {% block content %}
 <div class="page-title-row">
     <div>
-        <h2 class="page-title-main"><i class="fa-solid fa-server"></i> Subsystem Diagnostics & Monitoring</h2>
-        <div class="page-subtitle">Continuous diagnostic monitoring of AI subsystems, database, and real-time execution logs.</div>
+        <h2 class="page-title-main"><i class="fa-solid fa-server"></i> System Logs & Monitoring</h2>
+        <div class="page-subtitle">Continuous monitoring of server activity, AI executions, and live application logs.</div>
     </div>
-    <button class="btn-primary" onclick="refreshSystemData()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Diagnostics</button>
+    <button class="btn-primary" onclick="loadRecentLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Logs</button>
 </div>
 
-<!-- Diagnostics & Subsystem Status -->
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:22px;">
-    <div class="glass-panel">
-        <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-            <span><i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i></span><span>Subsystem Diagnostic Probes</span>
+<!-- Live Logs Tailer -->
+<div class="glass-panel" style="display:flex; flex-direction:column; min-height:550px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+            <span><i class="fa-solid fa-file-lines" style="color:var(--accent-blue);"></i></span><span>Server Application Logs</span>
         </h3>
-        <div id="diagnosticsList" style="display:flex; flex-direction:column; gap:8px;">
-            <div style="font-size:13px; color:var(--text-dim);">Running diagnostic probes...</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn-secondary" style="font-size:11.5px; padding:4px 12px;" onclick="loadRecentLogs()">
+                <i class="fa-solid fa-rotate-right"></i> Tail Logs
+            </button>
+            <button class="btn-secondary" style="font-size:11.5px; padding:4px 12px;" onclick="clearLogsViewer()">
+                <i class="fa-solid fa-eraser"></i> Clear View
+            </button>
         </div>
     </div>
-
-    <!-- Live Logs Tailer -->
-    <div class="glass-panel" style="display:flex; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <span><i class="fa-solid fa-file-lines" style="color:var(--accent-blue);"></i></span><span>Server Application Logs</span>
-            </h3>
-            <button class="btn-secondary" style="font-size:11.5px; padding:3px 10px;" onclick="loadRecentLogs()">Tail Logs <i class="fa-solid fa-rotate-right"></i></button>
-        </div>
-        <pre class="code-viewer" id="logsViewer" style="flex:1; min-height:220px; font-size:12px; line-height:1.4;">Loading logs...</pre>
-    </div>
+    <pre class="code-viewer" id="logsViewer" style="flex:1; min-height:480px; font-size:12px; line-height:1.5; overflow-y:auto; padding:16px; background:rgba(7, 9, 14, 0.95); border:1px solid var(--border-subtle); border-radius:10px;">Loading logs...</pre>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    async function refreshSystemData() {
-        await Promise.all([loadDiagnostics(), loadRecentLogs()]);
-        window.showToast('Diagnostics refreshed successfully', 'info');
-    }
-
-    async function loadDiagnostics() {
-        try {
-            const data = await window.ajaxClient.get('/api/diagnostics');
-            const list = document.getElementById('diagnosticsList');
-            const subs = data.subsystems || {};
-
-            list.innerHTML = Object.entries(subs).map(([k, v]) => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:8px; font-size:13px;">
-                    <span style="font-weight:600; text-transform:uppercase;">${k}</span>
-                    <span class="${v === 'OK' || v === 'HEALTHY' || v === 'CONNECTED' ? 'badge-safe' : 'badge-confirm'}">${v}</span>
-                </div>
-            `).join('');
-        } catch (_) {}
-    }
-
     async function loadRecentLogs() {
+        const viewer = document.getElementById('logsViewer');
         try {
             const data = await window.ajaxClient.get('/api/logs');
-            const viewer = document.getElementById('logsViewer');
             const lines = data.logs || [];
             viewer.textContent = lines.length > 0 ? lines.join('\n') : 'No recent log entries found.';
             viewer.scrollTop = viewer.scrollHeight;
-        } catch (_) {}
+            if (window.showToast) window.showToast('Application logs refreshed', 'info');
+        } catch (err) {
+            viewer.textContent = `Could not retrieve logs: ${err.message}`;
+        }
+    }
+
+    function clearLogsViewer() {
+        const viewer = document.getElementById('logsViewer');
+        if (viewer) viewer.textContent = '// Log view cleared';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadDiagnostics();
         loadRecentLogs();
     });
 </script>

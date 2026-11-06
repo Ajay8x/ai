@@ -6,7 +6,7 @@ import os
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Body, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from system.monitor import system_monitor
 from core.diagnostics import diagnostics
@@ -19,21 +19,21 @@ from controllers.auth_controller import require_authenticated_user, require_admi
 system_router = APIRouter(prefix="/api", tags=["System, Settings & Neural Diagnostics"])
 
 class SettingsUpdateRequest(BaseModel):
-    llm_provider: Optional[str] = None
-    llm_model: Optional[str] = None
-    llm_temperature: Optional[float] = None
-    llm_max_tokens: Optional[int] = None
+    llm_provider: Optional[str] = Field(default=None, min_length=1, max_length=32)
+    llm_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    llm_temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+    llm_max_tokens: Optional[int] = Field(default=None, ge=1, le=32768)
     gemini_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     deepseek_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
-    ollama_base_url: Optional[str] = None
+    ollama_base_url: Optional[str] = Field(default=None, min_length=1, max_length=512)
     default_language: Optional[str] = None
     thinking_mode: Optional[bool] = None
 
 class NeuralPredictRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1, max_length=10000)
 
 @system_router.get("/status")
 async def get_system_status(current_user: Dict[str, Any] = Depends(require_authenticated_user)):

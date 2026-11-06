@@ -32,7 +32,8 @@ from database.crud import (
     is_mongo_active,
     save_auth_session,
     get_auth_session,
-    delete_auth_session
+    delete_auth_session,
+    purge_expired_auth_sessions
 )
 from core.logger import ajax_logger
 from config.config_loader import config
@@ -46,6 +47,29 @@ _LOGIN_FAILURES = defaultdict(deque)
 _LOGIN_RATE_LOCK = threading.Lock()
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_MAX_FAILURES = 5
+_LAST_SESSION_CLEANUP = 0.0
+_SESSION_CLEANUP_LOCK = threading.Lock()
+SESSION_CLEANUP_INTERVAL_SECONDS = 60
+
+
+def evict_expired_sessions() -> int:
+    """Remove expired in-memory and persistent sessions on a bounded cadence."""
+    global _LAST_SESSION_CLEANUP
+    now = time.time()
+    if now - _LAST_SESSION_CLEANUP < SESSION_CLEANUP_INTERVAL_SECONDS:
+        return 0
+    with _SESSION_CLEANUP_LOCK:
+        if now - _LAST_SESSION_CLEANUP < SESSION_CLEANUP_INTERVAL_SECONDS:
+            return 0
+        _LAST_SESSION_CLEANUP = now
+        expired = [token for token, session in list(_SESSIONS.items()) if session.get("expires_at", 0) <= now]
+        for token in expired:
+            _SESSIONS.pop(token, None)
+        try:
+            purge_expired_auth_sessions()
+        except Exception as e:
+            ajax_logger.warning(f"Expired session cleanup notice: {e}")
+        return len(expired)
 
 
 def _login_key(request: Request, username: str) -> str:
@@ -106,6 +130,7 @@ def create_session(user: Dict[str, Any]) -> str:
 
 def get_current_user_from_request(request: Request) -> Optional[Dict[str, Any]]:
     """Resolves authenticated user from Cookie or Authorization header with DB fallback."""
+    evict_expired_sessions()
     token = request.cookies.get("ajax_session_token")
     if not token:
         auth_header = request.headers.get("Authorization", "")
@@ -178,7 +203,8 @@ def require_admin(request: Request) -> Dict[str, Any]:
 # ------------------------------------------------------------------------------
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=2)
-    password: str = Field(..., min_length=8)
+    # Login validates presence only; registration owns the password-strength policy.
+    password: str = Field(..., min_length=1, max_length=256)
     mode: str = Field("user", description="'user' or 'admin'")
 
 class RegisterRequest(BaseModel):
@@ -253,7 +279,6 @@ async def login_user(request: Request, payload: LoginRequest, response: Response
 
 
 @auth_router.post("/auth/demo-login")
-@auth_router.get("/auth/demo-login")
 async def demo_quick_login(response: Response):
     """Instant demo login when explicitly enabled and configured."""
     from database.crud import seed_default_demo_user

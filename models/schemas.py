@@ -6,11 +6,11 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 
 class ChatRequest(BaseModel):
-    query: str = Field(..., description="User query or instruction")
-    conversation_id: Optional[str] = Field(None, description="Active conversation session ID")
-    modality: Optional[str] = Field("api", description="Interaction modality: api, text, voice")
+    query: str = Field(..., min_length=1, max_length=10000, description="User query or instruction")
+    conversation_id: Optional[str] = Field(None, max_length=128, description="Active conversation session ID")
+    modality: Optional[str] = Field("api", max_length=32, description="Interaction modality: api, text, voice")
     web_search: Optional[bool] = Field(False, description="Whether to force live web search")
-    language: Optional[str] = Field("en", description="Preferred response language: 'en' or 'hi'")
+    language: Optional[str] = Field("en", pattern="^(en|hi)$", description="Preferred response language: 'en' or 'hi'")
 
 class ChatResponse(BaseModel):
     response: str
@@ -33,11 +33,11 @@ class UploadResponse(BaseModel):
     message: str
 
 class MemoryRequest(BaseModel):
-    key: str
-    value: str
-    category: Optional[str] = "general"
+    key: str = Field(..., min_length=1, max_length=200)
+    value: str = Field(..., min_length=1, max_length=5000)
+    category: Optional[str] = Field("general", max_length=64)
 
 class ToolExecRequest(BaseModel):
-    tool_name: str
+    tool_name: str = Field(..., min_length=1, max_length=128, pattern="^[A-Za-z0-9_.-]+$")
     parameters: Optional[Dict[str, Any]] = None
     confirmed: Optional[bool] = False

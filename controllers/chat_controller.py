@@ -5,6 +5,7 @@ AJAX AI - MVC Controller: Chat & Conversation Endpoints
 from typing import Dict, Any
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.concurrency import run_in_threadpool
 from models.schemas import ChatRequest, ChatResponse
 from core.router import router
 from controllers.auth_controller import require_authenticated_user
@@ -24,7 +25,8 @@ async def process_chat_message(req: ChatRequest, current_user: Dict[str, Any] = 
     if req.conversation_id and not get_conversation(conv_id, user_id=current_user["id"]):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Conversation not found.")
-    result = router.process_query(
+    result = await run_in_threadpool(
+        router.process_query,
         req.query,
         conv_id,
         modality=req.modality or "api",
@@ -50,7 +52,12 @@ async def process_chat_message_stream(req: ChatRequest, current_user: Dict[str, 
             language=req.language or "en",
             user_id=current_user["id"]
         ),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
     )
 
 @chat_router.get("/conversations")

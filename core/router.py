@@ -476,8 +476,9 @@ class RequestRouter:
                     full_text = cleaned
                     yield f"data: {json.dumps({'type': 'token', 'token': delta})}\n\n"
         except Exception as e:
-            full_text = f"Error generating stream: {e}"
-            yield f"data: {json.dumps({'type': 'token', 'token': f' {e}'})}\n\n"
+            ajax_logger.error(f"Streaming generation failed: {e}")
+            full_text = "I couldn't complete that response right now. Please try again."
+            yield f"data: {json.dumps({'type': 'token', 'token': full_text})}\n\n"
 
         full_text = sanitize_model_output(full_text)
         if not full_text.strip():

@@ -7,6 +7,7 @@ Seamlessly unifies MongoDB Atlas (Cloud) with PostgreSQL and SQLite (Local fallb
 import uuid
 import json
 import re
+import time
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from database.db import get_db_connection, get_mongo_db, is_mongo_active, DB_LOCK, SYSTEM_SCOPE
@@ -748,7 +749,7 @@ def save_auth_session(token: str, user: Dict[str, Any], expires_at: float) -> bo
                     full_name=excluded.full_name,
                     expires_at=excluded.expires_at
                 """,
-                (token, user_id, username, role, full_name, expires_at)
+                (token_digest, user_id, username, role, full_name, expires_at)
             )
             conn.commit()
             conn.close()
@@ -807,5 +808,30 @@ def delete_auth_session(token: str) -> bool:
         except Exception as e:
             error_logger.error(f"DB delete_auth_session error: {e}")
             return False
+
+
+def purge_expired_auth_sessions() -> int:
+    """Remove expired persistent sessions from the active auth store."""
+    now_ts = time.time()
+
+    if is_mongo_active():
+        try:
+            result = get_mongo_db().auth_sessions.delete_many({"expires_at": {"$lte": now_ts}})
+            return int(result.deleted_count)
+        except Exception as e:
+            error_logger.warning(f"MongoDB purge_expired_auth_sessions notice: {e}")
+
+    with DB_LOCK:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM auth_sessions WHERE expires_at <= ?", (now_ts,))
+            deleted = cursor.rowcount
+            conn.commit()
+            conn.close()
+            return int(deleted or 0)
+        except Exception as e:
+            error_logger.warning(f"DB purge_expired_auth_sessions notice: {e}")
+            return 0
 
 

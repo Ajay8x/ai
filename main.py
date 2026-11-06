@@ -24,10 +24,8 @@ def main():
 
     args = parser.parse_args()
 
-    # Step 1: Initialize Database & Core subsystems
-    init_db()
-
     if args.diagnostics:
+        init_db()
         report = diagnostics.run_health_check()
         print("\n=== AJAX AI DIAGNOSTIC REPORT ===")
         print(f"Overall Status: {report['overall_status']}")
@@ -36,11 +34,13 @@ def main():
         return
 
     if args.cli:
+        init_db()
         from ui.cli import start_cli
         start_cli()
         return
 
     if args.voice:
+        init_db()
         from voice.manager import voice_manager
         print("\nStarting AJAX AI Hands-Free Voice Mode... (Say 'exit' or press Ctrl+C to stop)")
         voice_manager.run_loop()
@@ -54,7 +54,7 @@ def main():
         except Exception:
             pass
 
-    start_server(port=args.port)
+    start_server(host=config.host, port=args.port)
 
 if __name__ == "__main__":
     main()

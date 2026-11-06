@@ -268,8 +268,11 @@ def get_db_connection() -> UniversalConnectionWrapper:
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
     except OSError:
         pass
-    raw_conn = sqlite3.connect(db_path, check_same_thread=False)
+    raw_conn = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
     raw_conn.row_factory = sqlite3.Row
+    raw_conn.execute("PRAGMA busy_timeout=30000")
+    raw_conn.execute("PRAGMA journal_mode=WAL")
+    raw_conn.execute("PRAGMA foreign_keys=ON")
     _IS_POSTGRES = False
     return UniversalConnectionWrapper(raw_conn, is_postgres=False)
 
