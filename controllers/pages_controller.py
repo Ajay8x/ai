@@ -198,6 +198,22 @@ async def serve_brain_page(request: Request):
         context={"active_page": "brain"}
     )
 
+# Core Subsystem: Training Pipeline & Storage Topology (Protected)
+@pages_router.get("/AJAX/training", response_class=HTMLResponse)
+@pages_router.get("/AJAX/pipeline", response_class=HTMLResponse)
+@pages_router.get("/training", response_class=RedirectResponse)
+async def serve_training_page(request: Request):
+    if request.url.path == "/training":
+        return RedirectResponse(url="/AJAX/training", status_code=302)
+    if auth_redirect := require_auth_page(request):
+        return auth_redirect
+
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/training.html",
+        context={"active_page": "training"}
+    )
+
 # Core Subsystem: Settings (Protected)
 @pages_router.get("/AJAX/settings", response_class=HTMLResponse)
 async def serve_settings_page(request: Request):

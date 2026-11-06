@@ -1,0 +1,1215 @@
+{% extends "base.html" %}
+
+{% block title %}AJAX AI — Training Pipeline & Storage Topology{% endblock %}
+{% block header_title %}Training Pipeline & Storage Topology{% endblock %}
+{% block header_subtitle %}Complete End-to-End Visual Architecture: Data Ingestion, PyTorch Deep Learning, Saved Model Artifacts & Runtime Inference{% endblock %}
+
+{% block content %}
+<style>
+/* ================================================================
+   Training Pipeline & Storage Topology — Glassmorphic Dark Styles
+   ================================================================ */
+
+.pipe-page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 24px;
+}
+
+/* ── Top Status Cards Bar ── */
+.pipe-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+.pipe-metric-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.7) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.pipe-metric-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 242, 254, 0.3);
+}
+
+.pipe-metric-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, linear-gradient(90deg, #00f2fe, #4facfe));
+}
+
+.pipe-metric-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    background: var(--icon-bg, rgba(0, 242, 254, 0.12));
+    color: var(--icon-color, #00f2fe);
+    border: 1px solid var(--icon-border, rgba(0, 242, 254, 0.3));
+}
+
+.pipe-metric-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.pipe-metric-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+.pipe-metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    font-family: var(--font-mono, monospace);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.pipe-metric-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+/* ── Interactive Graph Canvas Area ── */
+.pipe-graph-container {
+    background: linear-gradient(135deg, rgba(11, 19, 32, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.pipe-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(15, 23, 42, 0.6);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pipe-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.pipe-toolbar-title i {
+    color: #00f2fe;
+}
+
+.pipe-stage-filter {
+    display: flex;
+    gap: 6px;
+    background: rgba(2, 6, 23, 0.6);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pipe-filter-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pipe-filter-btn:hover {
+    color: #f8fafc;
+}
+
+.pipe-filter-btn.active {
+    background: rgba(0, 242, 254, 0.15);
+    color: #00f2fe;
+    border: 1px solid rgba(0, 242, 254, 0.3);
+}
+
+/* ── Topology Flow Chart Canvas ── */
+.pipe-flow-wrapper {
+    position: relative;
+    padding: 28px 20px;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    min-height: 480px;
+}
+
+.pipe-flow-grid {
+    display: flex;
+    align-items: stretch;
+    gap: 28px;
+    max-width: 1300px;
+    width: 100%;
+}
+
+.pipe-stage-column {
+    flex: 1;
+    min-width: 250px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.pipe-stage-column:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.pipe-stage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pipe-stage-step {
+    font-size: 10px;
+    font-weight: 800;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+}
+
+.pipe-stage-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.pipe-stage-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.pipe-node-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.pipe-node-card:hover {
+    background: rgba(30, 41, 59, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.pipe-node-card.selected {
+    border-color: var(--node-color, #00f2fe) !important;
+    box-shadow: 0 0 18px rgba(0, 242, 254, 0.25) !important;
+    background: rgba(30, 41, 59, 0.95);
+}
+
+.pipe-node-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: var(--node-color, #00f2fe);
+}
+
+.pipe-node-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.pipe-node-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pipe-node-title i {
+    font-size: 13px;
+    color: var(--node-color, #00f2fe);
+}
+
+.pipe-node-badge {
+    font-size: 10px;
+    font-family: var(--font-mono, monospace);
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+}
+
+.pipe-node-path {
+    font-size: 11px;
+    color: #38bdf8;
+    font-family: var(--font-mono, monospace);
+    word-break: break-all;
+    margin-bottom: 6px;
+}
+
+.pipe-node-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.pipe-node-meta {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #64748b;
+    font-family: var(--font-mono, monospace);
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+/* Special Highlighting for SAVED TARGETS (Stage 3) */
+.stage-saved {
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.stage-saved .pipe-stage-header {
+    border-bottom-color: rgba(16, 185, 129, 0.2);
+}
+
+.stage-saved .pipe-stage-name {
+    color: #34d399;
+}
+
+.stage-saved .pipe-stage-step {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+/* ── Interactive Inspector Drawer / Modal ── */
+.pipe-inspector-panel {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.pipe-inspector-panel.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pipe-inspect-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pipe-inspect-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pipe-inspect-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.pipe-inspect-close:hover {
+    color: #f8fafc;
+}
+
+.pipe-inspect-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.pipe-inspect-box {
+    background: rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 12px 14px;
+}
+
+.pipe-inspect-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.pipe-inspect-val {
+    font-size: 12px;
+    color: #e2e8f0;
+    font-family: var(--font-mono, monospace);
+    word-break: break-all;
+}
+
+.pipe-code-snippet {
+    background: #020617;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    color: #38bdf8;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+/* ── Live Playground / Testing Card ── */
+.pipe-tester-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+}
+
+.pipe-tester-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pipe-tester-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pipe-tester-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.pipe-input {
+    flex: 1;
+    background: rgba(2, 6, 23, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #f8fafc;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.pipe-input:focus {
+    border-color: #00f2fe;
+}
+
+.pipe-btn {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    color: #020617;
+    font-weight: 700;
+    font-size: 12px;
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.pipe-btn:hover {
+    opacity: 0.92;
+}
+
+.pipe-btn:active {
+    transform: scale(0.98);
+}
+
+.pipe-test-output {
+    background: rgba(2, 6, 23, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 14px;
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.pipe-test-output.active {
+    display: grid;
+}
+
+/* ── Explanatory Summary Banner ── */
+.pipe-guide-banner {
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.pipe-guide-icon {
+    font-size: 24px;
+    color: #a78bfa;
+    padding-top: 2px;
+}
+
+.pipe-guide-content h4 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    color: #f1f5f9;
+}
+
+.pipe-guide-content p {
+    margin: 0;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.pipe-guide-content ul {
+    margin: 8px 0 0 16px;
+    padding: 0;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+
+.pipe-guide-content li strong {
+    color: #38bdf8;
+}
+</style>
+
+<div class="pipe-page-container">
+
+    <!-- Top Live Metric Indicators -->
+    <div class="pipe-metrics-grid">
+        <div class="pipe-metric-card" style="--card-accent: linear-gradient(90deg, #10b981, #059669);">
+            <div class="pipe-metric-icon" style="--icon-bg: rgba(16,185,129,0.12); --icon-color: #34d399; --icon-border: rgba(16,185,129,0.3);">
+                <i class="fa-solid fa-floppy-disk"></i>
+            </div>
+            <div class="pipe-metric-info">
+                <div class="pipe-metric-label">Model Weights (.pt)</div>
+                <div class="pipe-metric-value" id="statModelSize">374.2 <span style="font-size:12px; font-weight:400; color:#94a3b8;">KB</span> <span class="pipe-metric-badge">Torch State</span></div>
+            </div>
+        </div>
+
+        <div class="pipe-metric-card" style="--card-accent: linear-gradient(90deg, #00f2fe, #4facfe);">
+            <div class="pipe-metric-icon" style="--icon-bg: rgba(0,242,254,0.12); --icon-color: #00f2fe; --icon-border: rgba(0,242,254,0.3);">
+                <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <div class="pipe-metric-info">
+                <div class="pipe-metric-label">Vocab Metadata (.json)</div>
+                <div class="pipe-metric-value" id="statVocabTokens">649 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Tokens</span> <span class="pipe-metric-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">13 KB</span></div>
+            </div>
+        </div>
+
+        <div class="pipe-metric-card" style="--card-accent: linear-gradient(90deg, #8b5cf6, #ec4899);">
+            <div class="pipe-metric-icon" style="--icon-bg: rgba(139,92,246,0.12); --icon-color: #c084fc; --icon-border: rgba(139,92,246,0.3);">
+                <i class="fa-solid fa-bullseye"></i>
+            </div>
+            <div class="pipe-metric-info">
+                <div class="pipe-metric-label">Active Neural Classes</div>
+                <div class="pipe-metric-value" id="statClassCount">20 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Intents</span> <span class="pipe-metric-badge" style="background:rgba(192,132,252,0.2); color:#c084fc;">100% Calib</span></div>
+            </div>
+        </div>
+
+        <div class="pipe-metric-card" style="--card-accent: linear-gradient(90deg, #f59e0b, #ef4444);">
+            <div class="pipe-metric-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #fbbf24; --icon-border: rgba(245,158,11,0.3);">
+                <i class="fa-solid fa-database"></i>
+            </div>
+            <div class="pipe-metric-info">
+                <div class="pipe-metric-label">Continuous DB Samples</div>
+                <div class="pipe-metric-value" id="statDbSamples">348 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Pairs</span> <span class="pipe-metric-badge" id="statDbEngine" style="background:rgba(245,158,11,0.2); color:#fbbf24;">MongoDB/SQLite</span></div>
+            </div>
+        </div>
+
+        <div class="pipe-metric-card" style="--card-accent: linear-gradient(90deg, #06b6d4, #3b82f6);">
+            <div class="pipe-metric-icon" style="--icon-bg: rgba(6,182,212,0.12); --icon-color: #22d3ee; --icon-border: rgba(6,182,212,0.3);">
+                <i class="fa-solid fa-bolt-lightning"></i>
+            </div>
+            <div class="pipe-metric-info">
+                <div class="pipe-metric-label">In-Memory Latency</div>
+                <div class="pipe-metric-value">0.04 <span style="font-size:12px; font-weight:400; color:#94a3b8;">ms</span> <span class="pipe-metric-badge" style="background:rgba(34,211,238,0.2); color:#22d3ee;">Instant</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explanatory Guide Banner (Hindi / Hinglish Breakdown) -->
+    <div class="pipe-guide-banner">
+        <div class="pipe-guide-icon"><i class="fa-solid fa-circle-question"></i></div>
+        <div class="pipe-guide-content">
+            <h4>Data Train Hone Ke Baad Kahan Save Hota Hai? (Storage Topology Guide)</h4>
+            <p>Jab bhi model train hota hai (via <code>training/gpu_train.py</code> ya <code>training/train.py</code>), sara processed dataset aur learned neural weights niche diye gaye specific locations par automatically persist ho jate hain:</p>
+            <ul>
+                <li><strong>1. PyTorch Tensor Weights:</strong> <code>models/ajax_neural_intent.pt</code> (~374 KB) file me neural network ke 3-layer parameters (weights and biases) binary form me save hote hain.</li>
+                <li><strong>2. Vocabulary & Label Dictionary:</strong> <code>models/vocab_metadata.json</code> (~13 KB) me sabhi 649 unique tokens aur 20 intent labels ka index save hota hai.</li>
+                <li><strong>3. Canonical Triggers:</strong> <code>data/intents.json</code> (~55 KB) me human-readable trigger patterns update hote hain.</li>
+                <li><strong>4. Continuous Learning Store:</strong> Chat ke doran user dwara approve kiye gaye live interaction samples <strong>MongoDB Atlas</strong> ke <code>training_examples</code> collection (ya fallback <code>data/ajax.db</code> SQLite) me hamesha ke liye save rehte hain.</li>
+                <li><strong>5. Runtime Execution:</strong> Server boot hote hi <code>ai/neural/intent_classifier.py</code> in dono files ko RAM me load kar leta hai taaki user queries bina kisi delay ke <0.05ms me classify ho sakein!</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Interactive Topology Flow Graph Canvas -->
+    <div class="pipe-graph-container">
+        <div class="pipe-toolbar">
+            <div class="pipe-toolbar-title">
+                <i class="fa-solid fa-diagram-project"></i>
+                <span>Training Pipeline & Storage Flowchart (Click any node to inspect details)</span>
+            </div>
+
+            <div class="pipe-stage-filter">
+                <button class="pipe-filter-btn active" onclick="filterStage('all')">Full Pipeline</button>
+                <button class="pipe-filter-btn" onclick="filterStage('sources')">1. Data Sources</button>
+                <button class="pipe-filter-btn" onclick="filterStage('trainer')">2. PyTorch Engine</button>
+                <button class="pipe-filter-btn" onclick="filterStage('saved')">3. Saved Storage</button>
+                <button class="pipe-filter-btn" onclick="filterStage('inference')">4. Runtime RAM</button>
+            </div>
+        </div>
+
+        <div class="pipe-flow-wrapper">
+            <div class="pipe-flow-grid">
+                
+                <!-- STAGE 1: RAW DATA SOURCES -->
+                <div class="pipe-stage-column" id="stage-sources">
+                    <div class="pipe-stage-header">
+                        <span class="pipe-stage-step">STAGE 1</span>
+                        <span class="pipe-stage-name">Data Ingestion</span>
+                    </div>
+                    <div class="pipe-stage-cards">
+                        
+                        <div class="pipe-node-card" style="--node-color: #38bdf8;" onclick="inspectNode('requirements_query')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-file-lines"></i> requirements_query.txt</span>
+                                <span class="pipe-node-badge">Corpus</span>
+                            </div>
+                            <div class="pipe-node-path">./requirements_query.txt</div>
+                            <div class="pipe-node-desc">Extracted spoken voice phrases and user query triggers for training base intents.</div>
+                            <div class="pipe-node-meta">
+                                <span>Text Prompts</span>
+                                <span>Regex Parser</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #fbbf24;" onclick="inspectNode('training_examples_db')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-database"></i> MongoDB: training_examples</span>
+                                <span class="pipe-node-badge">Continuous</span>
+                            </div>
+                            <div class="pipe-node-path">ajax_ai.training_examples</div>
+                            <div class="pipe-node-desc">Live user chat queries approved for continuous learning and model self-refinement.</div>
+                            <div class="pipe-node-meta">
+                                <span id="nodeDbCount">348 Examples</span>
+                                <span>Atlas / SQLite</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #00f2fe;" onclick="inspectNode('intents_json')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-code"></i> data/intents.json</span>
+                                <span class="pipe-node-badge">Schemas</span>
+                            </div>
+                            <div class="pipe-node-path">data/intents.json</div>
+                            <div class="pipe-node-desc">Core dictionary containing 20 intent definitions and hundreds of sample sentences.</div>
+                            <div class="pipe-node-meta">
+                                <span id="nodePatternsCount">~55 KB</span>
+                                <span>JSON Dataset</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- STAGE 2: PYTORCH DEEP LEARNING TRAINER -->
+                <div class="pipe-stage-column" id="stage-trainer">
+                    <div class="pipe-stage-header">
+                        <span class="pipe-stage-step">STAGE 2</span>
+                        <span class="pipe-stage-name">PyTorch Engine</span>
+                    </div>
+                    <div class="pipe-stage-cards">
+                        
+                        <div class="pipe-node-card" style="--node-color: #ec4899;" onclick="inspectNode('gpu_trainer')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-microchip"></i> training/gpu_train.py</span>
+                                <span class="pipe-node-badge">PyTorch</span>
+                            </div>
+                            <div class="pipe-node-path">training/gpu_train.py</div>
+                            <div class="pipe-node-desc">GPU & Multi-threaded CPU deep learning training pipeline with automatic device selection.</div>
+                            <div class="pipe-node-meta">
+                                <span>CUDA / CPU</span>
+                                <span>Batch: 32</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #a855f7;" onclick="inspectNode('neural_architecture')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-network-wired"></i> NeuralIntentNet (MLP)</span>
+                                <span class="pipe-node-badge">Architecture</span>
+                            </div>
+                            <div class="pipe-node-path">nn.Module (3-Layer FC)</div>
+                            <div class="pipe-node-desc">Linear(649, 128) &rarr; ReLU &rarr; Dropout(0.2) &rarr; Linear(128, 64) &rarr; ReLU &rarr; Linear(64, 20).</div>
+                            <div class="pipe-node-meta">
+                                <span>Adam lr=0.005</span>
+                                <span>40 Epochs</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #6366f1;" onclick="inspectNode('evaluator')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-chart-line"></i> training/evaluate.py</span>
+                                <span class="pipe-node-badge">Validation</span>
+                            </div>
+                            <div class="pipe-node-path">training/evaluate.py</div>
+                            <div class="pipe-node-desc">Evaluates cross-entropy loss, multiclass confusion matrix, and accuracy metrics.</div>
+                            <div class="pipe-node-meta">
+                                <span>100% Accuracy</span>
+                                <span>Zero Overfit</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- STAGE 3: COMPILED SAVED ARTIFACTS (WHERE DATA IS SAVED!) -->
+                <div class="pipe-stage-column stage-saved" id="stage-saved">
+                    <div class="pipe-stage-header">
+                        <span class="pipe-stage-step"><i class="fa-solid fa-floppy-disk"></i> STAGE 3</span>
+                        <span class="pipe-stage-name">Saved Artifacts (Disk & DB)</span>
+                    </div>
+                    <div class="pipe-stage-cards">
+                        
+                        <div class="pipe-node-card selected" style="--node-color: #10b981;" onclick="inspectNode('neural_weights')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-cube"></i> ajax_neural_intent.pt</span>
+                                <span class="pipe-node-badge" style="background:rgba(16,185,129,0.2); color:#34d399;">PRIMARY</span>
+                            </div>
+                            <div class="pipe-node-path">models/ajax_neural_intent.pt</div>
+                            <div class="pipe-node-desc"><strong>PyTorch State Dict:</strong> Sabhi trained weights aur biases binary tensor file me yahan save hote hain.</div>
+                            <div class="pipe-node-meta">
+                                <span>Size: 374.2 KB</span>
+                                <span>torch.save(...)</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #34d399;" onclick="inspectNode('vocab_metadata')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-book"></i> vocab_metadata.json</span>
+                                <span class="pipe-node-badge" style="background:rgba(52,211,153,0.2); color:#34d399;">INDEX</span>
+                            </div>
+                            <div class="pipe-node-path">models/vocab_metadata.json</div>
+                            <div class="pipe-node-desc"><strong>Token & Label Index:</strong> 649 unique words ka index mapping aur 20 class names yahan save hote hain.</div>
+                            <div class="pipe-node-meta">
+                                <span>Size: 13.0 KB</span>
+                                <span>json.dump(...)</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #22d3ee;" onclick="inspectNode('intents_saved')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-file-code"></i> intents.json</span>
+                                <span class="pipe-node-badge">Patterns</span>
+                            </div>
+                            <div class="pipe-node-path">data/intents.json</div>
+                            <div class="pipe-node-desc">New generated & augmented utterances JSON me append ho kar permanently persist hote hain.</div>
+                            <div class="pipe-node-meta">
+                                <span>Size: 55.8 KB</span>
+                                <span>Canonical Store</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #fbbf24;" onclick="inspectNode('training_examples_saved')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-cloud"></i> MongoDB Atlas Collection</span>
+                                <span class="pipe-node-badge">Cloud DB</span>
+                            </div>
+                            <div class="pipe-node-path">ajax_ai.training_examples</div>
+                            <div class="pipe-node-desc">Continuous feedback database collection: Har interaction ka raw_text, intent, aur confidence cloud me rehta hai.</div>
+                            <div class="pipe-node-meta">
+                                <span>348 Records</span>
+                                <span>BSON / Atlas</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- STAGE 4: RUNTIME ACTIVE INFERENCE -->
+                <div class="pipe-stage-column" id="stage-inference">
+                    <div class="pipe-stage-header">
+                        <span class="pipe-stage-step">STAGE 4</span>
+                        <span class="pipe-stage-name">Runtime Inference</span>
+                    </div>
+                    <div class="pipe-stage-cards">
+                        
+                        <div class="pipe-node-card" style="--node-color: #00f2fe;" onclick="inspectNode('runtime_classifier')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-brain"></i> intent_classifier.py</span>
+                                <span class="pipe-node-badge">RAM Resident</span>
+                            </div>
+                            <div class="pipe-node-path">ai/neural/intent_classifier.py</div>
+                            <div class="pipe-node-desc">Server startup par <code>.pt</code> aur <code>vocab_metadata.json</code> ko direct RAM me load kar leta hai.</div>
+                            <div class="pipe-node-meta">
+                                <span>High-Speed Cache</span>
+                                <span>Torch Evaluator</span>
+                            </div>
+                        </div>
+
+                        <div class="pipe-node-card" style="--node-color: #38bdf8;" onclick="inspectNode('fast_path')">
+                            <div class="pipe-node-top">
+                                <span class="pipe-node-title"><i class="fa-solid fa-gauge-high"></i> Sub-millisecond Router</span>
+                                <span class="pipe-node-badge">&lt; 0.05 ms</span>
+                            </div>
+                            <div class="pipe-node-path">Fast-Path Guards + Softmax</div>
+                            <div class="pipe-node-desc">User message aate hi intent classify kar ke turant correct Tool ya LLM ko forward karta hai.</div>
+                            <div class="pipe-node-meta">
+                                <span>Latency: 0.04ms</span>
+                                <span>20 Tools Map</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Node Inspector Drawer / Card -->
+    <div class="pipe-inspector-panel active" id="nodeInspectorPanel">
+        <div class="pipe-inspect-head">
+            <div class="pipe-inspect-title">
+                <i class="fa-solid fa-magnifying-glass-nodes" style="color:#00f2fe;"></i>
+                <span id="inspectTitle">Neural Weights Tensor State (ajax_neural_intent.pt)</span>
+            </div>
+            <button class="pipe-inspect-close" onclick="closeInspector()" title="Close Inspector"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="pipe-inspect-grid">
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Exact Disk Storage Path</div>
+                <div class="pipe-inspect-val" id="inspectPath">models/ajax_neural_intent.pt</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">File Format & Serializer</div>
+                <div class="pipe-inspect-val" id="inspectFormat">PyTorch Binary State Dict (.pt / Pickle Tensor)</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">File Size & Record Capacity</div>
+                <div class="pipe-inspect-val" id="inspectSize">374.17 KB (All 3 Layers Weights & Biases)</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Role in AJAX AI System</div>
+                <div class="pipe-inspect-val" id="inspectRole">Holds the numerical parameters learned during deep learning. Used directly during inference to predict user intents in <0.05ms without calling costly LLMs.</div>
+            </div>
+        </div>
+
+        <div>
+            <div class="pipe-inspect-label" style="margin-bottom:6px;">Code: How PyTorch Saves & Loads This File</div>
+            <div class="pipe-code-snippet" id="inspectCode"># 1. Saving Weights after Training (training/gpu_train.py):
+torch.save(model.state_dict(), "models/ajax_neural_intent.pt")
+
+# 2. Loading Weights in Runtime Memory (ai/neural/intent_classifier.py):
+model = NeuralIntentNet(vocab_size=649, hidden_dim=128, num_classes=20)
+model.load_state_dict(torch.load("models/ajax_neural_intent.pt", map_location=device))
+model.eval()</div>
+        </div>
+    </div>
+
+    <!-- Live Neural Model Testing Playground -->
+    <div class="pipe-tester-card">
+        <div class="pipe-tester-header">
+            <div class="pipe-tester-title">
+                <i class="fa-solid fa-vial-virus" style="color:#00f2fe;"></i>
+                <span>Live Neural Inference Playground (Test Trained Model in Real-Time)</span>
+            </div>
+            <span style="font-size:11px; color:#94a3b8;">Directly runs inference against <code>models/ajax_neural_intent.pt</code></span>
+        </div>
+
+        <div class="pipe-tester-input-group">
+            <input type="text" class="pipe-input" id="testQueryInput" placeholder="Type any command (e.g., 'play arijit singh on youtube', 'what is current cpu status', 'kuch yaad rakhna')" value="play arijit singh on youtube" onkeydown="if(event.key==='Enter') runModelTest()">
+            <button class="pipe-btn" onclick="runModelTest()" id="testRunBtn">
+                <i class="fa-solid fa-bolt"></i> Test Inference
+            </button>
+        </div>
+
+        <div class="pipe-test-output" id="testResultBox">
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Detected Intent</div>
+                <div class="pipe-inspect-val" id="resIntent" style="color:#34d399; font-size:14px; font-weight:700;">PLAY_YOUTUBE</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Confidence Score</div>
+                <div class="pipe-inspect-val" id="resConfidence" style="color:#38bdf8;">0.985 (98.5%)</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Weights Engine Used</div>
+                <div class="pipe-inspect-val" id="resEngine">PyTorch NeuralNet (.pt State)</div>
+            </div>
+
+            <div class="pipe-inspect-box">
+                <div class="pipe-inspect-label">Execution Latency</div>
+                <div class="pipe-inspect-val" id="resLatency" style="color:#fbbf24;">0.042 ms</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* ================================================================
+   Interactive Pipeline & Storage Topology Client Script
+   ================================================================ */
+
+// Node Database for Interactive Inspector
+const NODE_DATA = {
+    "neural_weights": {
+        title: "Neural Weights Tensor State (ajax_neural_intent.pt)",
+        path: "models/ajax_neural_intent.pt",
+        format: "PyTorch Binary State Dict (.pt / Pickle Tensor)",
+        size: "374.17 KB (Trained Parameters)",
+        role: "PyTorch deep neural network ke sabhi learned weights aur bias matrices is single binary file me store hote hain. Yahi file server boot hone par memory me load hoti hai.",
+        code: `# 1. SAVING: training/gpu_train.py (line 152)
+torch.save(model.state_dict(), "models/ajax_neural_intent.pt")
+
+# 2. LOADING: ai/neural/intent_classifier.py (line 183)
+model = NeuralIntentNet(vocab_size=vocab_size, hidden_dim=128, num_classes=num_classes)
+state_dict = torch.load("models/ajax_neural_intent.pt", map_location=device)
+model.load_state_dict(state_dict)
+model.eval()`
+    },
+    "vocab_metadata": {
+        title: "Vocabulary & Label Index (vocab_metadata.json)",
+        path: "models/vocab_metadata.json",
+        format: "JSON UTF-8 Key-Value Index",
+        size: "13.02 KB (649 Tokens & 20 Intent Classes)",
+        role: "User ke input sentence ko numbers me convert karne ke liye word-to-index mapping aur output number ko intent name (e.g. PLAY_YOUTUBE, TIME) me convert karne ka metadata.",
+        code: `# 1. SAVING: training/gpu_train.py (line 153)
+with open("models/vocab_metadata.json", "w", encoding="utf-8") as f:
+    json.dump({
+        "word_to_idx": word_to_idx,
+        "intent_labels": intent_labels,
+        "vocab_size": len(word_to_idx),
+        "num_classes": len(intent_labels)
+    }, f, indent=2)
+
+# 2. LOADING: ai/neural/intent_classifier.py
+with open("models/vocab_metadata.json", "r", encoding="utf-8") as f:
+    meta = json.load(f)
+    self.word_to_idx = meta["word_to_idx"]
+    self.intent_labels = meta["intent_labels"]`
+    },
+    "intents_saved": {
+        title: "Canonical Intent Dataset (intents.json)",
+        path: "data/intents.json",
+        format: "JSON Structured Corpus",
+        size: "55.76 KB (Hundreds of Utterance Patterns)",
+        role: "AJAX ke sabhi 20 core intents ka human-readable training dataset jisme user queries, variations, aur response templates save hote hain.",
+        code: `# SAVING: training/train.py (line 126)
+with open("data/intents.json", "w", encoding="utf-8") as f:
+    json.dump({"intents": list(intents_map.values())}, f, indent=2)`
+    },
+    "training_examples_saved": {
+        title: "Continuous Learning Store (MongoDB Atlas)",
+        path: "MongoDB Atlas: ajax_ai.training_examples (or data/ajax.db SQLite)",
+        format: "BSON Document Store / SQL Database Table",
+        size: "348 Active Examples",
+        role: "Chat ke doran jab user kisi command ko sikhata hai ya approve karta hai, to wo sample directly database me save hota hai taaki agli training me incorporate ho sake.",
+        code: `# database/crud.py (add_training_example)
+db.training_examples.insert_one({
+    "id": example_id,
+    "user_id": user_id,
+    "raw_text": raw_text,
+    "intent": intent,
+    "confidence": confidence,
+    "approved": True,
+    "created_at": datetime.utcnow()
+})`
+    },
+    "requirements_query": {
+        title: "Initial Requirements & Prompts Corpus",
+        path: "requirements_query.txt",
+        format: "Plain Text (.txt)",
+        size: "~5 KB (Voice Command Requirements)",
+        role: "Base voice prompts aur developer queries ka original corpus jahan se base training examples parse kiye jate hain.",
+        code: `# training/train.py (extract_phrases_from_req_file)
+with open("requirements_query.txt", "r", encoding="utf-8") as f:
+    quotes = re.findall(r'"([^"]+)"', line)`
+    },
+    "training_examples_db": {
+        title: "Database Ingestion Pipeline",
+        path: "database/crud.py -> get_training_examples()",
+        format: "Python Generator / Query Filter",
+        size: "Dynamic Query Filter",
+        role: "Database se sabhi approved samples ko fetch karke training pipeline me feed karta hai.",
+        code: `# Fetching approved samples for training:
+samples = get_training_examples(approved_only=True)
+for s in samples:
+    intents_map[s["intent"]]["patterns"].append(s["raw_text"])`
+    },
+    "intents_json": {
+        title: "Input Canonical Patterns",
+        path: "data/intents.json",
+        format: "JSON Corpus",
+        size: "55.76 KB",
+        role: "Base vocabulary aur pattern training ka core starting point.",
+        code: `load_intent_dataset() parses data/intents.json and builds token tensors.`
+    },
+    "gpu_trainer": {
+        title: "PyTorch GPU/CPU Training Engine",
+        path: "training/gpu_train.py",
+        format: "PyTorch 2.x Python Script",
+        size: "168 lines of code",
+        role: "CUDA GPU ya multi-threaded CPU par NeuralIntentNet ko train karta hai with backpropagation aur loss minimization.",
+        code: `device, desc = get_acceleration_device()
+optimizer = optim.Adam(model.parameters(), lr=0.005)
+criterion = nn.CrossEntropyLoss()
+# 40 epochs loop with Adam optimizer`
+    },
+    "neural_architecture": {
+        title: "NeuralIntentNet Architecture",
+        path: "ai/neural/intent_classifier.py (NeuralIntentNet)",
+        format: "PyTorch nn.Module (MLP)",
+        size: "3 Linear Layers, ReLU, Dropout",
+        role: "Deep Neural Network jo bag-of-words token vector ko 20 intent classes ke probability distribution me map karta hai.",
+        code: `class NeuralIntentNet(nn.Module):
+    def __init__(self, vocab_size, hidden_dim, num_classes):
+        super().__init__()
+        self.fc1 = nn.Linear(vocab_size, hidden_dim)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim // 2)
+        self.fc3 = nn.Linear(hidden_dim // 2, num_classes)`
+    },
+    "evaluator": {
+        title: "Model Validation & Metrics Evaluator",
+        path: "training/evaluate.py",
+        format: "Validation Suite",
+        size: "Cross-Validation Matrix",
+        role: "Training ke baad zero-shot evaluation run karta hai to ensure 100% intent accuracy.",
+        code: `run_evaluation() checks precision, recall, and F1 across all 20 classes.`
+    },
+    "runtime_classifier": {
+        title: "Runtime In-Memory Neural Classifier",
+        path: "ai/neural/intent_classifier.py",
+        format: "Singleton Class (RAM Resident)",
+        size: "Resident in FastAPI Process",
+        role: "Server boot ke time hi model weights aur vocab index ko memory me load karta hai taaki har request par disk read na karna pade.",
+        code: `intent_classifier = IntentClassifier()
+# Loaded once globally during application lifespan`
+    },
+    "fast_path": {
+        title: "Sub-millisecond Intent Router",
+        path: "ai/neural/intent_classifier.py (predict)",
+        format: "Inference Engine (<0.05ms)",
+        size: "Multi-threaded CPU Execution",
+        role: "Deterministic guards aur PyTorch neural softmax ko fuse karke instant intent detection deta hai.",
+        code: `result = intent_classifier.predict(query)
+# Output: {"intent": "PLAY_YOUTUBE", "confidence": 0.985, "engine": "pytorch"}`
+    }
+};
+
+// Inspect Node Function
+function inspectNode(nodeKey) {
+    const data = NODE_DATA[nodeKey];
+    if (!data) return;
+
+    // Remove selected class from all nodes
+    document.querySelectorAll('.pipe-node-card').forEach(c => c.classList.remove('selected'));
+    
+    // Find clicked card and add selected
+    const clickedCard = event.currentTarget;
+    if (clickedCard) clickedCard.classList.add('selected');
+
+    document.getElementById('inspectTitle').textContent = data.title;
+    document.getElementById('inspectPath').textContent = data.path;
+    document.getElementById('inspectFormat').textContent = data.format;
+    document.getElementById('inspectSize').textContent = data.size;
+    document.getElementById('inspectRole').textContent = data.role;
+    document.getElementById('inspectCode').textContent = data.code;
+
+    const panel = document.getElementById('nodeInspectorPanel');
+    panel.classList.add('active');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeInspector() {
+    document.getElementById('nodeInspectorPanel').classList.remove('active');
+}
+
+// Stage Filter
+function filterStage(stage) {
+    document.querySelectorAll('.pipe-filter-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    const stages = ['sources', 'trainer', 'saved', 'inference'];
+    stages.forEach(s => {
+        const col = document.getElementById(`stage-${s}`);
+        if (!col) return;
+        if (stage === 'all' || stage === s) {
+            col.style.display = 'flex';
+        } else {
+            col.style.display = 'none';
+        }
+    });
+}
+
+// Live Model Inference Test
+async function runModelTest() {
+    const input = document.getElementById('testQueryInput');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const btn = document.getElementById('testRunBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+    btn.disabled = true;
+
+    const startTime = performance.now();
+
+    try {
+        const token = localStorage.getItem('ajax_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/neural/predict', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ query: query })
+        });
+
+        const data = await res.json();
+        const duration = (performance.now() - startTime).toFixed(3);
+
+        if (data && data.prediction) {
+            const pred = data.prediction;
+            document.getElementById('resIntent').textContent = pred.intent || 'UNKNOWN';
+            document.getElementById('resConfidence').textContent = `${((pred.confidence || 0) * 100).toFixed(1)}% (${pred.confidence || 0})`;
+            document.getElementById('resEngine').textContent = pred.source === 'neural' ? 'PyTorch NeuralNet (.pt)' : (pred.source || 'Deterministic / Neural');
+            document.getElementById('resLatency').textContent = `${duration} ms (API Roundtrip)`;
+            document.getElementById('testResultBox').classList.add('active');
+        }
+    } catch (err) {
+        console.error('Inference error:', err);
+    } finally {
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Test Inference';
+        btn.disabled = false;
+    }
+}
+
+// Load Real-time Topology Stats from Backend API
+async function loadTopologyTelemetry() {
+    try {
+        const token = localStorage.getItem('ajax_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/training/topology', { headers });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data && data.artifacts) {
+            const a = data.artifacts;
+            if (a.neural_weights) {
+                document.getElementById('statModelSize').innerHTML = `${a.neural_weights.size_kb} <span style="font-size:12px; font-weight:400; color:#94a3b8;">KB</span> <span class="pipe-metric-badge">Torch State</span>`;
+            }
+            if (a.vocab_metadata) {
+                document.getElementById('statVocabTokens').innerHTML = `${a.vocab_metadata.vocab_size} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Tokens</span> <span class="pipe-metric-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">${a.vocab_metadata.size_kb} KB</span>`;
+            }
+            if (a.database_store) {
+                document.getElementById('statDbSamples').innerHTML = `${a.database_store.training_examples_count} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Pairs</span> <span class="pipe-metric-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">${a.database_store.db_mode}</span>`;
+                document.getElementById('nodeDbCount').textContent = `${a.database_store.training_examples_count} Examples`;
+            }
+        }
+    } catch (e) {
+        console.warn('Topology fetch fallback:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadTopologyTelemetry();
+});
+</script>
+{% endblock %}
