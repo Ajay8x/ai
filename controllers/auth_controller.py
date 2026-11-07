@@ -490,7 +490,7 @@ async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin))
     memories = search_memories(limit=200, include_all=True)
 
     from ai.neural.intent_classifier import intent_classifier
-    num_intents = len(intent_classifier.classes) if hasattr(intent_classifier, "classes") else 20
+    num_intents = len(getattr(intent_classifier, "intents", [])) or len(getattr(intent_classifier, "intent_labels", []))
     vocab_size = len(intent_classifier.vocab) if hasattr(intent_classifier, "vocab") else 0
 
     return JSONResponse({

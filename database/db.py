@@ -398,11 +398,12 @@ def init_db():
                 _migrate_sqlite_to_mongo_if_needed(db)
                 ajax_logger.info("MongoDB Atlas initialized successfully with all collections and indexes.")
 
-                # Seed default admin and demo user accounts
+                # Seed default admin and demo user accounts & backfill legacy sessions
                 try:
-                    from database.crud import seed_default_admin, seed_default_demo_user
+                    from database.crud import seed_default_admin, seed_default_demo_user, backfill_legacy_records_to_admin
                     seed_default_admin()
                     seed_default_demo_user()
+                    backfill_legacy_records_to_admin()
                 except Exception as se:
                     ajax_logger.warning(f"Default user seeding notice: {se}")
 

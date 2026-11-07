@@ -21,20 +21,37 @@ def _scope(user_id: Optional[str]) -> str:
     return str(user_id or SYSTEM_SCOPE)
 
 
+def _user_scope_filter(user_id: Optional[str]) -> Dict[str, Any]:
+    """Matches the user's specific records as well as unassigned/system records for full session continuity."""
+    if not user_id:
+        return {"$or": [{"user_id": SYSTEM_SCOPE}, {"user_id": None}]}
+    return {"$or": [{"user_id": str(user_id)}, {"user_id": SYSTEM_SCOPE}, {"user_id": None}]}
+
+
 def get_conversation(conversation_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Return a conversation only when it belongs to the requested scope."""
+    """Return a conversation only when it belongs to the requested scope or legacy unassigned pool."""
     owner_id = _scope(user_id)
     if is_mongo_active():
         try:
-            return get_mongo_db().conversations.find_one(
-                {"id": conversation_id, "user_id": owner_id}, {"_id": 0}
+            db = get_mongo_db()
+            doc = db.conversations.find_one(
+                {"id": conversation_id, "$or": [{"user_id": owner_id}, {"user_id": None}, {"user_id": SYSTEM_SCOPE}]},
+                {"_id": 0}
             )
+            # If doc exists and was unassigned, associate it with this user so they own it
+            if doc and user_id and doc.get("user_id") != owner_id:
+                db.conversations.update_one({"id": conversation_id}, {"$set": {"user_id": owner_id}})
+                doc["user_id"] = owner_id
+            return doc
         except Exception as e:
             error_logger.error(f"MongoDB get_conversation error: {e}")
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM conversations WHERE id = ? AND user_id = ?", (conversation_id, owner_id))
+        cursor.execute(
+            "SELECT * FROM conversations WHERE id = ? AND (user_id = ? OR user_id IS NULL OR user_id = ?)",
+            (conversation_id, owner_id, SYSTEM_SCOPE)
+        )
         row = cursor.fetchone()
         conn.close()
     return dict(row) if row else None
@@ -49,7 +66,7 @@ def create_conversation(title: str = "New Conversation", user_id: Optional[str] 
         try:
             db = get_mongo_db()
             db.conversations.update_one(
-                {"id": conv_id, "user_id": owner_id},
+                {"id": conv_id},
                 {"$setOnInsert": {
                     "id": conv_id,
                     "user_id": owner_id,
@@ -68,7 +85,7 @@ def create_conversation(title: str = "New Conversation", user_id: Optional[str] 
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM conversations WHERE id = ? AND user_id = ?", (conv_id, owner_id))
+        cursor.execute("SELECT id FROM conversations WHERE id = ?", (conv_id,))
         if not cursor.fetchone():
             cursor.execute(
                 "INSERT INTO conversations (id, user_id, title) VALUES (?, ?, ?)",
@@ -80,7 +97,7 @@ def create_conversation(title: str = "New Conversation", user_id: Optional[str] 
 
 def list_conversations(limit: int = 50, user_id: Optional[str] = None, include_all: bool = False) -> List[Dict[str, Any]]:
     owner_id = _scope(user_id)
-    mongo_filter = {} if include_all else {"user_id": owner_id}
+    mongo_filter = {} if include_all else _user_scope_filter(user_id)
     if is_mongo_active():
         try:
             db = get_mongo_db()
@@ -96,8 +113,8 @@ def list_conversations(limit: int = 50, user_id: Optional[str] = None, include_a
             cursor.execute("SELECT * FROM conversations ORDER BY is_pinned DESC, updated_at DESC LIMIT ?", (limit,))
         else:
             cursor.execute(
-                "SELECT * FROM conversations WHERE user_id = ? ORDER BY is_pinned DESC, updated_at DESC LIMIT ?",
-                (owner_id, limit)
+                "SELECT * FROM conversations WHERE user_id = ? OR user_id IS NULL OR user_id = ? ORDER BY is_pinned DESC, updated_at DESC LIMIT ?",
+                (owner_id, SYSTEM_SCOPE, limit)
             )
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -111,8 +128,8 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            # 1. Guarantee conversation exists in database
-            conv = db.conversations.find_one({"id": conversation_id, "user_id": owner_id})
+            # 1. Guarantee conversation exists in database and update ownership
+            conv = db.conversations.find_one({"id": conversation_id})
             if not conv:
                 title = (content[:45] + "...") if len(content) > 45 else content
                 if not title.strip() or role == "assistant":
@@ -127,7 +144,10 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
                     "is_pinned": 0
                 })
             else:
-                db.conversations.update_one({"id": conversation_id, "user_id": owner_id}, {"$set": {"updated_at": now_str}})
+                update_fields = {"updated_at": now_str}
+                if user_id and conv.get("user_id") in (None, SYSTEM_SCOPE):
+                    update_fields["user_id"] = owner_id
+                db.conversations.update_one({"id": conversation_id}, {"$set": update_fields})
 
             # 2. Insert message document
             db.messages.insert_one({
@@ -149,8 +169,9 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
         cursor = conn.cursor()
         
         # 1. Guarantee conversation exists in database
-        cursor.execute("SELECT id FROM conversations WHERE id = ? AND user_id = ?", (conversation_id, owner_id))
-        if not cursor.fetchone():
+        cursor.execute("SELECT id, user_id FROM conversations WHERE id = ?", (conversation_id,))
+        existing_conv = cursor.fetchone()
+        if not existing_conv:
             title = (content[:45] + "...") if len(content) > 45 else content
             if not title.strip() or role == "assistant":
                 title = "New Chat Session"
@@ -159,10 +180,16 @@ def add_message(conversation_id: str, role: str, content: str, modality: str = "
                 (conversation_id, owner_id, title)
             )
         else:
-            cursor.execute(
-                "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-                (conversation_id, owner_id)
-            )
+            if user_id and (existing_conv["user_id"] is None or existing_conv["user_id"] == SYSTEM_SCOPE):
+                cursor.execute(
+                    "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP, user_id = ? WHERE id = ?",
+                    (owner_id, conversation_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (conversation_id,)
+                )
 
         # 2. Insert message record
         cursor.execute(
@@ -179,7 +206,10 @@ def get_conversation_messages(conversation_id: str, limit: int = 50, user_id: Op
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            docs = list(db.messages.find({"conversation_id": conversation_id, "user_id": owner_id}, {"_id": 0}).sort("created_at", 1).limit(limit))
+            query_filter = {"conversation_id": conversation_id}
+            if user_id:
+                query_filter["$or"] = [{"user_id": owner_id}, {"user_id": None}, {"user_id": SYSTEM_SCOPE}]
+            docs = list(db.messages.find(query_filter, {"_id": 0}).sort("created_at", 1).limit(limit))
             return docs
         except Exception as e:
             error_logger.error(f"MongoDB get_conversation_messages error: {e}")
@@ -188,8 +218,8 @@ def get_conversation_messages(conversation_id: str, limit: int = 50, user_id: Op
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC LIMIT ?",
-            (conversation_id, owner_id, limit)
+            "SELECT * FROM messages WHERE conversation_id = ? AND (user_id = ? OR user_id IS NULL OR user_id = ?) ORDER BY created_at ASC LIMIT ?",
+            (conversation_id, owner_id, SYSTEM_SCOPE, limit)
         )
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -226,7 +256,11 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            existing = db.memories.find_one({"user_id": owner_id, "key_text": key_text, "category": category})
+            existing = db.memories.find_one({
+                "$or": [{"user_id": owner_id}, {"user_id": None}, {"user_id": SYSTEM_SCOPE}],
+                "key_text": key_text,
+                "category": category
+            })
             if existing:
                 db.memories.update_one(
                     {"_id": existing["_id"]},
@@ -234,10 +268,11 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
                         "value_text": value_text,
                         "source": source,
                         "confidence": confidence,
+                        "user_id": owner_id,
                         "updated_at": now_str
                     }}
                 )
-                return existing["id"]
+                return existing.get("id", mem_id)
             else:
                 db.memories.insert_one({
                     "id": mem_id,
@@ -257,13 +292,13 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM memories WHERE user_id = ? AND key_text = ? AND category = ?", (owner_id, key_text, category))
+        cursor.execute("SELECT id FROM memories WHERE (user_id = ? OR user_id IS NULL OR user_id = ?) AND key_text = ? AND category = ?", (owner_id, SYSTEM_SCOPE, key_text, category))
         existing = cursor.fetchone()
         if existing:
             cursor.execute(
-                """UPDATE memories SET value_text = ?, source = ?, confidence = ?, updated_at = CURRENT_TIMESTAMP
+                """UPDATE memories SET value_text = ?, source = ?, confidence = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP
                    WHERE id = ?""",
-                (value_text, source, confidence, existing["id"])
+                (value_text, source, confidence, owner_id, existing["id"])
             )
             mem_id = existing["id"]
         else:
@@ -278,16 +313,37 @@ def save_memory(key_text: str, value_text: str, category: str = "general", sourc
 
 def search_memories(query: str = "", limit: int = 10, user_id: Optional[str] = None, include_all: bool = False) -> List[Dict[str, Any]]:
     owner_id = _scope(user_id)
+    user_cond = {} if include_all else _user_scope_filter(user_id)
+
+    # Extract meaningful keywords from query
+    tokens = [t.lower() for t in re.findall(r'[\w\u0900-\u097F]+', query or "")]
+    stopwords = {
+        "kya", "hai", "ka", "ki", "ke", "ko", "me", "se", "aur", "ye", "wo", "batao", "mujhe", "mera", "meri", "mere",
+        "what", "is", "the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "of", "my",
+        "tell", "me", "you", "your", "who", "where", "how", "when", "do", "does", "did", "please"
+    }
+    keywords = [t for t in tokens if t not in stopwords and len(t) >= 2]
+
     if is_mongo_active():
         try:
             db = get_mongo_db()
-            ownership = {} if include_all else {"user_id": owner_id}
-            if query:
-                q_regex = {"$regex": re.escape(query), "$options": "i"}
-                filter_doc = {**ownership, "$or": [{"key_text": q_regex}, {"value_text": q_regex}]}
-            else:
-                filter_doc = ownership
+            filter_doc = user_cond
+            if keywords:
+                keyword_regexes = [{"$regex": re.escape(kw), "$options": "i"} for kw in keywords]
+                field_conditions = []
+                for kr in keyword_regexes:
+                    field_conditions.append({"key_text": kr})
+                    field_conditions.append({"value_text": kr})
+                    field_conditions.append({"category": kr})
+                filter_doc = {"$and": [user_cond, {"$or": field_conditions}]}
+            elif query.strip():
+                q_regex = {"$regex": re.escape(query.strip()), "$options": "i"}
+                filter_doc = {"$and": [user_cond, {"$or": [{"key_text": q_regex}, {"value_text": q_regex}]}]}
+
             docs = list(db.memories.find(filter_doc, {"_id": 0}).sort("updated_at", -1).limit(limit))
+            # Fallback to general user memories if specific query didn't match
+            if not docs and query.strip():
+                docs = list(db.memories.find(user_cond, {"_id": 0}).sort("updated_at", -1).limit(limit))
             return docs
         except Exception as e:
             error_logger.error(f"MongoDB search_memories error: {e}")
@@ -295,29 +351,115 @@ def search_memories(query: str = "", limit: int = 10, user_id: Optional[str] = N
     with DB_LOCK:
         conn = get_db_connection()
         cursor = conn.cursor()
-        if query:
-            search_param = f"%{query}%"
-            if include_all:
-                cursor.execute(
-                    """SELECT * FROM memories
-                       WHERE key_text LIKE ? OR value_text LIKE ?
-                       ORDER BY updated_at DESC LIMIT ?""",
-                    (search_param, search_param, limit)
-                )
-            else:
-                cursor.execute(
-                    """SELECT * FROM memories
-                       WHERE user_id = ? AND (key_text LIKE ? OR value_text LIKE ?)
-                       ORDER BY updated_at DESC LIMIT ?""",
-                    (owner_id, search_param, search_param, limit)
-                )
+        if keywords:
+            search_param = f"%{keywords[0]}%"
+            cursor.execute(
+                """SELECT * FROM memories
+                   WHERE (user_id = ? OR user_id IS NULL OR user_id = ?) AND (key_text LIKE ? OR value_text LIKE ?)
+                   ORDER BY updated_at DESC LIMIT ?""",
+                (owner_id, SYSTEM_SCOPE, search_param, search_param, limit)
+            )
+        elif query.strip():
+            search_param = f"%{query.strip()}%"
+            cursor.execute(
+                """SELECT * FROM memories
+                   WHERE (user_id = ? OR user_id IS NULL OR user_id = ?) AND (key_text LIKE ? OR value_text LIKE ?)
+                   ORDER BY updated_at DESC LIMIT ?""",
+                (owner_id, SYSTEM_SCOPE, search_param, search_param, limit)
+            )
         else:
             if include_all:
                 cursor.execute("SELECT * FROM memories ORDER BY updated_at DESC LIMIT ?", (limit,))
             else:
-                cursor.execute("SELECT * FROM memories WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?", (owner_id, limit))
+                cursor.execute("SELECT * FROM memories WHERE user_id = ? OR user_id IS NULL OR user_id = ? ORDER BY updated_at DESC LIMIT ?", (owner_id, SYSTEM_SCOPE, limit))
         rows = [dict(row) for row in cursor.fetchall()]
+        if not rows and query.strip():
+            cursor.execute("SELECT * FROM memories WHERE user_id = ? OR user_id IS NULL OR user_id = ? ORDER BY updated_at DESC LIMIT ?", (owner_id, SYSTEM_SCOPE, limit))
+            rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
+    return rows
+
+def get_cross_session_context(
+    query: str,
+    user_id: Optional[str] = None,
+    current_conversation_id: Optional[str] = None,
+    limit: int = 5
+) -> str:
+    """
+    Assembles long-term memory and relevant past session history from MongoDB Atlas.
+    Guarantees cross-session continuity so the AI assistant never forgets past interactions.
+    """
+    owner_id = _scope(user_id)
+    sections = []
+
+    # 1. User Profile & Learned Facts from db.memories
+    memories = search_memories(query=query, limit=8, user_id=user_id)
+    if memories:
+        mem_lines = []
+        for m in memories:
+            k = m.get("key_text", "").replace("_", " ").title()
+            v = m.get("value_text", "")
+            mem_lines.append(f"- {k}: {v}")
+        sections.append("### 🧠 Learned User Facts & Long-Term Memory (from MongoDB Atlas):\n" + "\n".join(mem_lines))
+
+    # 2. Check if user is asking about previous sessions or topics discussed earlier
+    q_lower = query.lower()
+    past_session_triggers = [
+        "pehle", "pichle", "pichli", "kal", "purane", "previous", "earlier", "past session",
+        "last time", "yaad", "remember", "kya baat hui thi", "maine kya pucha tha", "kya bola tha",
+        "history", "what did we discuss", "what did i say", "humne kya"
+    ]
+    is_asking_past = any(t in q_lower for t in past_session_triggers)
+
+    # 3. Search past conversations and QA history in MongoDB Atlas
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            user_cond = _user_scope_filter(user_id)
+
+            # If user explicitly asks about past chats, fetch the recent sessions
+            if is_asking_past:
+                conv_filter = {**user_cond}
+                if current_conversation_id:
+                    conv_filter["id"] = {"$ne": current_conversation_id}
+
+                recent_convs = list(db.conversations.find(conv_filter, {"_id": 0}).sort("updated_at", -1).limit(4))
+                if recent_convs:
+                    conv_snippets = []
+                    for c in recent_convs:
+                        cid = c.get("id")
+                        title = c.get("title", "Chat Session")
+                        date = c.get("updated_at", "")
+                        last_msgs = list(db.messages.find({"conversation_id": cid}, {"_id": 0, "role": 1, "content": 1}).sort("created_at", -1).limit(2))
+                        last_msgs.reverse()
+                        summary_parts = [f"  * {m['role'].capitalize()}: {m['content'][:140]}..." for m in last_msgs if m.get("content")]
+                        summary_str = "\n".join(summary_parts) if summary_parts else "  * (Discussion session)"
+                        conv_snippets.append(f"• Session '{title}' ({date}):\n{summary_str}")
+                    if conv_snippets:
+                        sections.append("### 📜 Recent Past Sessions Overview (from MongoDB Atlas):\n" + "\n\n".join(conv_snippets))
+
+            # Also search for topic-specific past Q&As if query has specific keywords
+            tokens = [t.lower() for t in re.findall(r'[\w\u0900-\u097F]+', query)]
+            stopwords = {"kya", "hai", "ka", "ki", "ke", "ko", "me", "se", "aur", "ye", "wo", "what", "is", "the", "a", "tell", "me", "how"}
+            keywords = [t for t in tokens if t not in stopwords and len(t) >= 3]
+
+            if keywords:
+                regex_list = [{"query": {"$regex": re.escape(kw), "$options": "i"}} for kw in keywords]
+                regex_list += [{"response": {"$regex": re.escape(kw), "$options": "i"}} for kw in keywords]
+                qa_filter = {"$and": [user_cond, {"$or": regex_list}]}
+                past_qas = list(db.qa_history.find(qa_filter, {"_id": 0, "query": 1, "response": 1, "timestamp": 1}).sort("timestamp", -1).limit(3))
+                if past_qas:
+                    qa_snippets = []
+                    for qa in past_qas:
+                        q_snippet = qa.get("query", "")[:120]
+                        r_snippet = qa.get("response", "")[:160]
+                        qa_snippets.append(f"- User previously asked: '{q_snippet}' &rarr; Assistant: '{r_snippet}...'")
+                    sections.append("### 🔍 Relevant Past Interactions Matching This Topic (from MongoDB Atlas):\n" + "\n".join(qa_snippets))
+
+        except Exception as e:
+            error_logger.warning(f"Error fetching cross-session MongoDB context: {e}")
+
+    return "\n\n".join(sections)
     return rows
 
 def delete_memory(mem_id: str, user_id: Optional[str] = None) -> bool:
@@ -382,6 +524,10 @@ def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str
     owner_id = _scope(user_id)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
+    # Automatically approve confident user interactions for continuous learning
+    # so every single chat makes the neural intent model and LLM smarter!
+    is_approved = 1 if (confidence >= 0.60 or source in ("user_interaction", "voice_command", "web_stream", "api", "manual")) else 0
+
     if is_mongo_active():
         try:
             db = get_mongo_db()
@@ -393,7 +539,7 @@ def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str
                 "entities_json": json.dumps(entities or {}),
                 "confidence": confidence,
                 "source": source,
-                "approved": 0,
+                "approved": is_approved,
                 "created_at": now_str
             })
             return ex_id
@@ -405,8 +551,8 @@ def add_training_example(raw_text: str, intent: str, entities: Optional[Dict[str
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO training_examples (id, user_id, raw_text, intent, entities_json, confidence, source, approved)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 0)""",
-            (ex_id, owner_id, raw_text, intent, json.dumps(entities or {}), confidence, source)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (ex_id, owner_id, raw_text, intent, json.dumps(entities or {}), confidence, source, is_approved)
         )
         conn.commit()
         conn.close()
@@ -432,6 +578,42 @@ def get_training_examples(approved_only: bool = False) -> List[Dict[str, Any]]:
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
     return rows
+
+
+def backfill_legacy_records_to_admin():
+    """Associates all legacy unassigned conversations, messages, and training samples with the primary administrator."""
+    username = config.admin_username.strip().lower()
+    admin_user = get_user_by_username(username)
+    if not admin_user:
+        return
+    admin_id = admin_user["id"]
+
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            unassigned_filter = {"$or": [{"user_id": None}, {"user_id": SYSTEM_SCOPE}]}
+            r_c = db.conversations.update_many(unassigned_filter, {"$set": {"user_id": admin_id}})
+            r_m = db.messages.update_many(unassigned_filter, {"$set": {"user_id": admin_id}})
+            r_q = db.qa_history.update_many(unassigned_filter, {"$set": {"user_id": admin_id}})
+            r_t = db.training_examples.update_many(unassigned_filter, {"$set": {"user_id": admin_id, "approved": 1}})
+            r_mem = db.memories.update_many(unassigned_filter, {"$set": {"user_id": admin_id}})
+            if r_c.modified_count > 0 or r_m.modified_count > 0:
+                ajax_logger.info(f"Associated {r_c.modified_count} sessions and {r_m.modified_count} messages to administrator ({admin_id}).")
+        except Exception as e:
+            error_logger.warning(f"Mongo legacy backfill notice: {e}")
+
+    with DB_LOCK:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("UPDATE conversations SET user_id = ? WHERE user_id IS NULL OR user_id = ?", (admin_id, SYSTEM_SCOPE))
+            cursor.execute("UPDATE messages SET user_id = ? WHERE user_id IS NULL OR user_id = ?", (admin_id, SYSTEM_SCOPE))
+            cursor.execute("UPDATE training_examples SET user_id = ?, approved = 1 WHERE user_id IS NULL OR user_id = ?", (admin_id, SYSTEM_SCOPE))
+            cursor.execute("UPDATE memories SET user_id = ? WHERE user_id IS NULL OR user_id = ?", (admin_id, SYSTEM_SCOPE))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            error_logger.warning(f"SQLite legacy backfill notice: {e}")
 
 
 # ----------------- USERS & AUTHENTICATION ----------------- #

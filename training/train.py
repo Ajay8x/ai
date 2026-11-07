@@ -23,6 +23,7 @@ if sys.stdout.encoding != 'utf-8':
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.crud import get_training_examples
+from database.db import get_mongo_db, is_mongo_active
 from ai.neural.intent_classifier import intent_classifier
 from core.logger import training_logger
 
@@ -106,32 +107,59 @@ def train_from_sources():
                 added_count += 1
                 print(f"  + Added: '{p_lower}' -> {target_intent}")
 
-    # 2. Ingest approved user samples from Database
-    print("\n[2/3] Ingesting approved training samples from SQLite database...")
+    # 2. Ingest approved user samples from Database & MongoDB Atlas
+    print("\n[2/3] Ingesting interaction samples from MongoDB Atlas / SQLite...")
     db_samples = get_training_examples(approved_only=True)
     db_added = 0
     for sample in db_samples:
-        intent = sample["intent"]
-        text = sample["raw_text"].lower().strip()
-        if intent in intents_map:
+        intent = sample.get("intent")
+        text = str(sample.get("raw_text", "")).lower().strip()
+        if intent and intent in intents_map and text:
             existing = [x.lower() for x in intents_map[intent]["patterns"]]
             if text not in existing:
                 intents_map[intent]["patterns"].append(text)
                 added_count += 1
                 db_added += 1
-    print(f"  + Ingested {db_added} approved interaction samples from database.")
+
+    # Also ingest historical chat queries from MongoDB qa_history
+    if is_mongo_active():
+        try:
+            db = get_mongo_db()
+            qa_docs = list(db.qa_history.find({"intent": {"$ne": None}}, {"_id": 0, "query": 1, "intent": 1}).limit(500))
+            for qa in qa_docs:
+                intent = qa.get("intent")
+                text = str(qa.get("query", "")).lower().strip()
+                if intent and intent in intents_map and text and len(text) >= 3:
+                    existing = [x.lower() for x in intents_map[intent]["patterns"]]
+                    if text not in existing:
+                        intents_map[intent]["patterns"].append(text)
+                        added_count += 1
+                        db_added += 1
+        except Exception as e:
+            training_logger.warning(f"MongoDB qa_history ingestion notice: {e}")
+
+    print(f"  + Ingested {db_added} chat interaction samples from MongoDB Atlas / database.")
 
     # 3. Save model dataset
     print("\n[3/3] Compiling and saving new Model Weights...")
     with open(INTENTS_FILE, "w", encoding="utf-8") as f:
         json.dump({"intents": list(intents_map.values())}, f, indent=2)
 
+    # Retrain PyTorch Neural Net weights with the newly learned patterns
+    try:
+        from training.gpu_train import train_gpu_intent_model
+        print("  * Retraining PyTorch Deep Neural Network (ajax_neural_intent.pt)...")
+        train_gpu_intent_model(epochs=35)
+    except Exception as e:
+        training_logger.warning(f"PyTorch retrain notice: {e}")
+
     # Reload classifier in memory
     intent_classifier.load_dataset()
+    intent_classifier.init_pytorch_neural_net()
     total_patterns_after = sum(len(item["patterns"]) for item in intents_map.values())
 
     print("\n==================================================================")
-    print("  [SUCCESS] TRAINING COMPLETE!")
+    print("  [SUCCESS] CONTINUOUS TRAINING & NEURAL MODEL UPDATE COMPLETE!")
     print(f"  * Total Intents Active : {len(intents_map)}")
     print(f"  * Patterns Before      : {total_patterns_before}")
     print(f"  * Patterns Ingested    : +{added_count}")

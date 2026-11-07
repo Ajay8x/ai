@@ -32,7 +32,8 @@ def format_system_prompt(
     rag_context: str = "",
     language: str = "en",
     intent_context: str = "",
-    thinking_mode: Optional[bool] = None
+    thinking_mode: Optional[bool] = None,
+    past_sessions_context: str = ""
 ) -> str:
     from config.config_loader import config
     prompt = AJAX_SYSTEM_PROMPT
@@ -44,6 +45,8 @@ def format_system_prompt(
         prompt += f"\n\n--- NEURAL INTENT CONTEXT ---\n{intent_context}"
     if memories_context:
         prompt += f"\n\n--- RELEVANT USER MEMORIES ---\n{memories_context}"
+    if past_sessions_context:
+        prompt += f"\n\n--- PAST SESSIONS & LONG-TERM MEMORY (FROM MONGODB ATLAS) ---\nYou have direct access to the user's previous conversations, past chat history, and persistent facts saved in MongoDB Atlas. Maintain seamless continuity across all sessions, recall past discussions accurately, and never claim you don't remember previous chats:\n{past_sessions_context}"
     if rag_context:
         prompt += f"\n\n--- RETRIEVED USER DOCUMENTS ---\n{rag_context}"
     

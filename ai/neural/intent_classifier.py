@@ -331,7 +331,67 @@ class IntentClassifier:
                 "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
             }
 
-        # ----------------- GUARD 2: PROGRAMMING & CODE GENERATION ----------------- #
+        # ----------------- GUARD 2: SPECIALIZED CODING REQUESTS ----------------- #
+        # Keep these ahead of the broad WRITE_CODE guard below. Without this
+        # ordering, every request containing the word "code" would be treated
+        # as code generation and the more useful specialist intents would
+        # never be reachable.
+        if re.search(r'\b(debug|bug|stack\s*trace|error\s+in|why\s+(?:does|is)|fix)\b', text_clean) and re.search(r'\b(code|program|script|function|app|application)\b', text_clean):
+            return {
+                "intent": "DEBUG_CODE",
+                "confidence": 0.97,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(explain|walk\s+me\s+through|what\s+does)\b', text_clean) and re.search(r'\b(code|function|class|program|script)\b', text_clean):
+            return {
+                "intent": "CODE_EXPLAIN",
+                "confidence": 0.97,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(review|quality|best\s+practices|improve)\b', text_clean) and re.search(r'\b(code|program|script|function)\b', text_clean):
+            return {
+                "intent": "CODE_REVIEW",
+                "confidence": 0.97,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(sql|select|insert|update|delete|join)\b', text_clean) and re.search(r'\b(query|table|database|sql)\b', text_clean):
+            return {
+                "intent": "SQL_QUERY",
+                "confidence": 0.97,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(unit\s+tests?|test\s+cases?|automated\s+tests?)\b', text_clean) and re.search(r'\b(code|function|program|write|generate|create)\b', text_clean):
+            return {
+                "intent": "TEST_GENERATION",
+                "confidence": 0.97,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        # ----------------- GUARD 3: PROGRAMMING & CODE GENERATION ----------------- #
         is_explicit_app_launch = bool(re.search(r'\b(open|launch|kholo|start)\s+(vs\s*code|vscode|code\s*editor)\b', text_clean))
         is_coding = not is_explicit_app_launch and bool(
             re.search(r'\b(code|program|coding|script|class|method|function|syntax|algorithm|hello\s+world|loop|array|pointer|query|snippet)\b', text_clean)
@@ -350,7 +410,7 @@ class IntentClassifier:
                 "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
             }
 
-        # ----------------- GUARD 3: PUBLIC APIS (ISS, EARTHQUAKES, CURRENCY, HOLIDAYS) ----------------- #
+        # ----------------- GUARD 4: PUBLIC APIS (ISS, EARTHQUAKES, CURRENCY, HOLIDAYS) ----------------- #
         if re.search(r'\b(iss\b|international\s+space\s+station|space\s+station\s+(location|position|coordinates)|iss\s+kahan\s+hai)', text_clean):
             return {
                 "intent": "TRACK_ISS",

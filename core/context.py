@@ -1,10 +1,10 @@
 """
 AJAX AI - Context Manager
-Assembles dynamic context from conversation history, persistent memories, and RAG knowledge.
+Assembles dynamic context from conversation history, persistent memories, cross-session MongoDB records, and RAG knowledge.
 """
 
 from typing import List, Dict, Any, Optional
-from database.crud import get_conversation_messages, search_memories
+from database.crud import get_conversation_messages, search_memories, get_cross_session_context
 from core.prompts import format_system_prompt
 
 class ContextManager:
@@ -20,15 +20,18 @@ class ContextManager:
         intent_context: str = "",
         user_id: Optional[str] = None
     ) -> List[Dict[str, str]]:
-        # 1. Fetch relevant memories
-        memories = search_memories(query=current_query, limit=5, user_id=user_id)
-        memories_str = ""
-        if memories:
-            memories_str = "\n".join([f"- {m['key_text']}: {m['value_text']}" for m in memories])
+        # 1. Fetch cross-session knowledge & memories from MongoDB Atlas
+        cross_session_ctx = get_cross_session_context(
+            query=current_query,
+            user_id=user_id,
+            current_conversation_id=conversation_id,
+            limit=5
+        )
 
-        # 2. Build system prompt with language mode and neural intent
+        # 2. Build system prompt with language mode, neural intent, and cross-session memory
         system_prompt = format_system_prompt(
-            memories_context=memories_str,
+            memories_context="",
+            past_sessions_context=cross_session_ctx,
             rag_context=rag_context,
             language=language,
             intent_context=intent_context
@@ -36,7 +39,7 @@ class ContextManager:
         
         messages = [{"role": "system", "content": system_prompt}]
 
-        # 3. Retrieve recent conversation history
+        # 3. Retrieve recent conversation history for current session
         history = get_conversation_messages(conversation_id, limit=self.max_history_turns, user_id=user_id)
         for msg in history:
             messages.append({

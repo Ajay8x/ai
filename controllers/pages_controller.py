@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from controllers.auth_controller import get_current_user_from_request
+from ai.neural.intent_classifier import intent_classifier
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -212,6 +213,22 @@ async def serve_training_page(request: Request):
         request=request,
         name="pages/training.html",
         context={"active_page": "training"}
+    )
+
+# Neural Intent Catalog (Protected)
+@pages_router.get("/AJAX/intents", response_class=HTMLResponse)
+async def serve_intents_page(request: Request):
+    if auth_redirect := require_auth_page(request):
+        return auth_redirect
+
+    return templates.TemplateResponse(
+        request=request,
+        name="pages/intents.html",
+        context={
+            "active_page": "intents",
+            "intent_catalog": intent_classifier.intents,
+            "intent_count": len(intent_classifier.intents)
+        }
     )
 
 # Core Subsystem: Settings (Protected)

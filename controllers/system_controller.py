@@ -258,7 +258,7 @@ async def get_training_topology(current_user: Dict[str, Any] = Depends(require_a
                 "title": "Canonical Intent Dataset",
                 "format": "Structured JSON Corpus",
                 "total_patterns": total_patterns,
-                "description": "Training corpus containing triggers, patterns, and contextual examples for 20 intents",
+                "description": f"Training corpus containing triggers, patterns, and contextual examples for {len(intent_classifier.intents)} intents",
                 "save_location": "data/intents.json",
                 "saver_script": "training/train.py",
                 "loader_script": "ai/neural/dataset_loader.py"
@@ -292,7 +292,19 @@ async def get_training_topology(current_user: Dict[str, Any] = Depends(require_a
             "compute_device": neural_diag.get("compute_device", "CPU"),
             "pytorch_available": neural_diag.get("pytorch_available", False),
             "neural_loaded": neural_diag.get("neural_loaded", False),
-            "active_intents_count": len(intent_labels) if intent_labels else 20,
+            "active_intents_count": len(intent_classifier.intents) or len(intent_labels),
             "inference_latency_ms": 0.04
         }
+    }
+
+@system_router.post("/training/retrain")
+async def trigger_continuous_training(admin: Dict[str, Any] = Depends(require_admin)):
+    """Triggers continuous model training: ingests approved chat samples from MongoDB Atlas and retrains PyTorch neural model."""
+    from starlette.concurrency import run_in_threadpool
+    from training.train import train_from_sources
+
+    await run_in_threadpool(train_from_sources)
+    return {
+        "success": True,
+        "message": "Continuous learning training completed successfully. Neural weights and dataset updated in models/ajax_neural_intent.pt!"
     }

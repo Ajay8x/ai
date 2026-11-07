@@ -16,43 +16,54 @@ QA_LOG_JSONL = os.path.join(DATA_DIR, "qa_history.jsonl")
 QA_LOG_TXT = os.path.join(DATA_DIR, "saved_qa.txt")
 
 def auto_extract_and_save_facts(query: str, user_id: Optional[str] = None):
-    """Detects personal details / user facts and saves them to SQLite memories automatically."""
+    """Detects personal details, preferences, and facts and saves them to MongoDB Atlas memories automatically."""
     q_clean = query.strip()
     import re
-    # 1. Names: e.g. 'mera naam Ajay hai', 'my name is Ajay'
-    name_match = re.search(r'(?:mera naam|my name is)\s+([A-Za-z\u0900-\u097F]+)', q_clean, re.IGNORECASE)
+    from database.crud import save_memory
+
+    # 1. Names: e.g. 'mera naam Ajay Singh hai', 'my name is Ajay', 'call me Ajay'
+    name_match = re.search(r'(?:mera naam|my name is|call me|i am)\s+([A-Za-z\u0900-\u097F\s]{2,30})', q_clean, re.IGNORECASE)
     if name_match:
-        from database.crud import save_memory
-        save_memory("user_name", name_match.group(1).title(), category="user_profile", source="auto_extract", user_id=user_id)
-        return
+        val = name_match.group(1).strip()
+        val = re.sub(r'\s+(hai|hoon|hu|here|speaking)$', '', val, flags=re.IGNORECASE).title()
+        if len(val) >= 2 and val.lower() not in ('a', 'an', 'the', 'fine', 'good'):
+            save_memory('user_name', val, category='user_profile', source='auto_extract', user_id=user_id)
 
-    # 2. Remember notes: e.g. 'remember that meeting is at 5pm', 'yaad rakhna ki kal exam hai'
-    rem_match = re.search(r'(?:remember that|yaad rakhna ki|yaad rakho ki)\s+(.+)', q_clean, re.IGNORECASE)
+    # 2. Profession / Role: e.g. 'main developer hoon', 'i work as a software engineer'
+    prof_match = re.search(r'(?:i am an?|main|i work as a?|my profession is)\s+([A-Za-z\s]+?)\s+(?:hoon|hu|developer|engineer|coder|designer|student)', q_clean, re.IGNORECASE)
+    if prof_match:
+        val = (prof_match.group(1).strip() + ' developer').title()
+        save_memory('profession', val, category='user_profile', source='auto_extract', user_id=user_id)
+
+    # 3. Remember notes: e.g. 'remember that meeting is at 5pm', 'yaad rakhna ki kal exam hai'
+    rem_match = re.search(r'(?:remember that|remember|yaad rakhna ki|yaad rakho ki|note this|note kar lo|yaad rakhna)\s+(.+)', q_clean, re.IGNORECASE)
     if rem_match:
-        from database.crud import save_memory
         fact = rem_match.group(1).strip()
-        save_memory("note", fact, category="user_note", source="auto_extract", user_id=user_id)
-        return
+        save_memory('note', fact, category='user_note', source='auto_extract', user_id=user_id)
 
-    # 3. Location: e.g. 'i live in Mumbai', 'main Delhi me rehta hoon'
+    # 4. Location: e.g. 'i live in Mumbai', 'main Delhi me rehta hoon'
     loc_match = re.search(r'(?:i live in\s+([A-Za-z\u0900-\u097F]+)|main\s+([A-Za-z\u0900-\u097F]+)\s+me\s+rehta\s+hoon)', q_clean, re.IGNORECASE)
     if loc_match:
-        from database.crud import save_memory
         loc = loc_match.group(1) or loc_match.group(2)
         if loc:
-            save_memory("location", loc.strip().title(), category="user_profile", source="auto_extract", user_id=user_id)
-            return
+            save_memory('location', loc.strip().title(), category='user_profile', source='auto_extract', user_id=user_id)
 
-    # 4. Favorites: e.g. 'my favorite color is blue', 'mera favorite food biryani hai'
+    # 5. Favorites: e.g. 'my favorite color is blue', 'mera favorite food biryani hai'
     fav_match = re.search(r'(?:my favorite\s+([a-zA-Z]+)\s+is\s+([a-zA-Z0-9\s]+)|mera favorite\s+([a-zA-Z]+)\s+([a-zA-Z0-9\s]+)\s+hai|mujhe\s+([a-zA-Z0-9\s]+)\s+pasand\s+hai)', q_clean, re.IGNORECASE)
     if fav_match:
-        from database.crud import save_memory
         if fav_match.group(1) and fav_match.group(2):
-            save_memory(f"favorite_{fav_match.group(1).lower().strip()}", fav_match.group(2).strip(), category="user_preference", source="auto_extract", user_id=user_id)
+            save_memory(f'favorite_{fav_match.group(1).lower().strip()}', fav_match.group(2).strip(), category='user_preference', source='auto_extract', user_id=user_id)
         elif fav_match.group(3) and fav_match.group(4):
-            save_memory(f"favorite_{fav_match.group(3).lower().strip()}", fav_match.group(4).strip(), category="user_preference", source="auto_extract", user_id=user_id)
+            save_memory(f'favorite_{fav_match.group(3).lower().strip()}', fav_match.group(4).strip(), category='user_preference', source='auto_extract', user_id=user_id)
         elif fav_match.group(5):
-            save_memory("favorite_item", fav_match.group(5).strip(), category="user_preference", source="auto_extract", user_id=user_id)
+            save_memory('favorite_item', fav_match.group(5).strip(), category='user_preference', source='auto_extract', user_id=user_id)
+
+    # 6. Projects / Stack: e.g. 'mera project ajax ai hai', 'i am working on python backend'
+    proj_match = re.search(r'(?:mera project\s+([a-zA-Z0-9\s]+)\s+hai|i am working on\s+([a-zA-Z0-9\s]+))', q_clean, re.IGNORECASE)
+    if proj_match:
+        pname = (proj_match.group(1) or proj_match.group(2)).strip().title()
+        save_memory('current_project', pname, category='user_project', source='auto_extract', user_id=user_id)
+
 
 def record_qa_interaction(query: str, response: str, intent: str, modality: str = "text", tool: Optional[str] = None, user_id: Optional[str] = None):
     """Automatically saves and appends every Q&A pair to MongoDB Atlas (cloud) or local files (fallback)."""
