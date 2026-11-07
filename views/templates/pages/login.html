@@ -566,6 +566,9 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        localStorage.setItem('ajax_token', data.token);
+                    }
                     showToast(data.message || 'Signed in successfully!', 'success');
                     
                     // Determine redirect destination based on role and query param
@@ -581,7 +584,11 @@
                         window.location.href = targetUrl;
                     }, 400);
                 } else {
-                    showToast(data.message || 'Invalid username or password.', 'error');
+                    let errMsg = data.message;
+                    if (!errMsg && data.detail) {
+                        errMsg = Array.isArray(data.detail) ? data.detail.map(d => d.msg || d).join(', ') : String(data.detail);
+                    }
+                    showToast(errMsg || 'Invalid username or password.', 'error');
                 }
             } catch (err) {
                 showToast(`Network error: ${err.message}`, 'error');
@@ -608,6 +615,9 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        localStorage.setItem('ajax_token', data.token);
+                    }
                     showToast('Demo Access Granted! Launching Dashboard...', 'success');
                     const redirectParam = new URLSearchParams(window.location.search).get('redirect');
                     const targetUrl = redirectParam && !redirectParam.includes('/login') ? redirectParam : '/AJAX/dashboard';
@@ -615,7 +625,11 @@
                         window.location.href = targetUrl;
                     }, 350);
                 } else {
-                    showToast(data.message || 'Demo login failed.', 'error');
+                    let errMsg = data.message;
+                    if (!errMsg && data.detail) {
+                        errMsg = Array.isArray(data.detail) ? data.detail.map(d => d.msg || d).join(', ') : String(data.detail);
+                    }
+                    showToast(errMsg || 'Demo login failed.', 'error');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fa-solid fa-bolt"></i><span>1-Click Instant Demo Login (User)</span><i class="fa-solid fa-arrow-right"></i>';
@@ -641,6 +655,11 @@
             const confirm = document.getElementById('regPasswordConfirm').value;
             const btn = document.getElementById('registerSubmitBtn');
 
+            if (password.length < 4) {
+                showToast('Password must be at least 4 characters.', 'warning');
+                return;
+            }
+
             if (password !== confirm) {
                 showToast('Passwords do not match. Please re-check.', 'warning');
                 return;
@@ -656,19 +675,26 @@
                     body: JSON.stringify({
                         full_name: fullName,
                         username: username,
-                        email: email,
+                        email: email || null,
                         password: password
                     })
                 });
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    if (data.token) {
+                        localStorage.setItem('ajax_token', data.token);
+                    }
                     showToast(data.message || 'Account created successfully!', 'success');
                     setTimeout(() => {
                         window.location.href = '/AJAX/dashboard';
                     }, 400);
                 } else {
-                    showToast(data.message || 'Registration failed.', 'error');
+                    let errMsg = data.message;
+                    if (!errMsg && data.detail) {
+                        errMsg = Array.isArray(data.detail) ? data.detail.map(d => d.msg || d).join(', ') : String(data.detail);
+                    }
+                    showToast(errMsg || 'Registration failed.', 'error');
                 }
             } catch (err) {
                 showToast(`Network error: ${err.message}`, 'error');

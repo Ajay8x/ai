@@ -465,7 +465,11 @@
                 document.getElementById('modalPassword').value = '';
                 loadAdminData();
             } else {
-                window.showToast(data.message || 'Account creation failed.', 'error');
+                let errMsg = data.message;
+                if (!errMsg && data.detail) {
+                    errMsg = Array.isArray(data.detail) ? data.detail.map(d => d.msg || d).join(', ') : String(data.detail);
+                }
+                window.showToast(errMsg || 'Account creation failed.', 'error');
             }
         } catch (err) {
             window.showToast(err.message, 'error');

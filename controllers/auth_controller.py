@@ -209,7 +209,7 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=32)
-    password: str = Field(..., min_length=12)
+    password: str = Field(..., min_length=4, max_length=256)
     full_name: str = Field(..., min_length=2)
     email: Optional[str] = None
 
@@ -271,6 +271,7 @@ async def login_user(request: Request, payload: LoginRequest, response: Response
     response = JSONResponse({
         "success": True,
         "message": f"Welcome back, {user.get('full_name', username)}!",
+        "token": token,
         "user": {
             "id": user["id"],
             "username": user["username"],
@@ -312,6 +313,7 @@ async def demo_quick_login(response: Response):
     res = JSONResponse({
         "success": True,
         "message": "Welcome to AJAX AI Demo Account!",
+        "token": token,
         "user": {
             "id": user["id"],
             "username": user["username"],
@@ -359,6 +361,7 @@ async def register_user(payload: RegisterRequest, response: Response):
     response = JSONResponse({
         "success": True,
         "message": f"Account created successfully! Welcome, {created['full_name']}.",
+        "token": token,
         "user": created
     })
 
