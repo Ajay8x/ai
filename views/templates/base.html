@@ -108,7 +108,7 @@
                         <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-gear"></i></span><span>Settings</span></div>
                     </a>
                     <!-- Protected Admin Panel Link (Only displayed for Admin role) -->
-                    <a href="/AJAX/admin" class="nav-link admin-only-link {% if active_page == 'admin' %}active{% endif %}" id="sidebarAdminLink" style="display:none;">
+                    <a href="/AJAX/admin" class="nav-link admin-only-link {% if active_page == 'admin' %}active{% endif %}" id="sidebarAdminLink" style="{% if (current_user and current_user.role == 'admin') or active_page == 'admin' %}display:flex;{% else %}display:none;{% endif %}">
                         <div class="nav-link-left"><span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span><span>Admin Panel</span></div>
                         <span class="nav-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);">Admin</span>
                     </a>

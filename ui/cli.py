@@ -30,7 +30,7 @@ HELP_TEXT = """
 Available Commands:
   /chat <message>   - Send a query directly to AJAX AI (or just type directly)
   /voice            - Launch hands-free continuous voice session
-  /model [name]     - View or switch active LLM provider (ollama, openai, groq)
+  /model [name]     - View or switch active LLM provider (ajax_local, openai, groq)
   /train            - Run neural intent training on candidate examples
   /evaluate         - Run model validation and accuracy evaluation
   /memory [search]  - Inspect or search stored long-term memories

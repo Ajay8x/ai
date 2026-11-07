@@ -16,9 +16,9 @@ data:
   PRIVACY_MODE: "false"
 
   # AI LLM Provider
-  DEFAULT_LLM_PROVIDER: "ollama"
-  LLM_MODEL: "qwen3.5:4b"
-  OLLAMA_BASE_URL: "http://ollama:11434"
+  DEFAULT_LLM_PROVIDER: "ajax_gguf"
+  LLM_MODEL: "ajax-native-1.7b-q4"
+  LOCAL_MODEL_PATH: "models/ajax-native-1.7b-q4_k_m.gguf"
   LLM_TEMPERATURE: "0.7"
   LLM_MAX_TOKENS: "2048"
 

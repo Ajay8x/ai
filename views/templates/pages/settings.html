@@ -30,15 +30,15 @@
                 <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
                 <option value="deepseek">DeepSeek (deepseek-chat / deepseek-reasoner)</option>
                 <option value="openrouter">OpenRouter (Multi-Model Cloud)</option>
-                <option value="ollama">Ollama (Local Daemon - llama3.2 / gemma)</option>
-                <option value="local_fallback">Local Rule-Based & Offline Brain</option>
+                <option value="ajax_gguf">AJAX Local Generative Model (CPU)</option>
+                <option value="ajax_local">AJAX Native Engine (Your 100-class Neural Brain)</option>
             </select>
             <span style="font-size:11px; color:var(--text-dim);">Zero-crash auto-cascade: if primary is unreachable, cascades to secondary cloud and local engine.</span>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="settingLlmModel">Model Name</label>
-            <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. gemini-2.5-flash-lite or qwen3.5:4b">
+            <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. ajax-native-100-intents or gemini-2.5-flash-lite">
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -226,7 +226,7 @@
             
             // Populate LLM Settings
             if (data.llm) {
-                document.getElementById('settingLlmProvider').value = data.llm.provider || 'gemini';
+                document.getElementById('settingLlmProvider').value = data.llm.provider || 'ajax_gguf';
                 document.getElementById('settingLlmModel').value = data.llm.model || '';
                 document.getElementById('settingLlmTemp').value = data.llm.temperature || 0.7;
                 document.getElementById('tempLabel').textContent = data.llm.temperature || 0.7;
@@ -253,7 +253,7 @@
             // Populate Neural Telemetry
             if (data.neural) {
                 document.getElementById('telemetryVocab').textContent = (data.neural.vocab_size || 585) + ' Words';
-                document.getElementById('telemetryClasses').textContent = (data.neural.num_classes || 20) + ' Classes';
+                document.getElementById('telemetryClasses').textContent = (data.neural.num_classes || 100) + ' Classes';
                 document.getElementById('telemetryDevice').textContent = 'Compute Device: ' + (data.neural.compute_device || 'CPU');
                 if (data.neural.neural_loaded) {
                     document.getElementById('neuralStatusBadge').textContent = 'Deep Net Active';
@@ -272,8 +272,8 @@
             'openai': 'gpt-4o-mini',
             'deepseek': 'deepseek-chat',
             'openrouter': 'meta-llama/llama-3.3-70b-instruct',
-            'ollama': 'qwen3.5:4b',
-            'local_fallback': 'chat_assistant_engine'
+            'ajax_gguf': 'ajax-native-1.7b-q4',
+            'ajax_local': 'ajax-native-100-intents'
         };
         if (defaultModels[provider]) {
             modelInput.value = defaultModels[provider];

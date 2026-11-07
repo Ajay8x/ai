@@ -15,9 +15,9 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8000
-      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-ollama}
-      - LLM_MODEL=${LLM_MODEL:-qwen3.5:4b}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-ajax_gguf}
+      - LLM_MODEL=${LLM_MODEL:-ajax-native-1.7b-q4}
+      - LOCAL_MODEL_PATH=${LOCAL_MODEL_PATH:-models/ajax-native-1.7b-q4_k_m.gguf}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}

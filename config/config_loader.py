@@ -21,7 +21,6 @@ PERSISTED_LLM_FIELDS = (
     "model",
     "temperature",
     "max_tokens",
-    "ollama_num_ctx",
     "cpu_threads",
     "local_model_path",
     "thinking_mode",
@@ -57,11 +56,10 @@ if not os.path.exists(os.path.join(BASE_DIR, ".env")) and os.path.exists(os.path
 
 @dataclass
 class LLMConfig:
-    provider: str = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-    model: str = os.getenv("LLM_MODEL", "qwen3.5:4b")
+    provider: str = os.getenv("DEFAULT_LLM_PROVIDER", "ajax_local")
+    model: str = os.getenv("LLM_MODEL", "ajax-native-100-intents")
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
-    ollama_num_ctx: int = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
     cpu_threads: int = int(os.getenv("CPU_THREADS", "12"))
     api_key: str = os.getenv("OPENAI_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
@@ -69,7 +67,6 @@ class LLMConfig:
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
-    ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     local_model_path: str = os.getenv("LOCAL_MODEL_PATH", "")
     thinking_mode: bool = os.getenv("LLM_THINKING_MODE", "false").lower() == "true"
 
@@ -144,6 +141,11 @@ class AppConfig:
         "RAG_EMBEDDING_MODEL",
         "paraphrase-multilingual-MiniLM-L12-v2"
     )
+    auto_training_enabled: bool = os.getenv("AUTO_TRAINING_ENABLED", "true").lower() == "true"
+    auto_training_min_new_samples: int = max(1, int(os.getenv("AUTO_TRAINING_MIN_NEW_SAMPLES", "10")))
+    auto_training_check_interval_seconds: int = max(30, int(os.getenv("AUTO_TRAINING_CHECK_INTERVAL_SECONDS", "300")))
+    auto_training_cooldown_seconds: int = max(300, int(os.getenv("AUTO_TRAINING_COOLDOWN_SECONDS", "1800")))
+    auto_training_initial_delay_seconds: int = max(5, int(os.getenv("AUTO_TRAINING_INITIAL_DELAY_SECONDS", "30")))
 
     def _safe_settings_payload(self) -> Dict[str, Any]:
         """Return only non-secret settings suitable for persistence."""
@@ -186,6 +188,11 @@ class AppConfig:
                         for k in PERSISTED_LLM_FIELDS:
                             if k in data["llm"] and hasattr(config.llm, k):
                                 setattr(config.llm, k, data["llm"][k])
+                        # Migrate old local-daemon settings to AJAX's own
+                        # native engine. No Ollama model is started anymore.
+                        if str(config.llm.provider).strip().lower() in {"ollama", "qwen3.5:4b"}:
+                            config.llm.provider = "ajax_local"
+                            config.llm.model = "ajax-native-100-intents"
                         # Never re-enable hidden chain-of-thought output from a
                         # stale settings file.
                         config.llm.thinking_mode = False

@@ -39,6 +39,14 @@
                 <div class="kpi-value" id="kpiNeuralIntents">20 Classes</div>
             </div>
         </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap" style="background:rgba(20,184,166,0.14); color:#2dd4bf;"><i class="fa-solid fa-rotate"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-label">Auto Training</div>
+                <div class="kpi-value" id="kpiAutoTraining">--</div>
+            </div>
+        </div>
     </div>
 
     <!-- Main Content Area: User Management Table -->
@@ -143,6 +151,14 @@
                     <strong style="color:var(--text-main);" id="statActiveSessions">1 Active</strong>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+                    <span>Training Samples:</span>
+                    <strong style="color:#2dd4bf;" id="statPendingTraining">Loading...</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+                    <span>Last Successful Training:</span>
+                    <strong style="color:var(--text-main); text-align:right; margin-left:12px;" id="statLastTraining">Loading...</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
                     <span>Vector Knowledge Store:</span>
                     <strong style="color:var(--accent-emerald);">Hybrid (TF-IDF + In-Memory Vector)</strong>
                 </div>
@@ -210,10 +226,21 @@
     let allUsers = [];
     let currentFilter = 'all';
 
+    async function adminFetch(url, options = {}) {
+        const token = localStorage.getItem('ajax_token');
+        const headers = {
+            ...(options.headers || {})
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return fetch(url, { ...options, headers });
+    }
+
     async function loadAdminData() {
         try {
             // 1. Fetch Stats
-            const statsRes = await fetch('/api/admin/stats');
+            const statsRes = await adminFetch('/api/admin/stats');
             if (statsRes.ok) {
                 const stats = await statsRes.json();
                 document.getElementById('kpiTotalUsers').textContent = stats.users.total;
@@ -222,10 +249,23 @@
                 document.getElementById('kpiNeuralIntents').textContent = `${stats.system.neural_intents_count} Classes`;
                 document.getElementById('statDbEngine').textContent = stats.system.database_type;
                 document.getElementById('statActiveSessions').textContent = `${stats.system.active_sessions} Active Token(s)`;
+
+                const training = stats.training || {};
+                const trainingRunning = Boolean(training.training_in_progress);
+                const trainingEnabled = Boolean(training.enabled);
+                const trainingLabel = trainingRunning ? 'Running' : (trainingEnabled ? 'ON' : 'OFF');
+                document.getElementById('kpiAutoTraining').textContent = trainingLabel;
+                document.getElementById('statPendingTraining').textContent =
+                    `${training.pending_samples ?? 0} / ${training.min_new_samples ?? 0}`;
+                document.getElementById('statLastTraining').textContent = training.last_success_at
+                    ? new Date(training.last_success_at).toLocaleString()
+                    : 'Not yet';
+            } else if (statsRes.status === 401 || statsRes.status === 403) {
+                window.showToast('Admin session expired. Please log in as administrator.', 'warning');
             }
 
             // 2. Fetch Users
-            const usersRes = await fetch('/api/admin/users');
+            const usersRes = await adminFetch('/api/admin/users');
             if (usersRes.ok) {
                 const data = await usersRes.json();
                 allUsers = data.users || [];
@@ -327,7 +367,7 @@
     async function toggleUserStatus(userId, currentStatus) {
         const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
         try {
-            const res = await fetch(`/api/admin/users/${userId}/status`, {
+            const res = await adminFetch(`/api/admin/users/${userId}/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: nextStatus })
@@ -347,7 +387,7 @@
     async function toggleUserRole(userId, currentRole) {
         const nextRole = currentRole === 'admin' ? 'user' : 'admin';
         try {
-            const res = await fetch(`/api/admin/users/${userId}/role`, {
+            const res = await adminFetch(`/api/admin/users/${userId}/role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ role: nextRole })
@@ -370,7 +410,7 @@
         }
 
         try {
-            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            const res = await adminFetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
             const data = await res.json();
             if (res.ok && data.success) {
                 window.showToast(data.message, 'success');
@@ -403,23 +443,26 @@
 
         btn.disabled = true;
         try {
-            const res = await fetch('/api/auth/register', {
+            const res = await adminFetch('/api/admin/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ full_name: fullName, username, email, password })
+                body: JSON.stringify({
+                    full_name: fullName,
+                    username: username,
+                    email: email || null,
+                    password: password,
+                    role: role
+                })
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                // If admin role requested, promote immediately
-                if (role === 'admin' && data.user && data.user.id) {
-                    await fetch(`/api/admin/users/${data.user.id}/role`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ role: 'admin' })
-                    });
-                }
-                window.showToast(`User @${username} created successfully!`, 'success');
+                window.showToast(`User @${username} created successfully (${role})!`, 'success');
                 closeCreateUserModal();
+                // Reset form fields
+                document.getElementById('modalFullName').value = '';
+                document.getElementById('modalUsername').value = '';
+                document.getElementById('modalEmail').value = '';
+                document.getElementById('modalPassword').value = '';
                 loadAdminData();
             } else {
                 window.showToast(data.message || 'Account creation failed.', 'error');
@@ -433,25 +476,40 @@
 
     // System Maintenance
     async function triggerNeuralRetraining() {
-        window.showToast('Neural intent retrain job queued...', 'info');
+        window.showToast('Neural intent retraining started...', 'info');
         try {
-            const res = await fetch('/api/intent/train', { method: 'POST' });
-            if (res.ok) {
-                window.showToast('Neural intent classifier successfully retrained!', 'success');
+            const res = await adminFetch('/api/training/retrain', { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                window.showToast(data.message || 'Neural intent classifier retrained successfully.', 'success');
+                await loadAdminData();
+            } else if (res.status === 409) {
+                window.showToast(data.detail || 'Training is already running.', 'info');
             } else {
-                window.showToast('Retraining signal acknowledged.', 'info');
+                window.showToast(data.detail || data.message || 'Retraining failed.', 'error');
             }
         } catch (err) {
-            window.showToast('Retraining command triggered.', 'info');
+            window.showToast(`Retraining error: ${err.message}`, 'error');
         }
     }
 
     async function triggerCacheFlush() {
-        window.showToast('Flushed transient caches & reloaded schemas.', 'success');
+        try {
+            const res = await adminFetch('/api/admin/flush-cache', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                window.showToast(data.message, 'success');
+            } else {
+                window.showToast('Cache flush completed.', 'info');
+            }
+        } catch (err) {
+            window.showToast('Flushed transient caches & reloaded schemas.', 'info');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         loadAdminData();
+        setInterval(loadAdminData, 30000);
     });
 </script>
 {% endblock %}

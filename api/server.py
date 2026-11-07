@@ -32,6 +32,7 @@ from controllers.auth_controller import require_admin
 from database.db import get_db_connection, init_db, is_mongo_active
 from config.config_loader import config
 from core.logger import ajax_logger
+from training.auto_retrainer import auto_training_manager
 
 VIEWS_DIR = os.path.join(BASE_DIR, "views")
 STATIC_DIR = os.path.join(VIEWS_DIR, "static")
@@ -81,7 +82,9 @@ async def lifespan(_app: FastAPI):
         ajax_logger.error(f"Startup database initialization error: {e}")
         if os.environ.get("VERCEL"):
             raise
+    auto_training_manager.start()
     yield
+    auto_training_manager.stop()
 
 
 app = FastAPI(

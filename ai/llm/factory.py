@@ -1,6 +1,6 @@
 """
 AJAX AI - LLM Factory & Multi-Tier Cascading Fallback Engine
-Selects and cascades across configured LLM providers (Google Gemini, Groq, OpenAI, DeepSeek, OpenRouter, Ollama, GGUF)
+Selects and cascades across configured LLM providers (Google Gemini, Groq, OpenAI, DeepSeek, OpenRouter, GGUF)
 with an intelligent offline conversational brain, extensive code generation, and multi-tier recovery.
 """
 
@@ -10,7 +10,6 @@ import time
 from typing import Optional, List, Dict, Any, Iterator
 from ai.llm.base import BaseLLMProvider, LLMResponse, ToolCall
 from ai.llm.openai_provider import OpenAICompatibleProvider
-from ai.llm.ollama_provider import OllamaProvider
 from ai.llm.gemini_provider import GeminiProvider
 from config.config_loader import config
 from core.logger import ajax_logger, error_logger
@@ -19,6 +18,65 @@ from core.logger import ajax_logger, error_logger
 def generate_offline_code(query: str) -> Optional[str]:
     """Generates clean, production-grade markdown code snippets and algorithms for 30+ programming requests."""
     q = query.lower()
+
+    # Tkinter calculator: keep callbacks and widget scope self-contained so
+    # the returned example runs immediately instead of producing undefined
+    # add/subtract/calculate functions.
+    if "calculator" in q and any(term in q for term in ("tkinter", "gui", "window", "desktop")):
+        return (
+            "Here is a working **Tkinter Calculator**. Save it as `calculator.py` and run `python calculator.py`:\n\n"
+            "```python\n"
+            "import tkinter as tk\n"
+            "from tkinter import messagebox\n\n"
+            "\n"
+            "def create_window():\n"
+            "    root = tk.Tk()\n"
+            "    root.title(\"Python Calculator\")\n"
+            "    root.geometry(\"320x300\")\n\n"
+            "    operation = tk.StringVar(value=\"+\")\n"
+            "    result = tk.StringVar(value=\"Result: \")\n\n"
+            "    tk.Label(root, text=\"Python Calculator\", font=(\"Arial\", 18)).pack(pady=10)\n"
+            "    tk.Label(root, text=\"Number 1\").pack()\n"
+            "    num1 = tk.Entry(root)\n"
+            "    num1.pack()\n\n"
+            "    tk.Label(root, text=\"Number 2\").pack()\n"
+            "    num2 = tk.Entry(root)\n"
+            "    num2.pack()\n\n"
+            "    def calculate():\n"
+            "        try:\n"
+            "            a = float(num1.get())\n"
+            "            b = float(num2.get())\n"
+            "            op = operation.get()\n"
+            "            if op == \"+\":\n"
+            "                answer = a + b\n"
+            "            elif op == \"-\":\n"
+            "                answer = a - b\n"
+            "            elif op == \"*\":\n"
+            "                answer = a * b\n"
+            "            elif op == \"/\":\n"
+            "                if b == 0:\n"
+            "                    raise ZeroDivisionError\n"
+            "                answer = a / b\n"
+            "            result.set(f\"Result: {answer:g}\")\n"
+            "        except ValueError:\n"
+            "            messagebox.showerror(\"Error\", \"Numbers sahi enter karo.\")\n"
+            "        except ZeroDivisionError:\n"
+            "            messagebox.showerror(\"Error\", \"Zero se divide nahi kar sakte.\")\n\n"
+            "    def clear():\n"
+            "        num1.delete(0, tk.END)\n"
+            "        num2.delete(0, tk.END)\n"
+            "        result.set(\"Result: \")\n\n"
+            "    button_frame = tk.Frame(root)\n"
+            "    button_frame.pack(pady=10)\n"
+            "    for op in [\"+\", \"-\", \"*\", \"/\"]:\n"
+            "        tk.Button(button_frame, text=op, width=5, command=lambda value=op: operation.set(value)).pack(side=tk.LEFT, padx=3)\n"
+            "    tk.Button(root, text=\"Calculate\", command=calculate).pack(pady=5)\n"
+            "    tk.Button(root, text=\"Clear\", command=clear).pack(pady=5)\n"
+            "    tk.Label(root, textvariable=result, font=(\"Arial\", 14)).pack(pady=10)\n"
+            "    root.mainloop()\n\n"
+            "create_window()\n"
+            "```"
+        )
 
     # 1. Binary Search
     if "binary search" in q or "binary_search" in q:
@@ -406,6 +464,9 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
     4. 40+ Topic Encyclopedic Knowledge Base.
     5. Live DuckDuckGo and Wikipedia web search integration.
     """
+    provider_name = "ajax_local"
+    model = "ajax-native-100-intents"
+
     def generate(
         self,
         messages: List[Dict[str, str]],
@@ -440,7 +501,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                 content=thought + str(calc_res.output),
                 tool_calls=[],
                 model="local_math_engine",
-                provider="local_rule_engine",
+                provider="ajax_local",
                 tokens_used=1
             )
 
@@ -465,7 +526,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                     content=thought + code_resp,
                     tool_calls=[],
                     model="code_generator_engine",
-                    provider="local_code_engine",
+                    provider="ajax_local",
                     tokens_used=len(code_resp.split())
                 )
             # Try DuckDuckGo search for programming examples
@@ -481,7 +542,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
                                 content=resp_content,
                                 tool_calls=[],
                                 model="code_search_engine",
-                                provider="duckduckgo_code",
+                                provider="ajax_local",
                                 tokens_used=len(resp_content.split())
                             )
             except Exception:
@@ -583,7 +644,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
             content=resp,
             tool_calls=[],
             model="chat_assistant_engine",
-            provider="conversational_engine",
+            provider="ajax_local",
             tokens_used=len(resp.split())
         )
 
@@ -592,6 +653,12 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
 def get_llm_provider() -> BaseLLMProvider:
     """Instantiate the primary configured LLM provider with auto-detection."""
     provider_name = config.llm.provider.lower()
+
+    # AJAX's own local engine is the default and must always win over any
+    # accidentally present cloud credentials. It uses the trained intent brain
+    # plus the built-in local response/code/search engines.
+    if provider_name in {"ajax_local", "local_fallback", "offline", "native", "custom"}:
+        return LocalRuleBasedFallbackProvider()
     
     # Priority 1: Google Gemini (Free & Ultra-Fast)
     if (provider_name in ["gemini", "google"] or config.llm.gemini_api_key) and config.llm.gemini_api_key:
@@ -631,36 +698,28 @@ def get_llm_provider() -> BaseLLMProvider:
             model=config.llm.model or "meta-llama/llama-3.3-70b-instruct",
             provider_name="openrouter"
         )
-    # Priority 6: Ollama
-    elif provider_name == "ollama":
-        return OllamaProvider(
-            base_url=config.llm.ollama_base_url,
-            model=config.llm.model or "qwen3.5:4b"
-        )
-    # Priority 7: Local PyTorch / Transformers
-    elif provider_name in ["qwen3.5-9b", "qwen3.5", "qwen9b", "qwen-9b", "qwen", "local_hf", "transformers"]:
+    # Optional local PyTorch / Transformers provider
+    elif provider_name in ["local_hf", "transformers"]:
         base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "qwen3.5-9b")
+        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "ajax-local-model")
         if not os.path.isabs(model_path):
             model_path = os.path.join(base_root, model_path)
         from ai.llm.local_hf_provider import LocalHuggingFaceProvider
         return LocalHuggingFaceProvider(model_path=model_path, device="auto")
-    elif provider_name in ["llamafile", "qwen3-4b", "qwen3", "thinking"]:
+    elif provider_name == "llamafile":
         from ai.llm.llamafile_provider import LlamafileProvider
-        model_path = config.llm.local_model_path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "qwen3-4b-thinking-2507.Q4_K_M.gguf")
+        model_path = config.llm.local_model_path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "models", "ajax-local-model.gguf")
         return LlamafileProvider(model_path=model_path)
-    elif provider_name in ["gguf", "llama_cpp"]:
+    elif provider_name in ["ajax_gguf", "ajax_local_llm", "local_gguf", "gguf", "llama_cpp"]:
         from ai.llm.gguf_provider import GGUFProvider
-        model_path = config.llm.local_model_path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "qwen3-4b-thinking-2507.Q4_K_M.gguf")
-        return GGUFProvider(model_path=model_path)
+        model_path = config.llm.local_model_path or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "models", "ajax-native-1.7b-q4_k_m.gguf"
+        )
+        if not os.path.isabs(model_path):
+            model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), model_path)
+        return GGUFProvider(model_path=model_path, n_gpu_layers=0, n_threads=config.llm.cpu_threads)
     else:
-        # Check if local GGUF model exists
-        base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        gguf_path = os.path.join(base_root, "qwen3-4b-thinking-2507.Q4_K_M.gguf")
-        if os.path.exists(gguf_path):
-            from ai.llm.llamafile_provider import LlamafileProvider
-            return LlamafileProvider(model_path=gguf_path)
-        
         # Fallback to conversational response engine
         return LocalRuleBasedFallbackProvider()
 
@@ -681,6 +740,38 @@ class ResilientLLMBrain:
         self._primary_disabled = False
         ajax_logger.info("ResilientLLMBrain reloaded with new active provider configuration.")
 
+    def _deterministic_code_response(
+        self,
+        messages: List[Dict[str, str]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048
+    ) -> Optional[LLMResponse]:
+        """Use verified built-in templates for simple coding requests.
+
+        Small local generative models can over-interpret basic examples (for
+        instance, returning a GUI for a plain Hello World request). Explicit
+        GUI/window requests remain with the generative model.
+        """
+        user_msg = next(
+            (m.get("content", "").strip() for m in reversed(messages) if m.get("role") == "user"),
+            ""
+        )
+        query = user_msg.lower()
+        if not user_msg or (
+            "calculator" not in query
+            and any(term in query for term in ("tkinter", "gui", "graphical", "new window", "button", "label"))
+        ):
+            return None
+        if generate_offline_code(user_msg) is None:
+            return None
+        return self.fallback.generate(
+            messages,
+            tools=tools,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+
     def generate(
         self,
         messages: List[Dict[str, str]],
@@ -688,6 +779,10 @@ class ResilientLLMBrain:
         temperature: float = 0.7,
         max_tokens: int = 2048
     ) -> LLMResponse:
+        deterministic = self._deterministic_code_response(messages, tools, temperature, max_tokens)
+        if deterministic is not None:
+            return deterministic
+
         now = time.time()
         # Auto-retry primary provider if cooldown period has elapsed
         if self._primary_disabled and (now - self._last_failure_time > self._retry_cooldown_seconds):
@@ -711,6 +806,13 @@ class ResilientLLMBrain:
         max_tokens: int = 2048
     ):
         """Yield real-time text chunks, falling back to simulated smooth token delivery on local engine."""
+        deterministic = self._deterministic_code_response(messages, temperature=temperature, max_tokens=max_tokens)
+        if deterministic is not None:
+            for part in re.split(r'(\s+)', deterministic.content or ""):
+                if part:
+                    yield part
+            return
+
         now = time.time()
         if self._primary_disabled and (now - self._last_failure_time > self._retry_cooldown_seconds):
             ajax_logger.info("Cooldown elapsed: probing primary LLM provider again...")

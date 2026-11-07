@@ -47,7 +47,19 @@
         "hey buddy are you online",
         "shubh prabhat ajax",
         "ram ram bhai",
-        "kaise ho ajax"
+        "kaise ho ajax",
+        "hii",
+        "what are you doing",
+        "where are you",
+        "mango kya hai",
+        "hello ajax, mongodb atlas connection test",
+        "java code  hello world",
+        "give me simple code java hello world",
+        "hello ajax!",
+        "kitane keyword hai",
+        "tajmahal kaha hai",
+        "who are you",
+        "hello postgresql check"
       ],
       "tool": null,
       "response": "Hello! How can I assist you today?"
@@ -494,7 +506,8 @@
         "edge chalu karo",
         "bhai edge chalu karo",
         "edge chalao",
-        "bhai edge chalao"
+        "bhai edge chalao",
+        "give me python simple code"
       ],
       "tool": null,
       "response": "PC application launching has been disabled."
@@ -659,7 +672,17 @@
         "ram kitni use ho rahi hai",
         "disk free space check karo",
         "system diagnostics dikhao",
-        "pc performance kaisa chal raha hai"
+        "pc performance kaisa chal raha hai",
+        "write 10 types cpu",
+        "types of cpu",
+        "current cpu",
+        "check battery's",
+        "c language",
+        "cpu",
+        "get system status",
+        "status",
+        "check the system status",
+        "pc status check karo"
       ],
       "tool": "get_system_status"
     },
@@ -702,7 +725,15 @@
         "ghadi me kitna time hua hai",
         "show time and calendar",
         "aaj ka din aur tarikh kya hai",
-        "current world time"
+        "current world time",
+        "what is apple",
+        "apple",
+        "mango",
+        "today date",
+        "what is ai",
+        "today's whether",
+        "what is time",
+        "explain how graphrag works with an ascii diagram"
       ],
       "tool": "get_system_time"
     },
@@ -751,7 +782,17 @@
         "google par search karo best laptops",
         "search meaning of artificial intelligence",
         "look up latest space missions",
-        "google search cricket live score"
+        "google search cricket live score",
+        "ai",
+        "gdp of india",
+        "types of computer",
+        "types of mmbs",
+        "latest ai developments 2026",
+        "calculate square root of 144",
+        "what is python",
+        "latest nasa mars rover discovery",
+        "mbbs full form",
+        "hello"
       ],
       "tool": "search_web"
     },
@@ -780,7 +821,30 @@
         "search quantum mechanics on wikipedia",
         "wikipedia page of space station",
         "explain black holes via wikipedia",
-        "wikipedia article on computer science"
+        "wikipedia article on computer science",
+        "what is ajax",
+        "what is banana",
+        "what is your best tool",
+        "what is ai?",
+        "what is",
+        "explain quantum computing in simple terms",
+        "what is your name",
+        "what is ai",
+        "\u0935\u094d\u0939\u093e\u091f \u0907\u0938 \u092c\u0928\u093e\u0928\u093e",
+        "what is inheritance",
+        "what is onion",
+        "what",
+        "what is banaba",
+        "what is apple",
+        "where is lalkila",
+        "where is tajmahal",
+        "what is oops inheritance",
+        "tell me about machine learning",
+        "what is mobiles",
+        "what is computer",
+        "what is mobile",
+        "what is pen",
+        "what is mango"
       ],
       "tool": "search_wikipedia"
     },
@@ -1129,7 +1193,8 @@
         "pause current video",
         "resume the playback",
         "pause audio",
-        "continue playing"
+        "continue playing",
+        "mbbs full form"
       ],
       "tool": null,
       "response": "PC volume control automation has been disabled."
@@ -1365,7 +1430,11 @@
         "goa ka temperature kitna hai",
         "goa ka live weather batao",
         "goa me kitni sardi hai",
-        "goa me kitni garmi hai"
+        "goa me kitni garmi hai",
+        "today wether",
+        "total city in uttar pradesh",
+        "today",
+        "define gravity in simple words"
       ],
       "tool": "get_weather"
     },
@@ -1431,7 +1500,11 @@
         "set a timer for 45 seconds",
         "45 seconds ka timer lagao",
         "start 45 seconds countdown",
-        "timer set karo 45 seconds ke liye"
+        "timer set karo 45 seconds ke liye",
+        "100 ka 10 %",
+        "100 ka 2%",
+        "2+2",
+        "set a timer 1 minut"
       ],
       "tool": "set_timer"
     },
@@ -1581,7 +1654,8 @@
         "open and read file data",
         "display code from main.py",
         "file padh kar batao",
-        "show what is written in this document"
+        "show what is written in this document",
+        "python main.py"
       ],
       "tool": "read_file"
     },
@@ -1608,7 +1682,11 @@
         "features list dikhao",
         "how can i control my computer with ajax",
         "command reference menu",
-        "madad menu dikhao"
+        "madad menu dikhao",
+        "who are you",
+        "hello how are you  how can i help you",
+        "your name",
+        "what are the latest ai developments today?"
       ],
       "tool": null,
       "response": "I can assist with: Opening apps, system metrics, web searches, YouTube playback, file management, taking screenshots, volume control, weather, timers, and multi-turn conversations!"
@@ -1638,7 +1716,9 @@
         "remember my college name is iit",
         "save this user preference",
         "ye information yaad rakho",
-        "what do you remember?"
+        "what do you remember?",
+        "please review and summarize this live result from \"memory: \":",
+        "address"
       ],
       "tool": "memory_save"
     },
@@ -1662,7 +1742,12 @@
         "mujhe yaad kiye huye facts batao",
         "what information do you know about me",
         "recall stored details",
-        "memories dikhao"
+        "memories dikhao",
+        "i love you",
+        "what is memory",
+        "what is computer memory",
+        "what do you remember about my profile and preferences?",
+        "mera naam ajay singh hai aur mujhe cricket pasand hai"
       ],
       "tool": "memory_recall"
     }

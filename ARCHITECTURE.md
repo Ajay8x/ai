@@ -61,8 +61,8 @@
 1. **AI Brain Layer (`ai/llm/`)**:
    - `BaseLLMProvider`: Standard abstract provider interface.
    - `OpenAICompatibleProvider`: Connects with OpenAI, Groq, DeepSeek, OpenRouter, and local OpenAI-compatible APIs.
-   - `OllamaProvider`: Native local model runner for offline intelligence.
-   - `ResilientLLMBrain`: Cascades from primary cloud LLM to local Ollama, falling back to local rule engine when offline.
+   - `LocalRuleBasedFallbackProvider`: AJAX Native Engine for offline intelligence.
+   - `ResilientLLMBrain`: Uses the selected cloud provider when configured, with AJAX Native Engine as a zero-crash local fallback.
 
 2. **Neural Intent Subsystem (`ai/neural/`)**:
    - Fast cosine token matcher with word-boundary regularization.

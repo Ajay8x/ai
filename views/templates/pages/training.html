@@ -641,6 +641,7 @@
                 <button class="pipe-btn" onclick="triggerContinuousRetrain()" id="btnSyncTrain" style="padding: 4px 12px; font-size: 11px; margin-right: 6px; background: linear-gradient(135deg, #10b981, #059669); color: white;" title="Ingest all recent chats from MongoDB Atlas and retrain PyTorch neural network">
                     <i class="fa-solid fa-arrows-rotate"></i> Retrain & Sync MongoDB
                 </button>
+                <span id="autoTrainStatus" class="pipe-metric-badge" style="margin-right: 8px;">Auto-training: checking...</span>
                 <button class="pipe-filter-btn active" onclick="filterStage('all')">Full Pipeline</button>
                 <button class="pipe-filter-btn" onclick="filterStage('sources')">1. Data Sources</button>
                 <button class="pipe-filter-btn" onclick="filterStage('trainer')">2. PyTorch Engine</button>
@@ -1204,6 +1205,19 @@ async function loadTopologyTelemetry() {
             if (a.database_store) {
                 document.getElementById('statDbSamples').innerHTML = `${a.database_store.training_examples_count} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Pairs</span> <span class="pipe-metric-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">${a.database_store.db_mode}</span>`;
                 document.getElementById('nodeDbCount').textContent = `${a.database_store.training_examples_count} Examples`;
+            }
+        }
+        if (data && data.auto_training) {
+            const auto = data.auto_training;
+            const status = document.getElementById('autoTrainStatus');
+            if (status) {
+                if (!auto.enabled) {
+                    status.textContent = 'Auto-training: OFF';
+                } else if (auto.training_in_progress) {
+                    status.textContent = 'Auto-training: running...';
+                } else {
+                    status.textContent = 'Auto-training: ON · ' + (auto.pending_samples || 0) + '/' + auto.min_new_samples + ' new';
+                }
             }
         }
     } catch (e) {

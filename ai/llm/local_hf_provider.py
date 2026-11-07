@@ -1,6 +1,6 @@
 """
 AJAX AI - Local Hugging Face / Transformers LLM Provider
-Loads and runs locally downloaded models (such as Qwen3.5-9B) using Hugging Face transformers.
+Loads and runs a locally downloaded causal language model using Hugging Face transformers.
 """
 
 import os
@@ -10,7 +10,7 @@ from ai.llm.base import BaseLLMProvider, LLMResponse, ToolCall
 from core.logger import ajax_logger, error_logger
 
 class LocalHuggingFaceProvider(BaseLLMProvider):
-    """Executes inference directly on local PyTorch/Transformers models like Qwen3.5-9B."""
+    """Executes inference directly on a local PyTorch/Transformers model."""
 
     def __init__(self, model_path: str, device: str = "auto", load_in_4bit: bool = False):
         self.model_path = os.path.abspath(model_path)
@@ -26,24 +26,22 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
 
         try:
             import torch
-            if not torch.cuda.is_available():
-                error_logger.warning("CUDA GPU not detected. Bypassing heavy 9B CPU inference to maintain sub-second response times.")
-                raise RuntimeError("CUDA GPU not available for heavy local 9B model.")
-            
             from transformers import AutoModelForCausalLM, AutoTokenizer
-            ajax_logger.info(f"Loading local Qwen model from: {self.model_path}")
+            ajax_logger.info(f"Loading local Transformers model from: {self.model_path}")
             
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_path,
                 trust_remote_code=True
             )
 
+            use_cuda = torch.cuda.is_available() and self.device != "cpu"
             kwargs = {
                 "trust_remote_code": True,
-                "torch_dtype": torch.bfloat16,
+                "torch_dtype": torch.float16 if use_cuda else torch.float32,
                 "low_cpu_mem_usage": True,
-                "device_map": "auto"
             }
+            if use_cuda:
+                kwargs["device_map"] = "auto"
             if self.load_in_4bit:
                 kwargs["load_in_4bit"] = True
             
@@ -51,11 +49,13 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
                 self.model_path,
                 **kwargs
             )
+            if not use_cuda:
+                self.model.to("cpu")
             self.model.eval()
             self._is_loaded = True
-            ajax_logger.info("Local Qwen3.5-9B model loaded successfully into GPU.")
+            ajax_logger.info("Local Transformers model loaded successfully.")
         except Exception as e:
-            error_logger.warning(f"Local Qwen model loading deferred ({e}). Using ultra-fast response engine.")
+            error_logger.warning(f"Local Transformers model loading deferred ({e}). Using AJAX Native Engine.")
             raise RuntimeError(f"Could not load local model from {self.model_path}: {e}")
 
     def generate(
@@ -83,7 +83,8 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
             if not torch.cuda.is_available():
                 torch.set_num_threads(os.cpu_count() or 8)
                 
-            model_inputs = self.tokenizer([prompt_text], return_tensors="pt").to(self.model.device)
+            input_device = next(self.model.parameters()).device
+            model_inputs = self.tokenizer([prompt_text], return_tensors="pt").to(input_device)
 
             # Cap max_new_tokens to 256 for snappy interactive conversation
             effective_max_tokens = min(max_tokens, 256) if max_tokens > 256 else max_tokens
@@ -113,8 +114,8 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
             return LLMResponse(
                 content=response_text,
                 tool_calls=[],
-                model=os.path.basename(self.model_path) or "qwen3.5-9b",
-                provider="local_huggingface",
+                model=os.path.basename(self.model_path) or "ajax-local-transformer",
+                provider="ajax_local_llm",
                 tokens_used=len(generated_ids[0])
             )
         except Exception as e:

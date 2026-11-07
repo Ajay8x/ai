@@ -57,7 +57,7 @@ You can pass environment variables in `.env` or via Docker Compose:
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `PORT` | `8000` | Port for the FastAPI web server |
-| `DEFAULT_LLM_PROVIDER` | `openai` | Active provider (`openai`, `groq`, `deepseek`, `ollama`) |
+| `DEFAULT_LLM_PROVIDER` | `ajax_local` | Active provider (`ajax_local`, `openai`, `groq`, `deepseek`) |
 | `OPENAI_API_KEY` | - | OpenAI API key |
 | `GROQ_API_KEY` | - | Groq Cloud API key |
 | `DEEPSEEK_API_KEY` | - | DeepSeek API key |

@@ -219,6 +219,13 @@ class StatusUpdateRequest(BaseModel):
 class RoleUpdateRequest(BaseModel):
     role: str = Field(..., pattern="^(admin|user)$")
 
+class AdminCreateUserRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=32)
+    password: str = Field(..., min_length=4)
+    full_name: str = Field(..., min_length=2)
+    email: Optional[str] = None
+    role: str = Field("user", pattern="^(admin|user)$")
+
 
 # ------------------------------------------------------------------------------
 # Authentication Endpoints
@@ -479,6 +486,41 @@ async def admin_delete_user(
     return JSONResponse({"success": True, "message": "User account permanently deleted."})
 
 
+@auth_router.post("/admin/users")
+async def admin_create_user(
+    req: AdminCreateUserRequest,
+    admin: Dict[str, Any] = Depends(require_admin)
+):
+    """Admin Only: Directly create a new user account with role and temporary password."""
+    new_user = create_user(
+        username=req.username.strip(),
+        password=req.password,
+        full_name=req.full_name.strip(),
+        email=req.email.strip() if req.email else None,
+        role=req.role
+    )
+    if not new_user:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"Username '{req.username}' already exists."}
+        )
+
+    ajax_logger.info(f"Admin '{admin['username']}' created new user '{new_user['username']}' (role={req.role})")
+    return JSONResponse(
+        status_code=201,
+        content={"success": True, "message": f"User '{new_user['username']}' created successfully.", "user": new_user}
+    )
+
+
+@auth_router.post("/admin/flush-cache")
+async def admin_flush_cache(admin: Dict[str, Any] = Depends(require_admin)):
+    """Admin Only: Flushes transient memory caches and runs garbage collection."""
+    import gc
+    gc.collect()
+    ajax_logger.info(f"Admin '{admin['username']}' triggered system memory & cache flush.")
+    return JSONResponse({"success": True, "message": "In-memory cache flushed and resources reclaimed."})
+
+
 @auth_router.get("/admin/stats")
 async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin)):
     """Admin Only: Returns high-level KPI and diagnostic metrics."""
@@ -490,8 +532,9 @@ async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin))
     memories = search_memories(limit=200, include_all=True)
 
     from ai.neural.intent_classifier import intent_classifier
+    from training.auto_retrainer import auto_training_manager
     num_intents = len(getattr(intent_classifier, "intents", [])) or len(getattr(intent_classifier, "intent_labels", []))
-    vocab_size = len(intent_classifier.vocab) if hasattr(intent_classifier, "vocab") else 0
+    vocab_size = getattr(intent_classifier, "vocab_size", len(getattr(intent_classifier, "word_to_idx", {})))
 
     return JSONResponse({
         "success": True,
@@ -509,5 +552,6 @@ async def admin_get_system_stats(admin: Dict[str, Any] = Depends(require_admin))
             "neural_intents_count": num_intents,
             "neural_vocab_size": vocab_size,
             "active_sessions": len(_SESSIONS)
-        }
+        },
+        "training": auto_training_manager.get_status()
     })

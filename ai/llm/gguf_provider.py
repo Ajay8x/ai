@@ -1,7 +1,7 @@
 """
 AJAX AI - Local GGUF LLM Provider
-Direct high-performance inference for quantized .gguf models (e.g., Qwen3-4B Thinking).
-Supports CPU and GPU acceleration with automated prompt formatting and reasoning/thinking tag parsing.
+Direct high-performance inference for quantized .gguf models.
+Supports CPU and GPU acceleration with automated prompt formatting and safe output cleanup.
 """
 
 import os
@@ -12,6 +12,7 @@ from core.logger import ajax_logger, error_logger
 
 class GGUFProvider(BaseLLMProvider):
     """Executes high-speed local inference directly on GGUF quantized models."""
+    provider_name = "ajax_local_llm"
 
     def __init__(
         self,
@@ -22,6 +23,7 @@ class GGUFProvider(BaseLLMProvider):
         verbose: bool = False
     ):
         self.model_path = model_path
+        self.model = os.path.basename(model_path)
         self.n_ctx = n_ctx
         self.n_gpu_layers = n_gpu_layers
         self.n_threads = n_threads or os.cpu_count() or 4
@@ -102,7 +104,7 @@ class GGUFProvider(BaseLLMProvider):
             choice = response["choices"][0]
             raw_content = choice["message"].get("content", "")
 
-            # Handle reasoning/thinking tokens (e.g., <think>...</think> in Qwen Thinking models)
+            # Keep hidden reasoning tags out of the visible assistant response.
             cleaned_content = raw_content
             thinking_content = None
             
@@ -111,7 +113,7 @@ class GGUFProvider(BaseLLMProvider):
                 thinking_content = think_match.group(1).strip()
                 cleaned_content = re.sub(r"<think>.*?</think>", "", raw_content, flags=re.DOTALL).strip()
                 if thinking_content:
-                    ajax_logger.info(f"[Qwen Thinking]: {thinking_content[:150]}...")
+                    ajax_logger.info(f"[Local Model Reasoning]: {thinking_content[:150]}...")
 
             tokens_used = response.get("usage", {}).get("total_tokens", len(raw_content.split()))
 
@@ -119,9 +121,37 @@ class GGUFProvider(BaseLLMProvider):
                 content=cleaned_content or raw_content,
                 tool_calls=[],
                 model=os.path.basename(self.model_path),
-                provider="gguf_local",
+                provider="ajax_local_llm",
                 tokens_used=tokens_used
             )
         except Exception as e:
             error_logger.error(f"Inference error in GGUFProvider: {e}")
             raise e
+
+    def stream_generate(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2048
+    ):
+        """Stream local model tokens so the web chat uses the generative model."""
+        self._load_model()
+        formatted_messages = [
+            {"role": m.get("role", "user"), "content": m.get("content", "")}
+            for m in messages
+        ]
+        response = self.llm.create_chat_completion(
+            messages=formatted_messages,
+            temperature=max(temperature, 0.01),
+            max_tokens=max_tokens,
+            top_p=0.9,
+            stop=["<|im_end|>", "<|endoftext|>"],
+            stream=True
+        )
+        for chunk in response:
+            choices = chunk.get("choices", []) if isinstance(chunk, dict) else []
+            if not choices:
+                continue
+            delta = choices[0].get("delta", {}).get("content", "")
+            if delta:
+                yield delta

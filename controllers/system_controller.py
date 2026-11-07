@@ -28,7 +28,6 @@ class SettingsUpdateRequest(BaseModel):
     openai_api_key: Optional[str] = None
     deepseek_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
-    ollama_base_url: Optional[str] = Field(default=None, min_length=1, max_length=512)
     default_language: Optional[str] = None
     thinking_mode: Optional[bool] = None
 
@@ -60,6 +59,7 @@ async def get_recent_logs(admin: Dict[str, Any] = Depends(require_admin)):
 async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
     """Retrieve active system, LLM, and Neural engine settings."""
     neural_diag = intent_classifier.get_diagnostics()
+    from training.auto_retrainer import auto_training_manager
     brain_status = llm_brain.get_status()
     
     # Mask API keys for safety
@@ -74,7 +74,6 @@ async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
             "model": config.llm.model,
             "temperature": config.llm.temperature,
             "max_tokens": config.llm.max_tokens,
-            "ollama_base_url": config.llm.ollama_base_url,
             "has_gemini_key": bool(config.llm.gemini_api_key),
             "gemini_key_masked": mask_key(config.llm.gemini_api_key),
             "has_groq_key": bool(config.llm.groq_api_key),
@@ -123,10 +122,6 @@ async def update_settings(req: SettingsUpdateRequest, admin: Dict[str, Any] = De
     if req.openai_api_key is not None and req.openai_api_key.strip():
         config.llm.api_key = req.openai_api_key.strip()
         updated.append("openai_api_key")
-    if req.ollama_base_url is not None:
-        config.llm.ollama_base_url = req.ollama_base_url.strip()
-        updated.append("ollama_base_url")
-
     # Persist
     config.save_to_file()
     
@@ -294,16 +289,19 @@ async def get_training_topology(current_user: Dict[str, Any] = Depends(require_a
             "neural_loaded": neural_diag.get("neural_loaded", False),
             "active_intents_count": len(intent_classifier.intents) or len(intent_labels),
             "inference_latency_ms": 0.04
-        }
+        },
+        "auto_training": auto_training_manager.get_status()
     }
 
 @system_router.post("/training/retrain")
 async def trigger_continuous_training(admin: Dict[str, Any] = Depends(require_admin)):
     """Triggers continuous model training: ingests approved chat samples from MongoDB Atlas and retrains PyTorch neural model."""
     from starlette.concurrency import run_in_threadpool
-    from training.train import train_from_sources
+    from training.auto_retrainer import auto_training_manager
 
-    await run_in_threadpool(train_from_sources)
+    result = await run_in_threadpool(auto_training_manager.retrain_now)
+    if not result.get("success"):
+        return JSONResponse(status_code=409, content=result)
     return {
         "success": True,
         "message": "Continuous learning training completed successfully. Neural weights and dataset updated in models/ajax_neural_intent.pt!"

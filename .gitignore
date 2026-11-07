@@ -15,6 +15,7 @@ __pycache__/
 *.safetensors
 *.bin
 *.onnx
+*.gguf
 models/qwen3.5-9b/
 models/qwen*/
 qwen3-4b-thinking-*.gguf
@@ -59,6 +60,7 @@ data/screenshots/
 data/vector_store/
 data/query.txt
 data/uploads/
+data/auto_training_state.json
 query.txt
 memory.txt
 backups/
