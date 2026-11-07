@@ -16,6 +16,7 @@ __pycache__/
 *.bin
 *.onnx
 *.gguf
+!models/ajax-native-1.7b-q4_k_m.gguf
 models/qwen3.5-9b/
 models/qwen*/
 qwen3-4b-thinking-*.gguf

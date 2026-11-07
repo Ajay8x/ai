@@ -1,0 +1,1 @@
+models/ajax-native-1.7b-q4_k_m.gguf filter=lfs diff=lfs merge=lfs -text
