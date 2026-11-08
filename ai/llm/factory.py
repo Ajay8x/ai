@@ -568,16 +568,20 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
             resp = "I can control your PC (open/close apps, volume, battery, screenshots), solve math, generate code, search Wikipedia and web, set timers/alarms, and remember your preferences."
         else:
             resp = ""
-            # Check user uploaded docs in RAG vector store if present
-            try:
-                from ai.rag.store import rag_store
-                if rag_store.documents:
-                    rag_results = rag_store.query(user_msg, top_k=2)
-                    if rag_results:
-                        chunks = [d.get("chunk", "") for d in rag_results]
-                        resp = "\n\n".join(chunks)
-            except Exception:
-                pass
+            # ContextManager injects user-scoped RAG passages into the system
+            # prompt. Reading that context here keeps offline fallback answers
+            # grounded without querying the global store and risking a private
+            # document scope leak.
+            system_msg = next(
+                (m.get("content", "") for m in messages if m.get("role") == "system"),
+                ""
+            )
+            rag_marker = "--- RETRIEVED USER DOCUMENTS ---"
+            if rag_marker in system_msg:
+                resp = system_msg.split(rag_marker, 1)[1]
+                if "--- TARGET RESPONSE LANGUAGE ---" in resp:
+                    resp = resp.split("--- TARGET RESPONSE LANGUAGE ---", 1)[0]
+                resp = resp.strip()
 
             if not resp:
                 from core.language import normalize_multilingual_query

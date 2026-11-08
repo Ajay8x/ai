@@ -60,7 +60,8 @@
         "tajmahal kaha hai",
         "who are you",
         "hello postgresql check",
-        "hello"
+        "hello",
+        "ram"
       ],
       "tool": null,
       "response": "Hello! How can I assist you today?"
@@ -796,7 +797,10 @@
         "what is python",
         "latest nasa mars rover discovery",
         "mbbs full form",
-        "hello"
+        "hello",
+        "information of india",
+        "india",
+        "india ke bare me batao"
       ],
       "tool": "search_web"
     },
@@ -848,7 +852,8 @@
         "what is computer",
         "what is mobile",
         "what is pen",
-        "what is mango"
+        "what is mango",
+        "inversion of mobile"
       ],
       "tool": "search_wikipedia"
     },

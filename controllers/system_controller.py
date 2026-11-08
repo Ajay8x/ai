@@ -57,10 +57,10 @@ async def get_recent_logs(admin: Dict[str, Any] = Depends(require_admin)):
 
 # ----------------- SETTINGS & LLM CONFIGURATION ----------------- #
 @system_router.get("/settings")
-async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
-    """Retrieve active system, LLM, and Neural engine settings."""
+def get_settings(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
+    """Retrieve safe, non-secret settings for the authenticated settings page."""
+    is_admin = current_user.get("role") == "admin"
     neural_diag = intent_classifier.get_diagnostics()
-    from training.auto_retrainer import auto_training_manager
     brain_status = llm_brain.get_status()
     
     # Mask API keys for safety
@@ -75,14 +75,14 @@ async def get_settings(admin: Dict[str, Any] = Depends(require_admin)):
             "model": config.llm.model,
             "temperature": config.llm.temperature,
             "max_tokens": config.llm.max_tokens,
-            "has_gemini_key": bool(config.llm.gemini_api_key),
-            "gemini_key_masked": mask_key(config.llm.gemini_api_key),
-            "has_groq_key": bool(config.llm.groq_api_key),
-            "groq_key_masked": mask_key(config.llm.groq_api_key),
-            "has_openai_key": bool(config.llm.api_key),
-            "openai_key_masked": mask_key(config.llm.api_key),
-            "has_deepseek_key": bool(config.llm.deepseek_api_key),
-            "has_openrouter_key": bool(config.llm.openrouter_api_key),
+            "has_gemini_key": is_admin and bool(config.llm.gemini_api_key),
+            "gemini_key_masked": mask_key(config.llm.gemini_api_key) if is_admin else "",
+            "has_groq_key": is_admin and bool(config.llm.groq_api_key),
+            "groq_key_masked": mask_key(config.llm.groq_api_key) if is_admin else "",
+            "has_openai_key": is_admin and bool(config.llm.api_key),
+            "openai_key_masked": mask_key(config.llm.api_key) if is_admin else "",
+            "has_deepseek_key": is_admin and bool(config.llm.deepseek_api_key),
+            "has_openrouter_key": is_admin and bool(config.llm.openrouter_api_key),
             "thinking_mode": False,
             "brain_status": brain_status
         },

@@ -54,6 +54,47 @@
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(0, 242, 254, 0.3);
 }
+.chat-file-upload-btn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.chat-file-upload-btn:hover,
+.chat-file-upload-btn:focus-visible {
+    background: rgba(0, 242, 254, 0.14);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    outline: none;
+}
+.chat-rag-upload-status {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 8px;
+    padding: 7px 10px;
+    border: 1px solid rgba(0, 242, 254, 0.22);
+    border-radius: 8px;
+    background: rgba(0, 242, 254, 0.06);
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+.chat-rag-upload-status.visible { display: flex; }
+.chat-rag-upload-status.success { color: #67e8f9; }
+.chat-rag-upload-status.error { color: #fda4af; border-color: rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.08); }
+.chat-rag-upload-status button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 2px 4px;
+}
 
 /* Prompt Starter Chips */
 .chat-starter-chips {
@@ -349,7 +390,16 @@
                 <div style="font-size:12px; color:var(--text-dim);" id="streamIndicator">Ready</div>
             </div>
 
+            <div id="chatRagUploadStatus" class="chat-rag-upload-status" role="status" aria-live="polite">
+                <span><i class="fa-solid fa-circle-notch fa-spin" id="chatRagUploadIcon"></i> <span id="chatRagUploadText">Preparing document...</span></span>
+                <button type="button" onclick="clearChatUploadStatus()" title="Dismiss upload status" aria-label="Dismiss upload status"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
             <div style="display:flex; gap:10px; align-items:center;">
+                <input type="file" id="chatFileInput" accept=".txt,.md,.py,.json,.csv,.yaml,.yml,.html,.js,.ts,.css,.pdf,.docx" hidden onchange="handleChatFileSelected(this)">
+                <button type="button" class="chat-file-upload-btn" id="chatFileUploadBtn" onclick="document.getElementById('chatFileInput').click()" title="Upload a document for RAG questions" aria-label="Upload a document for RAG questions">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
                 <button type="button" class="btn-voice-dictation" id="chatMicBtn" onclick="toggleChatVoiceDictation()" title="Voice Typing (बोलकर टाइप करें)">
                     <i class="fa-solid fa-microphone" id="chatMicIcon"></i>
                 </button>
@@ -369,6 +419,76 @@
 <script>
     let isFullStreaming = false;
     let fullChatAbortController = null;
+    const CHAT_UPLOAD_MAX_MB = 15;
+    const CHAT_UPLOAD_EXTENSIONS = ['.txt', '.md', '.py', '.json', '.csv', '.yaml', '.yml', '.html', '.js', '.ts', '.css', '.pdf', '.docx'];
+    let chatUploadedDocuments = [];
+
+    function setChatUploadStatus(message, state = 'loading') {
+        const status = document.getElementById('chatRagUploadStatus');
+        const text = document.getElementById('chatRagUploadText');
+        const icon = document.getElementById('chatRagUploadIcon');
+        if (!status || !text || !icon) return;
+        status.className = `chat-rag-upload-status visible ${state === 'success' ? 'success' : state === 'error' ? 'error' : ''}`;
+        text.textContent = message;
+        icon.className = state === 'loading'
+            ? 'fa-solid fa-circle-notch fa-spin'
+            : state === 'success'
+                ? 'fa-solid fa-circle-check'
+                : 'fa-solid fa-triangle-exclamation';
+    }
+
+    function clearChatUploadStatus() {
+        const status = document.getElementById('chatRagUploadStatus');
+        if (status) status.classList.remove('visible');
+    }
+
+    async function handleChatFileSelected(input) {
+        if (!input || !input.files || !input.files[0]) return;
+        const file = input.files[0];
+        input.value = '';
+
+        const extension = file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
+        if (!CHAT_UPLOAD_EXTENSIONS.includes(extension)) {
+            setChatUploadStatus(`Unsupported file type. Allowed: ${CHAT_UPLOAD_EXTENSIONS.join(', ')}`, 'error');
+            return;
+        }
+        if (file.size > CHAT_UPLOAD_MAX_MB * 1024 * 1024) {
+            const actualMb = (file.size / (1024 * 1024)).toFixed(2);
+            setChatUploadStatus(`File is ${actualMb} MB. Maximum allowed size is ${CHAT_UPLOAD_MAX_MB} MB.`, 'error');
+            return;
+        }
+
+        const uploadButton = document.getElementById('chatFileUploadBtn');
+        if (uploadButton) uploadButton.disabled = true;
+        setChatUploadStatus(`Uploading and indexing ${file.name}...`, 'loading');
+
+        try {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(String(event.target.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('Could not read the selected file.'));
+                reader.readAsDataURL(file);
+            });
+
+            const response = await window.ajaxApiFetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name, content_base64: base64Data })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.detail || data.message || `Upload failed (HTTP ${response.status}).`);
+            }
+
+            chatUploadedDocuments.push({ name: file.name, chunks: data.chunks || 0 });
+            setChatUploadStatus(`${file.name} is ready for questions • ${data.chunks || 0} RAG chunks indexed`, 'success');
+            appendFullMsg('assistant', `📄 **Document indexed successfully.** You can now ask questions about the uploaded file.`);
+        } catch (error) {
+            setChatUploadStatus(error.message || 'Document upload failed. Please try again.', 'error');
+        } finally {
+            if (uploadButton) uploadButton.disabled = false;
+        }
+    }
 
     function formatCurrentTime() {
         const d = new Date();

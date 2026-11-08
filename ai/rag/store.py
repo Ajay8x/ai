@@ -137,12 +137,14 @@ class RAGStore:
             except Exception as e:
                 ajax_logger.warning(f"Failed loading RAG docs from MongoDB: {e}")
 
-        # 2. Automatically index local knowledge, docs, and persistent uploads on startup
+        # 2. Automatically index shared local knowledge and docs on startup.
+        # User uploads are indexed explicitly by the authenticated upload
+        # controller; treating data/uploads as SYSTEM_SCOPE would expose a
+        # private upload to every user and also duplicate the fresh index.
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         local_dirs = [
             os.path.join(base_dir, "data", "knowledge"),
-            os.path.join(base_dir, "data", "docs"),
-            os.path.join(base_dir, "data", "uploads")
+            os.path.join(base_dir, "data", "docs")
         ]
 
         files_indexed = 0
