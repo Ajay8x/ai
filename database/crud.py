@@ -642,13 +642,15 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_user(
     username: str,
     password: str,
-    full_name: str,
-    email: str = "",
+    full_name: Optional[str] = "",
+    email: Optional[str] = "",
     role: str = "user"
 ) -> Optional[Dict[str, Any]]:
     """Creates a new user record in MongoDB Atlas or SQLite."""
     user_id = str(uuid.uuid4())
-    username_clean = username.strip().lower()
+    username_clean = (username or "").strip().lower()
+    if not username_clean:
+        return None
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     pwd_hash = hash_password(password)
 
@@ -657,11 +659,14 @@ def create_user(
     if existing:
         return None
 
+    email_clean = (email or "").strip() or f"{username_clean}@ajax.ai"
+    full_name_clean = (full_name or "").strip() or username_clean.title()
+
     user_doc = {
         "id": user_id,
         "username": username_clean,
-        "email": email.strip() or f"{username_clean}@ajax.ai",
-        "full_name": full_name.strip() or username_clean.title(),
+        "email": email_clean,
+        "full_name": full_name_clean,
         "password_hash": pwd_hash,
         "role": role if role in ["admin", "user"] else "user",
         "status": "active",

@@ -344,8 +344,8 @@ async def register_user(payload: RegisterRequest, response: Response):
     created = create_user(
         username=username,
         password=payload.password,
-        full_name=payload.full_name,
-        email=payload.email or f"{username}@ajax.ai",
+        full_name=(payload.full_name or "").strip(),
+        email=(payload.email or "").strip(),
         role="user"
     )
 
@@ -498,8 +498,8 @@ async def admin_create_user(
     new_user = create_user(
         username=req.username.strip(),
         password=req.password,
-        full_name=req.full_name.strip(),
-        email=req.email.strip() if req.email else None,
+        full_name=(req.full_name or "").strip(),
+        email=(req.email or "").strip(),
         role=req.role
     )
     if not new_user:

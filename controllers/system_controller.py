@@ -14,6 +14,7 @@ from core.logger import LOGS_DIR, ajax_logger
 from config.config_loader import config
 from ai.neural.intent_classifier import intent_classifier
 from ai.llm.factory import llm_brain
+from training.auto_retrainer import auto_training_manager
 from controllers.auth_controller import require_authenticated_user, require_admin
 
 system_router = APIRouter(prefix="/api", tags=["System, Settings & Neural Diagnostics"])
