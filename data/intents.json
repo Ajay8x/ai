@@ -59,7 +59,8 @@
         "kitane keyword hai",
         "tajmahal kaha hai",
         "who are you",
-        "hello postgresql check"
+        "hello postgresql check",
+        "hello"
       ],
       "tool": null,
       "response": "Hello! How can I assist you today?"
@@ -682,7 +683,10 @@
         "get system status",
         "status",
         "check the system status",
-        "pc status check karo"
+        "pc status check karo",
+        "battery health",
+        "battery",
+        "cpu batao mera"
       ],
       "tool": "get_system_status"
     },
@@ -1085,7 +1089,8 @@
         "devotional bhajans chalao youtube par",
         "devotional bhajans play karo youtube pe",
         "devotional bhajans bajao",
-        "devotional bhajans sunao"
+        "devotional bhajans sunao",
+        "play song arijit singh"
       ],
       "tool": "play_youtube"
     },
