@@ -8,7 +8,7 @@
 <div class="page-title-row">
     <div>
         <h2 class="page-title-main"><i class="fa-solid fa-file-contract"></i> Retrieval-Augmented Generation (RAG)</h2>
-        <div class="page-subtitle">Upload documents to expand AJAX AI's private knowledge base with vector embeddings.</div>
+        <div class="page-subtitle">Upload a document, index it privately, and ask grounded questions from Chat or this page.</div>
     </div>
 </div>
 
@@ -19,12 +19,15 @@
             <span><i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent-cyan);"></i></span><span>Upload Knowledge Document</span>
         </h3>
 
-        <div id="dropZone" style="border:2px dashed var(--border-card); border-radius:12px; padding:32px 20px; text-align:center; background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s ease; margin-bottom:16px;" onclick="document.getElementById('fileInput').click()">
+        <div id="dropZone" style="border:2px dashed var(--border-card); border-radius:12px; padding:32px 20px; text-align:center; background:rgba(255,255,255,0.02); cursor:pointer; transition:all 0.2s ease; margin-bottom:16px;" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0" aria-label="Choose a document to upload">
             <div style="font-size:36px; margin-bottom:8px; color:var(--accent-blue);"><i class="fa-solid fa-folder-open"></i></div>
             <div style="font-weight:600; font-size:14px; color:var(--text-main); margin-bottom:4px;">Click or Drag & Drop Document</div>
-            <div style="font-size:12px; color:var(--text-dim);">Supported: PDF, TXT, MD, CSV, DOCX, JSON (Max 25MB)</div>
-            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelected(this.files[0])">
+            <div style="font-size:12px; color:var(--text-dim);">Supported: PDF, TXT, MD, PY, JSON, CSV, YAML, HTML, JS, TS, CSS, DOCX (Max 15MB)</div>
+            <div style="font-size:11px; color:var(--accent-cyan); margin-top:8px;"><i class="fa-solid fa-circle-info"></i> Upload here or use the paperclip in Chat to ask questions immediately.</div>
+            <input type="file" id="fileInput" accept=".txt,.md,.py,.json,.csv,.yaml,.yml,.html,.js,.ts,.css,.pdf,.docx" style="display:none;" onchange="handleFileSelected(this.files[0])">
         </div>
+
+        <div id="ragUploadStatus" role="status" aria-live="polite" style="display:none; padding:10px 12px; border-radius:8px; margin-bottom:16px; font-size:12px;"></div>
 
         <div id="selectedFileInfo" style="display:none; padding:10px 14px; background:rgba(0,242,254,0.08); border:1px solid rgba(0,242,254,0.3); border-radius:8px; margin-bottom:16px; font-size:13px;">
             Selected: <strong id="selectedFileName">file.txt</strong> (<span id="selectedFileSize">0 KB</span>)
@@ -47,7 +50,7 @@
         <div class="form-group">
             <label class="form-label">Search Query across Documents</label>
             <div style="display:flex; gap:8px;">
-                <input type="text" class="form-input" id="ragQueryInput" placeholder="e.g. summarize section 4 of the report...">
+                <input type="text" class="form-input" id="ragQueryInput" placeholder="e.g. summarize section 4 of the report..." onkeydown="if(event.key==='Enter') queryRagDocuments()">
                 <button class="btn-primary" onclick="queryRagDocuments()" style="gap:6px;">Search <i class="fa-solid fa-bolt"></i></button>
             </div>
         </div>
@@ -60,40 +63,114 @@
 {% block extra_scripts %}
 <script>
     let currentFile = null;
+    const RAG_UPLOAD_MAX_MB = 15;
+    const RAG_UPLOAD_EXTENSIONS = ['.txt', '.md', '.py', '.json', '.csv', '.yaml', '.yml', '.html', '.js', '.ts', '.css', '.pdf', '.docx'];
+
+    function setRagUploadStatus(message, state = 'info') {
+        const status = document.getElementById('ragUploadStatus');
+        if (!status) return;
+        const palette = {
+            info: ['rgba(56,189,248,0.10)', 'rgba(56,189,248,0.35)', '#7dd3fc'],
+            success: ['rgba(16,185,129,0.10)', 'rgba(16,185,129,0.35)', '#6ee7b7'],
+            error: ['rgba(244,63,94,0.10)', 'rgba(244,63,94,0.35)', '#fda4af']
+        }[state] || ['rgba(56,189,248,0.10)', 'rgba(56,189,248,0.35)', '#7dd3fc'];
+        status.style.display = 'block';
+        status.style.background = palette[0];
+        status.style.border = `1px solid ${palette[1]}`;
+        status.style.color = palette[2];
+        status.textContent = message;
+    }
+
+    function validateRagFile(file) {
+        if (!file) return 'No document selected.';
+        const extension = file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
+        if (!RAG_UPLOAD_EXTENSIONS.includes(extension)) {
+            return `Unsupported file type. Allowed: ${RAG_UPLOAD_EXTENSIONS.join(', ')}`;
+        }
+        if (file.size > RAG_UPLOAD_MAX_MB * 1024 * 1024) {
+            return `File is ${(file.size / (1024 * 1024)).toFixed(2)} MB. Maximum allowed size is ${RAG_UPLOAD_MAX_MB} MB.`;
+        }
+        return '';
+    }
 
     function handleFileSelected(file) {
         if (!file) return;
+        const validationError = validateRagFile(file);
+        if (validationError) {
+            setRagUploadStatus(validationError, 'error');
+            document.getElementById('fileInput').value = '';
+            return;
+        }
         currentFile = file;
         document.getElementById('selectedFileName').textContent = file.name;
         document.getElementById('selectedFileSize').textContent = Math.round(file.size / 1024) + ' KB';
         document.getElementById('selectedFileInfo').style.display = 'block';
         document.getElementById('uploadBtn').style.display = 'flex';
+        setRagUploadStatus(`${file.name} is ready to index.`, 'info');
+    }
+
+    function handleRagDrop(event) {
+        event.preventDefault();
+        const dropZone = document.getElementById('dropZone');
+        dropZone.style.borderColor = 'var(--border-card)';
+        handleFileSelected(event.dataTransfer.files[0]);
     }
 
     async function uploadSelectedFile() {
         if (!currentFile) return;
 
+        const uploadButton = document.getElementById('uploadBtn');
+        uploadButton.disabled = true;
         const reader = new FileReader();
         reader.onload = async function(e) {
             const base64 = e.target.result.split(',')[1];
             try {
-                window.showLoader('Processing & embedding document...');
+                setRagUploadStatus('Processing and indexing document...', 'info');
+                window.showLoader('Processing & indexing document...');
                 const res = await window.ajaxClient.post('/api/upload', {
                     filename: currentFile.name,
                     content_base64: base64
                 });
                 window.hideLoader();
                 window.showToast(`Document uploaded successfully! Created ${res.chunks || 1} chunks.`, 'success');
+                setRagUploadStatus(`${currentFile.name} is indexed and ready for questions • ${res.chunks || 1} chunks`, 'success');
                 document.getElementById('selectedFileInfo').style.display = 'none';
-                document.getElementById('uploadBtn').style.display = 'none';
+                uploadButton.style.display = 'none';
+                document.getElementById('fileInput').value = '';
                 currentFile = null;
             } catch (err) {
                 window.hideLoader();
                 window.showToast(err.message, 'error');
+                setRagUploadStatus(err.message || 'Document upload failed. Please try again.', 'error');
+            } finally {
+                uploadButton.disabled = false;
             }
+        };
+        reader.onerror = () => {
+            uploadButton.disabled = false;
+            setRagUploadStatus('Could not read the selected document.', 'error');
         };
         reader.readAsDataURL(currentFile);
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropZone = document.getElementById('dropZone');
+        if (!dropZone) return;
+        dropZone.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                document.getElementById('fileInput').click();
+            }
+        });
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.style.borderColor = 'var(--accent-cyan)';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--border-card)';
+        });
+        dropZone.addEventListener('drop', handleRagDrop);
+    });
 
     async function queryRagDocuments() {
         const query = document.getElementById('ragQueryInput').value.trim();

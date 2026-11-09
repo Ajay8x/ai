@@ -381,7 +381,7 @@
             </div>
             <h4 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-main);" id="insTitle">PyTorch Deep Neural Intent Router</h4>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:12px;" id="insDesc">
-                Evaluates input tokens using PyTorch Deep Neural Network (NeuralIntentNet) with Softmax probability distribution and cosine semantic consensus across 100 anchors with sub-millisecond execution.
+                Evaluates input tokens using PyTorch Deep Neural Network (NeuralIntentNet) with Softmax probability distribution and cosine semantic consensus across the active merged intent catalog with sub-millisecond execution.
             </p>
 
             <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Connected Relationships:</div>
@@ -440,7 +440,7 @@ const NODES_DATA = [
     { id: "intent_vectors", label: "Merged Intent Anchors", cluster: "BRAIN", icon: "🎯", color: "#00f2fe", size: 18, x: -220, y: -160, desc: "Mathematical intent reference vectors covering productivity, writing, study, coding, networking, system control, and core assistant actions.", latency: "0.01ms" },
 
     // 2. Search-Guided GraphRAG Cluster (Indigo)
-    { id: "meilisearch", label: "Meilisearch Fast Filter", cluster: "GRAPHRAG", icon: "⚡", color: "#6366f1", size: 26, x: 0, y: -120, desc: "Ultra-fast inverted index lexical search. Filters noise so only 100% relevant document chunks enter the graph.", latency: "1.2ms" },
+    { id: "meilisearch", label: "Meilisearch Fast Filter", cluster: "GRAPHRAG", icon: "⚡", color: "#6366f1", size: 26, x: 0, y: -120, desc: "Ultra-fast inverted index lexical search. Filters noise so high-relevance document chunks enter the graph.", latency: "1.2ms" },
     { id: "entity_extractor", label: "Entity Extractor", cluster: "GRAPHRAG", icon: "🔍", color: "#6366f1", size: 20, x: 140, y: -150, desc: "Extracts named entities and candidates (AlphaFold, EMBL, DeepMind) from filtered search chunks.", latency: "2.1ms" },
     { id: "networkx_graph", label: "NetworkX Knowledge Graph", cluster: "GRAPHRAG", icon: "🕸️", color: "#6366f1", size: 30, x: 80, y: 0, desc: "Directional multi-graph storing verified relationship triples. Computes multi-hop paths and subgraphs.", latency: "0.4ms" },
 

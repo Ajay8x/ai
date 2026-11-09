@@ -2,7 +2,7 @@
 
 {% block title %}AJAX AI - Intent Catalog{% endblock %}
 {% block header_title %}Neural Intent Catalog{% endblock %}
-{% block header_subtitle %}All {{ intent_count }} request categories understood by AJAX AI{% endblock %}
+{% block header_subtitle %}All {{ intent_count }} active merged request categories understood by AJAX AI{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -37,8 +37,8 @@
 <div class="intent-hero">
     <div>
         <div class="page-kicker"><i class="fa-solid fa-brain"></i> LIVE CLASSIFIER DATASET</div>
-        <h2 class="page-title-main" style="margin:8px 0 5px;">{{ intent_count }} Intents, One Assistant</h2>
-        <div class="page-subtitle">Search any category to see the phrases that train AJAX AI to recognize it.</div>
+        <h2 class="page-title-main" style="margin:8px 0 5px;">{{ intent_count }} Active Intents, One Assistant</h2>
+        <div class="page-subtitle">Search the merged catalog to see the phrases that train AJAX AI to recognize each category.</div>
     </div>
     <div class="intent-search">
         <label for="intentSearch" class="sr-only">Search intents</label>

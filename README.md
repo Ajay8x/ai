@@ -1,149 +1,115 @@
 # AJAX AI ⚡
-## Adaptive Intelligence & Autonomous eXecution
-### Production-Grade Multilingual Voice & Chat AI Operating Layer
 
-AJAX AI is a modular, high-performance personal AI assistant built in Python. It blends deep LLM reasoning, neural-network intent classification, PC automation, continuous learning, and multi-tier memory into a unified interface operating across **Chat, Voice, CLI, Local REST API, and Web UI**.
+AJAX AI is a local-first autonomous assistant with a FastAPI web dashboard, multilingual chat, voice controls, neural intent routing, document RAG, system tools, memory, and a Windows portable build.
 
----
+## What is included
 
-## ✨ Key Capabilities
+- **Merged neural intent catalog:** 92 active intent classes with English, Hindi, and Hinglish examples. Overlapping labels were merged while keeping their useful training phrases.
+- **Local AI brain:** AJAX GGUF generation plus the AJAX Native PyTorch neural router. The Settings page exposes AJAX-local choices only.
+- **Chat and voice:** streamed chat, session history, browser voice typing, optional speech output, and safe tool execution.
+- **RAG document questions:** upload a document from the Chat paperclip or from **Documents & RAG**, index it, and ask questions with source-grounded retrieval.
+- **System tools:** diagnostics, hardware telemetry, web search, calculations, reminders, notes, file search, and other guarded workflows.
+- **Interactive UI:** dashboard, intent catalog, neural playground, training topology, memory, system diagnostics, and settings.
 
-1. **🧠 Multi-Provider AI Brain**: AJAX Native Engine with the trained merged neural intent catalog, plus optional OpenAI, Groq, DeepSeek, and OpenRouter providers with zero-crash local fallbacks.
-2. **🎯 Neural Intent Engine**: 40+ default intents with Hindi, English, and Hinglish semantic understanding and confidence scoring.
-3. **🎙️ Unified Voice Pipeline**: Wake word detection ("AJAX", "Jarvis"), VAD noise calibration, Google STT, and thread-safe interruptible TTS.
-4. **💾 Multi-Tier Memory Engine**: Short-term session buffer, long-term SQLite persistent facts, episodic task logs, and built-in privacy filtering.
-5. **🛡️ Safety & Guardrails**: Path traversal protection, strict shell command allowlisting, and user confirmation for destructive actions.
-6. **💻 Safe PC Automation**: Hardware telemetry (CPU, RAM, GPU, Disk, Battery, Top Processes), App Launcher, Volume/Brightness, and Power management.
-7. **📚 RAG Subsystem**: Parse, chunk, and index local documents (PDF, TXT, MD, Code) with cited retrieval.
-8. **🌐 Web Intelligence**: DuckDuckGo search, Wikipedia knowledge extraction, YouTube playback, and quick-launch for 100+ recognized websites.
-9. **🖥️ Modern Glassmorphic Web Dashboard**: Real-time live hardware graphs, chat streaming, and tool activity monitor.
+## RAG document workflow
 
----
+1. Open `http://127.0.0.1:8000/AJAX/chat` and click the paperclip, or open **Documents & RAG** from the left navigation.
+2. Upload a supported file: `.txt`, `.md`, `.py`, `.json`, `.csv`, `.yaml`, `.yml`, `.html`, `.js`, `.ts`, `.css`, `.pdf`, or `.docx`.
+3. Files are limited to **15 MB** and are indexed in the authenticated user's RAG scope.
+4. Ask a question in Chat. Relevant chunks are added to the response context and source citations are returned when available.
 
-## 🚀 Quick Start
+## Start from source
 
-### 1. Requirements Setup
-```bash
-pip install -r requirements.txt
+Install dependencies once:
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-### 2. Configuration (`.env`)
-Copy `.env.example` to `.env` and set your desired LLM API key (optional — works offline by default!):
-```bash
-cp .env.example .env
+Optional local configuration:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-### 3. Launching AJAX AI
+Start the web app and open the browser automatically:
 
-- **Interactive CLI Mode** (Default with slash commands):
-  ```bash
-  python main.py
-  ```
-
-- **Web Dashboard & GUI Mode**:
-  ```bash
-  python main.py --gui
-  ```
-
-- **Voice Assistant Mode**:
-  ```bash
-  python main.py --voice
-  ```
-
-- **Local REST API Server**:
-  ```bash
-  python main.py --server --port 8000
-  ```
-
-- **System Diagnostics & Health Check**:
-  ```bash
-  python main.py --diagnostics
-  ```
-
-### 4. Container & Cloud Deployment
-
-- **Docker Compose** (FastAPI + PostgreSQL + Meilisearch):
-  ```bash
-  docker-compose up -d
-  ```
-  See [README-DOCKER.md](file:///c:/Users/Ajaysingh/PROJECT/Ai%20full%203.0/README-DOCKER.md) for full guide.
-
-- **Kubernetes (K8s)** (Production Autoscaling Stack):
-  ```bash
-  kubectl apply -k k8s/
-  ```
-  See [README-K8S.md](file:///c:/Users/Ajaysingh/PROJECT/Ai%20full%203.0/README-K8S.md) for full Kubernetes deployment guide.
-
----
-
-## 💬 CLI Slash Commands
-
-| Command | Action |
-| :--- | :--- |
-| `/chat <query>` | Send a direct text message |
-| `/voice` | Switch into voice assistant mode |
-| `/tools` | List all 20+ registered tools and permissions |
-| `/status` | View real-time CPU, RAM, Disk, and Battery diagnostics |
-| `/diagnostics`| Run full self-health checks |
-| `/memory` | Inspect saved long-term user facts |
-| `/settings` | View active configuration |
-| `/clear` | Start a new conversation session |
-| `/help` | View help menu |
-| `/exit` | Exit AJAX AI |
-
----
-
-## 🧪 Testing & Evaluation
-
-Run unit and integration test suite:
-```bash
-python tests/test_ajax.py
+```powershell
+python main.py --port 8000
 ```
 
-Run Intent Classification benchmark:
-```bash
+Start without opening a browser:
+
+```powershell
+python main.py --no-browser --port 8000
+```
+
+Other useful modes:
+
+```powershell
+python main.py --cli
+python main.py --voice
+python main.py --diagnostics
+```
+
+On Windows, double-click [`start_ajax_ai.bat`](start_ajax_ai.bat). To stop the source server, double-click [`kill_ajax_ai.bat`](kill_ajax_ai.bat).
+
+## Portable Windows EXE
+
+The portable build bundles the Python runtime, local models, templates, and frontend assets. Python does not need to be installed on the target laptop.
+
+Build it on a 64-bit Windows development machine:
+
+```powershell
+build_ajax_ai.bat
+```
+
+Then share the complete folder:
+
+```text
+dist\AJAX_AI\
+├── AJAX_AI.exe
+├── start_ajax_ai.bat
+├── kill_ajax_ai.bat
+└── _internal\ ...
+```
+
+Run `dist\AJAX_AI\start_ajax_ai.bat` to start AJAX AI and open the browser. Run the bundled `kill_ajax_ai.bat` to stop it. Share the **whole `dist\AJAX_AI` folder**, not only the `.exe`; the current bundle is approximately 2.5 GB because it contains the local GGUF and PyTorch runtime.
+
+## Validation
+
+Run the complete automated suite:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+Run the intent benchmark or retrain the approved dataset when needed:
+
+```powershell
 python training/evaluate.py
-```
-
-Retrain intent model on approved interaction samples:
-```bash
 python training/train.py
 ```
 
----
+The current trained metadata contains 92 class labels and 1,028 vocabulary entries. The packaged executable has also been validated with `--diagnostics` and reports a healthy intent engine, database, and tools subsystem.
 
-## 📂 Project Architecture
+## Project layout
 
 ```text
-Ai 3.0/
-├── main.py                     # Unified multi-mode entry point
-├── requirements.txt            # Dependency manifest
-├── .env.example                # Configuration template
-├── config/
-│   ├── config_loader.py        # Typed configuration manager
-│   └── sites.py                # Comprehensive web targets
-├── core/
-│   ├── logger.py               # Rotating structured log sinks
-│   ├── safety.py               # Safety engine & path guardrails
-│   ├── permissions.py          # SAFE, CONFIRM_REQUIRED, BLOCKED
-│   ├── prompts.py              # Bilingual persona prompts
-│   ├── context.py              # Context & memory assembly
-│   ├── router.py               # Intent, tool & LLM router
-│   ├── planner.py              # Multi-step ReAct agent planner
-│   ├── diagnostics.py          # Self-healing diagnostics
-│   ├── tts.py & stt.py         # Backward compatibility wrappers
-├── ai/
-│   ├── llm/                    # Base, cloud providers & AJAX Native Engine
-│   ├── neural/                 # Semantic intent classifier
-│   ├── rag/                    # Loader, chunker, vector store
-│   └── vision/                 # Screen & OCR analyzer
-├── tools/                      # Central Tool Registry & 20+ tools
-├── voice/                      # TTS, STT, Wake word & Session manager
-├── memory/                     # Multi-tier memory & privacy filter
-├── system/                     # Telemetry monitor & background scheduler
-├── database/                   # SQLite engine, models & CRUD
-├── training/                   # Model trainer & benchmark evaluators
-├── data/                       # Database, screenshots & intent datasets
-├── tests/                      # Full test suite
-└── logs/                       # Specialized rotating audit logs
+Ai full 3.0/
+├── main.py                     # Web, CLI, voice, and diagnostics entry point
+├── views/templates/            # Jinja UI pages
+├── frontend/                   # Browser assets and shared client helpers
+├── controllers/                # FastAPI routes
+├── ai/neural/                  # Intent classifier and dataset loader
+├── ai/rag/                     # Document parsing, chunking, and retrieval
+├── models/                     # Neural checkpoint, vocabulary, and local GGUF
+├── data/                       # Intent corpus, database, and runtime data
+├── training/                   # Training and evaluation scripts
+├── tests/                      # Automated regression tests
+├── build_ajax_ai.bat           # Build portable Windows folder
+├── start_ajax_ai.bat           # Start source installation
+└── kill_ajax_ai.bat            # Stop source or scoped AJAX process
 ```
+
+For deployment notes, see [`README-DOCKER.md`](README-DOCKER.md) and [`README-K8S.md`](README-K8S.md).

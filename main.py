@@ -3,6 +3,8 @@ AJAX AI - Master Application Entry Point
 FastAPI MVC Backend & Standalone Frontend Server
 """
 
+import atexit
+import os
 import sys
 import argparse
 import webbrowser
@@ -13,6 +15,31 @@ from core.diagnostics import diagnostics
 from core.logger import ajax_logger
 from api.server import start_server
 from config.config_loader import config
+
+
+RUNTIME_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+PID_FILE = os.path.join(RUNTIME_DIR, ".ajax_ai.pid")
+
+
+def register_server_pid():
+    """Write a scoped PID file so the companion stop launcher can target AJAX only."""
+    try:
+        with open(PID_FILE, "w", encoding="utf-8") as handle:
+            handle.write(str(os.getpid()))
+
+        def cleanup_pid_file():
+            try:
+                if os.path.exists(PID_FILE):
+                    with open(PID_FILE, "r", encoding="utf-8") as handle:
+                        owner_pid = handle.read().strip()
+                    if owner_pid == str(os.getpid()):
+                        os.remove(PID_FILE)
+            except Exception:
+                pass
+
+        atexit.register(cleanup_pid_file)
+    except Exception as exc:
+        ajax_logger.warning(f"Could not create server PID file: {exc}")
 
 def main():
     parser = argparse.ArgumentParser(description="AJAX AI - Autonomous Assistant Backend & Web App")
@@ -47,6 +74,7 @@ def main():
         return
 
     # Default: Start FastAPI MVC & Web Application Server
+    register_server_pid()
     ajax_logger.info(f"Starting AJAX AI FastAPI MVC Server on port {args.port}...")
     if not args.no_browser:
         try:

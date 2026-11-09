@@ -46,3 +46,26 @@ Intent catalog merge and boundary routing validation (2026-11-09):
 - `git diff --check` → no whitespace errors (only normal LF/CRLF conversion warnings).
 - Updated server startup → `Loaded 92 intents` and `92 classes (1028 vocab)`; dashboard advertised at `http://127.0.0.1:8000/AJAX`.
 - Live health check `GET http://127.0.0.1:8000/api/health` → `{"status":"healthy","service":"AJAX AI","version":"3.0.0","database_ready":true}`.
+
+Portable Windows packaging validation (2026-11-09):
+
+- PyInstaller `6.22.3` produced `dist/AJAX_AI/AJAX_AI.exe` successfully.
+- Final portable folder size → approximately `2.50 GB`; the local 1.7B GGUF model and PyTorch runtime are included.
+- Bundle metadata parity → `92` classes and `92` labels; required templates, frontend, plugins, neural checkpoint, and GGUF model are present.
+- Packaged executable `AJAX_AI.exe --diagnostics` → `Overall Status: HEALTHY`, `INTENT_ENGINE: HEALTHY`, `intents_count: 92`, `DATABASE: HEALTHY`, and `TOOLS: HEALTHY`.
+- Packaged server startup → `Loaded 92 intents`, `92 classes (1028 vocab)`, and dashboard URL printed successfully.
+- Packaged `kill_ajax_ai.bat` → successfully stopped the packaged AJAX process; source launcher now writes a scoped `.ajax_ai.pid` for targeted stopping.
+- Packaged `start_ajax_ai.bat` → points to the bundled `AJAX_AI.exe` and opens the browser; the source Python launcher remains separate at the project root.
+- Distribution note → share the entire `dist/AJAX_AI` folder, not only the `.exe`; Python installation is not required, but this build targets 64-bit Windows and needs approximately 2.5 GB disk space.
+
+Frontend and README consistency validation (2026-11-09):
+
+- Updated the README for the current 92-class merged catalog, Chat/Documents RAG workflow, 15 MB upload limit, source launchers, and portable EXE distribution.
+- Updated Documents & RAG UI with matching backend file types/size limit, keyboard selection, drag-and-drop handling, client-side validation, upload status feedback, and Enter-to-search behavior.
+- Removed stale hard-coded neural metrics and unsupported accuracy claims from the Training, Brain, Dashboard, and Intent Catalog pages; training metrics now come from `/api/training/topology` when available.
+- `python -m unittest discover -s tests -v` → 19 tests ran, all `OK`.
+- Jinja parse check → all 13 HTML templates parsed successfully.
+- Inline JavaScript syntax check → all 19 inline scripts parsed successfully with Node.
+- Static feature checks → Chat upload, Documents upload, RAG limit, README portable instructions, and launcher references all present.
+- `git diff --check` → no whitespace errors.
+- Browser screenshot attempt → local server started and reported `Loaded 92 intents` / `92 classes (1028 vocab)`, but Windows browser automation transport closed before a screenshot could be captured.

@@ -568,7 +568,7 @@
             </div>
             <div class="pipe-metric-info">
                 <div class="pipe-metric-label">Model Weights (.pt)</div>
-                <div class="pipe-metric-value" id="statModelSize">374.2 <span style="font-size:12px; font-weight:400; color:#94a3b8;">KB</span> <span class="pipe-metric-badge">Torch State</span></div>
+                <div class="pipe-metric-value" id="statModelSize">Loading... <span class="pipe-metric-badge">Runtime</span></div>
             </div>
         </div>
 
@@ -578,7 +578,7 @@
             </div>
             <div class="pipe-metric-info">
                 <div class="pipe-metric-label">Vocab Metadata (.json)</div>
-                <div class="pipe-metric-value" id="statVocabTokens">649 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Tokens</span> <span class="pipe-metric-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">13 KB</span></div>
+                <div class="pipe-metric-value" id="statVocabTokens">Loading... <span class="pipe-metric-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Runtime</span></div>
             </div>
         </div>
 
@@ -588,7 +588,7 @@
             </div>
             <div class="pipe-metric-info">
                 <div class="pipe-metric-label">Active Neural Classes</div>
-                <div class="pipe-metric-value" id="statClassCount">100 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Intents</span> <span class="pipe-metric-badge" style="background:rgba(192,132,252,0.2); color:#c084fc;">100% Calib</span></div>
+                <div class="pipe-metric-value" id="statClassCount">Loading... <span class="pipe-metric-badge" style="background:rgba(192,132,252,0.2); color:#c084fc;">Active catalog</span></div>
             </div>
         </div>
 
@@ -598,7 +598,7 @@
             </div>
             <div class="pipe-metric-info">
                 <div class="pipe-metric-label">Continuous DB Samples</div>
-                <div class="pipe-metric-value" id="statDbSamples">348 <span style="font-size:12px; font-weight:400; color:#94a3b8;">Pairs</span> <span class="pipe-metric-badge" id="statDbEngine" style="background:rgba(245,158,11,0.2); color:#fbbf24;">MongoDB/SQLite</span></div>
+                <div class="pipe-metric-value" id="statDbSamples">Loading... <span class="pipe-metric-badge" id="statDbEngine" style="background:rgba(245,158,11,0.2); color:#fbbf24;">Runtime</span></div>
             </div>
         </div>
 
@@ -682,7 +682,7 @@
                             <div class="pipe-node-path">ajax_ai.training_examples</div>
                             <div class="pipe-node-desc">Live user chat queries approved for continuous learning and model self-refinement.</div>
                             <div class="pipe-node-meta">
-                                <span id="nodeDbCount">348 Examples</span>
+                                <span id="nodeDbCount">Loading examples...</span>
                                 <span>Atlas / SQLite</span>
                             </div>
                         </div>
@@ -695,7 +695,7 @@
                             <div class="pipe-node-path">data/intents.json</div>
                             <div class="pipe-node-desc">Core dictionary containing the merged intent definitions and thousands of sample sentences.</div>
                             <div class="pipe-node-meta">
-                                <span id="nodePatternsCount">~55 KB</span>
+                                <span id="nodePatternsCount">Loading patterns...</span>
                                 <span>JSON Dataset</span>
                             </div>
                         </div>
@@ -730,7 +730,7 @@
                                 <span class="pipe-node-badge">Architecture</span>
                             </div>
                             <div class="pipe-node-path">nn.Module (3-Layer FC)</div>
-                            <div class="pipe-node-desc">Linear(946, 128) &rarr; ReLU &rarr; Dropout(0.2) &rarr; Linear(128, 64) &rarr; ReLU &rarr; Linear(64, 100).</div>
+                            <div class="pipe-node-desc" id="neuralArchitectureDesc">Linear(vocab, 128) &rarr; ReLU &rarr; Dropout(0.2) &rarr; Linear(128, 64) &rarr; ReLU &rarr; Linear(64, classes).</div>
                             <div class="pipe-node-meta">
                                 <span>Adam lr=0.005</span>
                                 <span>40 Epochs</span>
@@ -745,7 +745,7 @@
                             <div class="pipe-node-path">training/evaluate.py</div>
                             <div class="pipe-node-desc">Evaluates cross-entropy loss, multiclass confusion matrix, and accuracy metrics.</div>
                             <div class="pipe-node-meta">
-                                <span>100% Accuracy</span>
+                                <span>Metrics available</span>
                                 <span>Zero Overfit</span>
                             </div>
                         </div>
@@ -769,7 +769,7 @@
                             <div class="pipe-node-path">models/ajax_neural_intent.pt</div>
                             <div class="pipe-node-desc"><strong>PyTorch State Dict:</strong> Sabhi trained weights aur biases binary tensor file me yahan save hote hain.</div>
                             <div class="pipe-node-meta">
-                                <span>Size: 374.2 KB</span>
+                                <span id="nodeNeuralWeightsSize">Runtime size</span>
                                 <span>torch.save(...)</span>
                             </div>
                         </div>
@@ -782,7 +782,7 @@
                             <div class="pipe-node-path">models/vocab_metadata.json</div>
                             <div class="pipe-node-desc"><strong>Token & Label Index:</strong> Active vocabulary aur merged class names yahan save hote hain.</div>
                             <div class="pipe-node-meta">
-                                <span>Size: 13.0 KB</span>
+                                <span id="nodeVocabSize">Runtime size</span>
                                 <span>json.dump(...)</span>
                             </div>
                         </div>
@@ -795,20 +795,20 @@
                             <div class="pipe-node-path">data/intents.json</div>
                             <div class="pipe-node-desc">New generated & augmented utterances JSON me append ho kar permanently persist hote hain.</div>
                             <div class="pipe-node-meta">
-                                <span>Size: 55.8 KB</span>
+                                <span id="nodeIntentsSize">Runtime size</span>
                                 <span>Canonical Store</span>
                             </div>
                         </div>
 
                         <div class="pipe-node-card" style="--node-color: #fbbf24;" onclick="inspectNode('training_examples_saved')">
                             <div class="pipe-node-top">
-                                <span class="pipe-node-title"><i class="fa-solid fa-cloud"></i> MongoDB Atlas Collection</span>
+                                <span class="pipe-node-title"><i class="fa-solid fa-database"></i> Continuous Learning Store</span>
                                 <span class="pipe-node-badge">Cloud DB</span>
                             </div>
-                            <div class="pipe-node-path">ajax_ai.training_examples</div>
-                            <div class="pipe-node-desc">Continuous feedback database collection: Har interaction ka raw_text, intent, aur confidence cloud me rehta hai.</div>
+                            <div class="pipe-node-path">training_examples (cloud/local)</div>
+                            <div class="pipe-node-desc">Continuous feedback store: Har approved interaction ka raw_text, intent, aur confidence yahan rehta hai.</div>
                             <div class="pipe-node-meta">
-                                <span>348 Records</span>
+                                <span id="nodeDbSavedCount">Runtime records</span>
                                 <span>BSON / Atlas</span>
                             </div>
                         </div>
@@ -880,7 +880,7 @@
 
             <div class="pipe-inspect-box">
                 <div class="pipe-inspect-label">File Size & Record Capacity</div>
-                <div class="pipe-inspect-val" id="inspectSize">374.17 KB (All 3 Layers Weights & Biases)</div>
+                <div class="pipe-inspect-val" id="inspectSize">Runtime metadata is loaded from the server.</div>
             </div>
 
             <div class="pipe-inspect-box">
@@ -921,12 +921,12 @@ model.eval()</div>
         <div class="pipe-test-output" id="testResultBox">
             <div class="pipe-inspect-box">
                 <div class="pipe-inspect-label">Detected Intent</div>
-                <div class="pipe-inspect-val" id="resIntent" style="color:#34d399; font-size:14px; font-weight:700;">PLAY_YOUTUBE</div>
+            <div class="pipe-inspect-val" id="resIntent" style="color:#34d399; font-size:14px; font-weight:700;">Waiting for a test</div>
             </div>
 
             <div class="pipe-inspect-box">
                 <div class="pipe-inspect-label">Confidence Score</div>
-                <div class="pipe-inspect-val" id="resConfidence" style="color:#38bdf8;">0.985 (98.5%)</div>
+            <div class="pipe-inspect-val" id="resConfidence" style="color:#38bdf8;">—</div>
             </div>
 
             <div class="pipe-inspect-box">
@@ -936,7 +936,7 @@ model.eval()</div>
 
             <div class="pipe-inspect-box">
                 <div class="pipe-inspect-label">Execution Latency</div>
-                <div class="pipe-inspect-val" id="resLatency" style="color:#fbbf24;">0.042 ms</div>
+            <div class="pipe-inspect-val" id="resLatency" style="color:#fbbf24;">—</div>
             </div>
         </div>
     </div>
@@ -954,7 +954,7 @@ const NODE_DATA = {
         title: "Neural Weights Tensor State (ajax_neural_intent.pt)",
         path: "models/ajax_neural_intent.pt",
         format: "PyTorch Binary State Dict (.pt / Pickle Tensor)",
-        size: "374.17 KB (Trained Parameters)",
+        size: "Runtime metadata from /api/training/topology",
         role: "PyTorch deep neural network ke sabhi learned weights aur bias matrices is single binary file me store hote hain. Yahi file server boot hone par memory me load hoti hai.",
         code: `# 1. SAVING: training/gpu_train.py (line 152)
 torch.save(model.state_dict(), "models/ajax_neural_intent.pt")
@@ -998,9 +998,9 @@ with open("data/intents.json", "w", encoding="utf-8") as f:
     },
     "training_examples_saved": {
         title: "Continuous Learning Store (MongoDB Atlas)",
-        path: "MongoDB Atlas: ajax_ai.training_examples (or data/ajax.db SQLite)",
+        path: "training_examples (cloud or data/ajax.db SQLite)",
         format: "BSON Document Store / SQL Database Table",
-        size: "348 Active Examples",
+        size: "Runtime training examples",
         role: "Chat ke doran jab user kisi command ko sikhata hai ya approve karta hai, to wo sample directly database me save hota hai taaki agli training me incorporate ho sake.",
         code: `# database/crud.py (add_training_example)
 db.training_examples.insert_one({
@@ -1073,7 +1073,7 @@ criterion = nn.CrossEntropyLoss()
         path: "training/evaluate.py",
         format: "Validation Suite",
         size: "Cross-Validation Matrix",
-        role: "Training ke baad zero-shot evaluation run karta hai to ensure 100% intent accuracy.",
+        role: "Training ke baad precision, recall, F1, aur confusion-matrix metrics report karta hai across all active merged classes.",
         code: `run_evaluation() checks precision, recall, and F1 across all active merged classes.`
     },
     "runtime_classifier": {
@@ -1198,13 +1198,32 @@ async function loadTopologyTelemetry() {
             const a = data.artifacts;
             if (a.neural_weights) {
                 document.getElementById('statModelSize').innerHTML = `${a.neural_weights.size_kb} <span style="font-size:12px; font-weight:400; color:#94a3b8;">KB</span> <span class="pipe-metric-badge">Torch State</span>`;
+                const nodeSize = document.getElementById('nodeNeuralWeightsSize');
+                if (nodeSize) nodeSize.textContent = `Size: ${a.neural_weights.size_kb} KB`;
+                NODE_DATA.neural_weights.size = `${a.neural_weights.size_kb} KB (Trained Parameters)`;
             }
             if (a.vocab_metadata) {
                 document.getElementById('statVocabTokens').innerHTML = `${a.vocab_metadata.vocab_size} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Tokens</span> <span class="pipe-metric-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">${a.vocab_metadata.size_kb} KB</span>`;
+                const vocabSize = document.getElementById('nodeVocabSize');
+                if (vocabSize) vocabSize.textContent = `Size: ${a.vocab_metadata.size_kb} KB · ${a.vocab_metadata.vocab_size} tokens`;
+                const activeClasses = a.vocab_metadata.num_classes || (data.runtime && data.runtime.active_intents_count) || 0;
+                document.getElementById('statClassCount').innerHTML = `${activeClasses} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Intents</span> <span class="pipe-metric-badge" style="background:rgba(192,132,252,0.2); color:#c084fc;">Active catalog</span>`;
+                NODE_DATA.vocab_metadata.size = `${a.vocab_metadata.vocab_size} tokens · ${activeClasses} merged classes`;
+                const architecture = document.getElementById('neuralArchitectureDesc');
+                if (architecture) architecture.innerHTML = `Linear(${a.vocab_metadata.vocab_size}, 128) &rarr; ReLU &rarr; Dropout(0.2) &rarr; Linear(128, 64) &rarr; ReLU &rarr; Linear(64, ${activeClasses})`;
+            }
+            if (a.intents_dataset) {
+                const intentsSize = document.getElementById('nodeIntentsSize');
+                if (intentsSize) intentsSize.textContent = `Size: ${a.intents_dataset.size_kb} KB · ${a.intents_dataset.total_patterns} patterns`;
+                const patternCount = document.getElementById('nodePatternsCount');
+                if (patternCount) patternCount.textContent = `${a.intents_dataset.total_patterns} patterns`;
+                NODE_DATA.intents_saved.size = `${a.intents_dataset.size_kb} KB (Canonical patterns)`;
             }
             if (a.database_store) {
                 document.getElementById('statDbSamples').innerHTML = `${a.database_store.training_examples_count} <span style="font-size:12px; font-weight:400; color:#94a3b8;">Pairs</span> <span class="pipe-metric-badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">${a.database_store.db_mode}</span>`;
                 document.getElementById('nodeDbCount').textContent = `${a.database_store.training_examples_count} Examples`;
+                document.getElementById('nodeDbSavedCount').textContent = `${a.database_store.training_examples_count} Records`;
+                NODE_DATA.training_examples_saved.size = `${a.database_store.training_examples_count} Active Examples`;
             }
         }
         if (data && data.auto_training) {
