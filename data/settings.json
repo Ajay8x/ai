@@ -1,0 +1,31 @@
+{
+    "llm": {
+        "provider": "ajax_gguf",
+        "model": "ajax-native-1.7b-q4_k_m",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "cpu_threads": 12,
+        "local_model_path": "models/ajax-native-1.7b-q4_k_m.gguf",
+        "thinking_mode": false
+    },
+    "neural": {
+        "backend": "auto",
+        "onnx_model_path": "models/ajax_neural_intent.onnx"
+    },
+    "voice": {
+        "enabled": true,
+        "wake_word": "ajax",
+        "wake_word_enabled": true,
+        "tts_engine": "pyttsx3",
+        "stt_engine": "speech_recognition",
+        "stt_language": "en-IN",
+        "stt_fallback_languages": "hi-IN",
+        "rate": 180,
+        "volume": 1.0
+    },
+    "safety": {
+        "level": "STANDARD",
+        "require_confirmation": true,
+        "privacy_mode": false
+    }
+}

@@ -34,6 +34,35 @@ class TestSettings(unittest.TestCase):
         self.assertNotIn('id="keyGroq"', page)
         self.assertNotIn('id="keyOpenAI"', page)
 
+    def test_chat_page_uses_single_local_gguf_model(self):
+        project_root = Path(__file__).resolve().parents[1]
+        page = (project_root / "views" / "templates" / "pages" / "chat.html").read_text(encoding="utf-8")
+
+        self.assertIn("AJAX Chat Core · GGUF 1.7B", page)
+        self.assertIn('class="chat-model-fixed"', page)
+        self.assertNotIn('id="chatModelSelector"', page)
+        self.assertNotIn('ajax_safetensors', page)
+        self.assertIn("Router ON", page)
+
+    def test_chat_session_switch_loads_persisted_messages(self):
+        project_root = Path(__file__).resolve().parents[1]
+        page = (project_root / "views" / "templates" / "pages" / "chat.html").read_text(encoding="utf-8")
+
+        self.assertIn("async function loadConversationHistory(convId)", page)
+        self.assertIn("/api/conversations/${encodeURIComponent(convId)}", page)
+        self.assertIn("await loadConversationHistory(convId)", page)
+
+    def test_brain_topology_contains_current_model_nodes(self):
+        project_root = Path(__file__).resolve().parents[1]
+        page = (project_root / "views" / "templates" / "pages" / "brain.html").read_text(encoding="utf-8")
+
+        self.assertIn("AJAX Neural Router · ONNX/PT", page)
+        self.assertIn("ONNX Intent Runtime", page)
+        self.assertIn("PyTorch .pt Fallback", page)
+        self.assertIn("AJAX Chat Core · GGUF 1.7B", page)
+        self.assertNotIn("AJAX Chat Lite · Qwen 0.5B", page)
+        self.assertIn("async function loadBrainDiagnostics()", page)
+
     def test_settings_api_accepts_only_ajax_local_providers(self):
         self.assertEqual(SettingsUpdateRequest(llm_provider="ajax_local").llm_provider, "ajax_local")
         with self.assertRaises(ValidationError):

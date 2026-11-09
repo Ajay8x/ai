@@ -17,6 +17,7 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from core.logger import ajax_logger
 from ai.neural.dataset_loader import canonical_intent_name, load_intent_dataset
+from config.config_loader import config
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,6 +25,14 @@ DATA_PATH = os.path.join(BASE_DIR, "data", "intents.json")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 MODEL_PT_PATH = os.path.join(MODELS_DIR, "ajax_neural_intent.pt")
 VOCAB_META_PATH = os.path.join(MODELS_DIR, "vocab_metadata.json")
+DEFAULT_ONNX_MODEL_PATH = os.path.join(MODELS_DIR, "ajax_neural_intent.onnx")
+
+try:
+    import onnxruntime as ort
+    ONNX_RUNTIME_AVAILABLE = True
+except ImportError:
+    ort = None
+    ONNX_RUNTIME_AVAILABLE = False
 
 # ----------------- PYTORCH NEURAL NETWORK DEFINITION ----------------- #
 try:
@@ -128,6 +137,10 @@ class IntentClassifier:
         
         # PyTorch Neural Net Components
         self.neural_model: Optional[Any] = None
+        self.onnx_session: Optional[Any] = None
+        self.onnx_input_name: str = ""
+        self.onnx_output_name: str = ""
+        self.inference_backend: str = "unavailable"
         self.word_to_idx: Dict[str, int] = {}
         self.intent_labels: List[str] = []
         self.vocab_size: int = 0
@@ -140,17 +153,59 @@ class IntentClassifier:
         self.init_pytorch_neural_net()
 
     def init_pytorch_neural_net(self):
-        """Initializes and loads PyTorch NeuralIntentNet checkpoint if available."""
-        if not TORCH_AVAILABLE:
-            ajax_logger.info("PyTorch not installed in environment; using pure semantic cosine engine.")
+        """Initialize the configured PyTorch or ONNX intent inference backend."""
+        if not TORCH_AVAILABLE and not ONNX_RUNTIME_AVAILABLE:
+            ajax_logger.info("Neither PyTorch nor ONNX Runtime is installed; using pure semantic cosine engine.")
             return
 
-        if not os.path.exists(MODEL_PT_PATH) or not os.path.exists(VOCAB_META_PATH):
-            ajax_logger.info(f"Neural checkpoint not found at {MODEL_PT_PATH}; using semantic cosine engine.")
+        if not os.path.exists(VOCAB_META_PATH):
+            ajax_logger.info(f"Neural vocabulary metadata not found at {VOCAB_META_PATH}; using semantic cosine engine.")
             return
 
         try:
-            # 1. Device Selection (CUDA -> DirectML -> CPU)
+            # Load vocabulary metadata shared by PyTorch and ONNX inference.
+            with open(VOCAB_META_PATH, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+                self.word_to_idx = meta.get("word_to_idx", {})
+                self.intent_labels = meta.get("intent_labels", [])
+                self.vocab_size = meta.get("vocab_size", len(self.word_to_idx))
+                self.num_classes = meta.get("num_classes", len(self.intent_labels))
+
+            backend = str(getattr(config.neural, "backend", "auto") or "auto").strip().lower()
+            onnx_path = str(getattr(config.neural, "onnx_model_path", "") or DEFAULT_ONNX_MODEL_PATH)
+            if not os.path.isabs(onnx_path):
+                onnx_path = os.path.join(BASE_DIR, onnx_path)
+
+            # ONNX is preferred only when explicitly selected or when auto mode
+            # finds the exported artifact. Any load failure safely falls back to
+            # the existing PyTorch checkpoint.
+            if backend in {"auto", "onnx"} and ONNX_RUNTIME_AVAILABLE and os.path.exists(onnx_path):
+                try:
+                    session = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+                    inputs = session.get_inputs()
+                    outputs = session.get_outputs()
+                    if not inputs or not outputs:
+                        raise RuntimeError("ONNX model has no input/output tensors")
+                    self.onnx_session = session
+                    self.onnx_input_name = inputs[0].name
+                    self.onnx_output_name = outputs[0].name
+                    self.neural_model = None
+                    self.neural_loaded = True
+                    self.inference_backend = "onnx"
+                    self.device_desc = "ONNX Runtime CPU"
+                    ajax_logger.info(
+                        f"Loaded ONNX Neural Intent Model on CPU ({self.num_classes} classes, "
+                        f"{self.vocab_size} vocab) from {onnx_path}."
+                    )
+                    return
+                except Exception as onnx_error:
+                    ajax_logger.warning(f"Could not load ONNX intent model ({onnx_error}); trying PyTorch fallback.")
+
+            if not TORCH_AVAILABLE or not os.path.exists(MODEL_PT_PATH):
+                ajax_logger.info(f"PyTorch checkpoint not available at {MODEL_PT_PATH}; using semantic cosine engine.")
+                return
+
+            # Device Selection (CUDA -> DirectML -> CPU)
             if torch.cuda.is_available():
                 self.device = torch.device("cuda")
                 self.device_desc = f"NVIDIA CUDA GPU ({torch.cuda.get_device_name(0)})"
@@ -162,20 +217,11 @@ class IntentClassifier:
                         self.device_desc = "DirectML GPU Accelerator"
                 except Exception:
                     pass
-            
+
             if self.device is None:
                 self.device = torch.device("cpu")
                 self.device_desc = f"Multi-Threaded CPU ({torch.get_num_threads()} threads)"
 
-            # 2. Load Vocabulary Metadata
-            with open(VOCAB_META_PATH, "r", encoding="utf-8") as f:
-                meta = json.load(f)
-                self.word_to_idx = meta.get("word_to_idx", {})
-                self.intent_labels = meta.get("intent_labels", [])
-                self.vocab_size = meta.get("vocab_size", len(self.word_to_idx))
-                self.num_classes = meta.get("num_classes", len(self.intent_labels))
-
-            # 3. Instantiate Neural Model
             model = NeuralIntentNet(vocab_size=self.vocab_size, hidden_dim=128, num_classes=self.num_classes)
             state_dict = torch.load(MODEL_PT_PATH, map_location=self.device)
             model.load_state_dict(state_dict)
@@ -184,6 +230,7 @@ class IntentClassifier:
 
             self.neural_model = model
             self.neural_loaded = True
+            self.inference_backend = "pytorch"
             ajax_logger.info(
                 f"Loaded PyTorch Deep Neural Model on {self.device_desc} "
                 f"({self.num_classes} classes, {self.vocab_size} vocab)."
@@ -191,7 +238,20 @@ class IntentClassifier:
         except Exception as e:
             self.neural_loaded = False
             self.neural_model = None
+            self.onnx_session = None
+            self.inference_backend = "unavailable"
             ajax_logger.warning(f"Could not load PyTorch neural intent model ({e}); falling back to cosine similarity.")
+
+    def reload_neural_backend(self):
+        """Reload the intent model after a runtime backend/path setting changes."""
+        self.neural_model = None
+        self.onnx_session = None
+        self.onnx_input_name = ""
+        self.onnx_output_name = ""
+        self.neural_loaded = False
+        self.inference_backend = "unavailable"
+        self.device = None
+        self.init_pytorch_neural_net()
 
     def load_dataset(self):
         """Loads the base dataset plus curated supplemental vocabulary."""
@@ -212,7 +272,7 @@ class IntentClassifier:
         Runs PyTorch forward pass with Softmax normalization.
         Returns: (top_intent, top_confidence, top_3_candidates)
         """
-        if not self.neural_loaded or self.neural_model is None or not TORCH_AVAILABLE:
+        if not self.neural_loaded or (self.neural_model is None and self.onnx_session is None):
             return None, 0.0, []
 
         try:
@@ -220,29 +280,48 @@ class IntentClassifier:
             if not tokens:
                 return None, 0.0, []
 
-            x = torch.zeros((1, self.vocab_size), dtype=torch.float32, device=self.device)
+            vector = [0.0] * self.vocab_size
             found_count = 0
             for t in tokens:
                 if t in self.word_to_idx:
-                    x[0, self.word_to_idx[t]] += 1.0
+                    vector[self.word_to_idx[t]] += 1.0
                     found_count += 1
 
             if found_count == 0:
                 return None, 0.0, []
 
-            with torch.no_grad():
-                logits = self.neural_model(x)
-                probs = torch.softmax(logits, dim=1)
-                k = min(3, self.num_classes)
-                top_p, top_i = torch.topk(probs, k=k)
-
-            top_intent = self.intent_labels[top_i[0][0].item()]
-            top_prob = float(top_p[0][0].item())
+            if self.inference_backend == "onnx" and self.onnx_session is not None:
+                import numpy as np
+                logits = self.onnx_session.run(
+                    [self.onnx_output_name],
+                    {self.onnx_input_name: np.asarray([vector], dtype=np.float32)}
+                )[0][0]
+                logits = np.asarray(logits, dtype=np.float32)
+                stable_logits = logits - np.max(logits)
+                exp_logits = np.exp(stable_logits)
+                probs = exp_logits / (np.sum(exp_logits) or 1.0)
+                ranked = np.argsort(-probs)[:min(3, self.num_classes)]
+                top_intent = self.intent_labels[int(ranked[0])]
+                top_prob = float(probs[int(ranked[0])])
+                ranked_probs = [(int(index), float(probs[int(index)])) for index in ranked]
+            else:
+                x = torch.tensor([vector], dtype=torch.float32, device=self.device)
+                with torch.no_grad():
+                    logits = self.neural_model(x)
+                    probs = torch.softmax(logits, dim=1)
+                    k = min(3, self.num_classes)
+                    top_p, top_i = torch.topk(probs, k=k)
+                top_intent = self.intent_labels[top_i[0][0].item()]
+                top_prob = float(top_p[0][0].item())
+                ranked_probs = [
+                    (top_i[0][j].item(), float(top_p[0][j].item()))
+                    for j in range(k)
+                ]
 
             candidates = []
-            for j in range(k):
-                lbl = self.intent_labels[top_i[0][j].item()]
-                c_prob = round(float(top_p[0][j].item()), 4)
+            for label_index, probability in ranked_probs:
+                lbl = self.intent_labels[label_index]
+                c_prob = round(probability, 4)
                 candidates.append((lbl, c_prob))
 
             return top_intent, top_prob, candidates
@@ -598,6 +677,7 @@ class IntentClassifier:
         final_conf = cos_conf
         final_tool = cos_tool or INTENT_TOOL_MAP.get(cos_intent)
         final_resp = cos_resp
+        neural_engine_name = "onnx_runtime" if self.inference_backend == "onnx" else "pytorch_deep_learning"
         engine_used = "semantic_cosine"
 
         if neural_intent:
@@ -611,7 +691,7 @@ class IntentClassifier:
                 final_intent = canonical_intent_name(neural_intent)
                 final_conf = neural_conf
                 final_tool = INTENT_TOOL_MAP.get(neural_intent)
-                engine_used = "pytorch_deep_learning"
+                engine_used = neural_engine_name
             elif cos_conf >= 0.90:
                 # Direct pattern string hit
                 final_intent = canonical_intent_name(cos_intent)
@@ -623,7 +703,7 @@ class IntentClassifier:
                     final_intent = canonical_intent_name(neural_intent)
                     final_conf = round(neural_conf * 0.7 + cos_conf * 0.3, 2)
                     final_tool = INTENT_TOOL_MAP.get(neural_intent)
-                    engine_used = "pytorch_deep_learning"
+                    engine_used = neural_engine_name
                 else:
                     final_intent = canonical_intent_name(cos_intent)
                     final_conf = round(cos_conf * 0.7 + neural_conf * 0.3, 2)
@@ -712,6 +792,11 @@ class IntentClassifier:
         return {
             "pytorch_available": TORCH_AVAILABLE,
             "neural_loaded": self.neural_loaded,
+            "inference_backend": self.inference_backend,
+            "inference_backend_configured": getattr(config.neural, "backend", "auto"),
+            "onnx_runtime_available": ONNX_RUNTIME_AVAILABLE,
+            "onnx_loaded": self.onnx_session is not None,
+            "onnx_model_path": getattr(config.neural, "onnx_model_path", DEFAULT_ONNX_MODEL_PATH),
             "compute_device": self.device_desc,
             "vocab_size": self.vocab_size,
             "num_classes": self.num_classes,

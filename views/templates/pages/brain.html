@@ -2,7 +2,7 @@
 
 {% block title %}AJAX AI — Brain & Neural Network Topology{% endblock %}
 {% block header_title %}Brain & GraphRAG Network Topology{% endblock %}
-{% block header_subtitle %}Interactive Physics-Driven Multi-Cluster Diagram: Neural Intent Anchors, Search-Guided GraphRAG & Knowledge Entities{% endblock %}
+{% block header_subtitle %}Interactive topology of the 92-intent ONNX/PT Neural Router, local GGUF chat model, GraphRAG, and knowledge entities{% endblock %}
 
 {% block content %}
 <style>
@@ -115,6 +115,49 @@
     min-width: 40px; color: var(--text-dim);
     font-family: var(--font-mono); font-size: 10.5px;
     text-align: center; user-select: none;
+}
+
+/* ── Live Model Flow Strip ── */
+.network-flow-strip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 42px;
+    padding: 6px 10px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    background: linear-gradient(90deg, rgba(0,242,254,.07), rgba(99,102,241,.07), rgba(244,63,94,.07));
+    border: 1px solid rgba(148,163,184,.16);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 22px rgba(0,242,254,.025);
+}
+.network-flow-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    border: 1px solid rgba(148,163,184,.18);
+    border-radius: 999px;
+    background: rgba(7,9,14,.68);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.network-flow-step i { color: var(--accent-cyan); }
+.network-flow-step.active {
+    color: var(--text-main);
+    border-color: rgba(0,242,254,.38);
+    background: rgba(0,242,254,.10);
+    box-shadow: 0 0 14px rgba(0,242,254,.10);
+}
+.network-flow-step.output { border-color: rgba(244,63,94,.30); }
+.network-flow-step.output i { color: #fb7185; }
+.network-flow-arrow {
+    flex: 0 0 auto;
+    color: rgba(148,163,184,.52);
+    font-size: 13px;
 }
 
 /* ── Summary Cards ── */
@@ -292,8 +335,8 @@
             <div class="network-brand-mark"><i class="fa-solid fa-circle-nodes"></i></div>
             <div>
                 <div class="network-eyebrow"><span class="network-live-dot"></span> Live topology monitor</div>
-                <h3 class="network-title">Neural Intent & GraphRAG Network</h3>
-                <div class="network-subtitle">Drag to explore · click to inspect · scroll to zoom</div>
+            <h3 class="network-title">Neural Router, Generative Models & GraphRAG</h3>
+            <div class="network-subtitle">Drag to explore · click to inspect · scroll to zoom</div>
             </div>
         </div>
 
@@ -305,11 +348,11 @@
 
             <select id="clusterFilter" class="form-input network-filter-select" onchange="filterCluster()" aria-label="Filter network cluster">
                 <option value="ALL">All Clusters (Full System)</option>
-                <option value="BRAIN">Neural Intent & Routing</option>
+                <option value="BRAIN">Neural Router & Backends</option>
                 <option value="GRAPHRAG">Search-Guided GraphRAG</option>
                 <option value="ENTITY">Knowledge Entities</option>
                 <option value="EXEC">Execution & DB Storage</option>
-                <option value="OUTPUT">Grounded LLM Output</option>
+                <option value="OUTPUT">Generative Models & Output</option>
             </select>
 
             <button class="btn-secondary network-tool-btn" onclick="zoomOut()" title="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-minus"></i></button>
@@ -322,21 +365,35 @@
         </div>
     </div>
 
+    <div class="network-flow-strip" aria-label="Live model execution flow">
+        <span class="network-flow-step active"><i class="fa-solid fa-message"></i> Query</span>
+        <span class="network-flow-arrow">→</span>
+        <span class="network-flow-step active"><i class="fa-solid fa-brain"></i> Neural Router</span>
+        <span class="network-flow-arrow">→</span>
+        <span class="network-flow-step"><i class="fa-solid fa-gears"></i> ONNX / PT</span>
+        <span class="network-flow-arrow">→</span>
+        <span class="network-flow-step"><i class="fa-solid fa-microchip"></i> AJAX Chat Core · GGUF 1.7B</span>
+        <span class="network-flow-arrow">→</span>
+        <span class="network-flow-step"><i class="fa-solid fa-diagram-project"></i> RAG Context</span>
+        <span class="network-flow-arrow">→</span>
+        <span class="network-flow-step output"><i class="fa-solid fa-bolt"></i> Streamed Answer</span>
+    </div>
+
     <div class="network-summary-grid" aria-label="Network summary">
         <div class="network-summary-card" style="--summary-glow:rgba(0,242,254,0.14); --summary-accent:#00f2fe;">
             <div class="network-summary-label">Active nodes</div>
-            <div class="network-summary-value" id="summaryNodeCount">19</div>
+            <div class="network-summary-value" id="summaryNodeCount">22</div>
             <div class="network-summary-meta">Interactive system components</div>
         </div>
         <div class="network-summary-card" style="--summary-glow:rgba(99,102,241,0.16); --summary-accent:#6366f1;">
             <div class="network-summary-label">Topology edges</div>
-            <div class="network-summary-value" id="summaryEdgeCount">21</div>
+            <div class="network-summary-value" id="summaryEdgeCount">25</div>
             <div class="network-summary-meta">Directed relationships</div>
         </div>
         <div class="network-summary-card" style="--summary-glow:rgba(16,185,129,0.15); --summary-accent:#10b981;">
             <div class="network-summary-label">Clusters</div>
             <div class="network-summary-value" id="summaryClusterCount">5</div>
-            <div class="network-summary-meta" id="summaryClusterMeta">Neural · RAG · entities · output</div>
+            <div class="network-summary-meta" id="summaryClusterMeta">Router · models · RAG · entities · output</div>
         </div>
         <div class="network-summary-card" style="--summary-glow:rgba(244,63,94,0.15); --summary-accent:#f43f5e;">
             <div class="network-summary-label">Engine status</div>
@@ -361,15 +418,15 @@
         <div class="network-hud">
             <div class="hud-pill">
                 <span style="color:var(--accent-cyan);">●</span>
-                <span>Active Nodes: <strong id="hudNodeCount">19</strong></span>
+                <span>Active Nodes: <strong id="hudNodeCount">22</strong></span>
             </div>
             <div class="hud-pill">
                 <span style="color:var(--accent-indigo);">●</span>
-                <span>Topology Edges: <strong id="hudEdgeCount">26</strong></span>
+                <span>Topology Edges: <strong id="hudEdgeCount">25</strong></span>
             </div>
             <div class="hud-pill">
                 <span style="color:var(--accent-emerald);">●</span>
-                <span>Neural Engine: <strong id="hudNeuralStatus">PyTorch Deep Net (CPU/GPU)</strong></span>
+                <span>Neural Engine: <strong id="hudNeuralStatus">ONNX Runtime · PT fallback</strong></span>
             </div>
         </div>
 
@@ -379,9 +436,9 @@
                 <span style="font-size:11px; font-weight:800; font-family:var(--font-mono); color:var(--accent-cyan); text-transform:uppercase;" id="insCluster">Cluster: Brain</span>
                 <button class="btn-secondary" style="padding:2px 6px; font-size:11px;" onclick="deselectNode()">✕</button>
             </div>
-            <h4 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-main);" id="insTitle">PyTorch Deep Neural Intent Router</h4>
+            <h4 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-main);" id="insTitle">AJAX Neural Router · ONNX/PT</h4>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:12px;" id="insDesc">
-                Evaluates input tokens using PyTorch Deep Neural Network (NeuralIntentNet) with Softmax probability distribution and cosine semantic consensus across the active merged intent catalog with sub-millisecond execution.
+                Classifies the active 92-intent catalog using the ONNX Runtime backend when available, with the trained PyTorch .pt checkpoint as a safe fallback.
             </p>
 
             <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Connected Relationships:</div>
@@ -391,7 +448,7 @@
 
             <div style="margin-top:14px; border-top:1px solid var(--border-subtle); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:11px; color:var(--text-dim);">Latency / Overhead:</span>
-                <span style="font-size:11px; font-family:var(--font-mono); color:var(--accent-emerald);" id="insLatency">< 0.05ms</span>
+                <span style="font-size:11px; font-family:var(--font-mono); color:var(--accent-emerald);" id="insLatency">Runtime</span>
             </div>
         </div>
 
@@ -407,7 +464,7 @@
         <button class="legend-item" type="button" data-cluster="GRAPHRAG" onclick="setClusterFilter('GRAPHRAG')"><span class="legend-dot" style="background:#6366f1;"></span><span>GraphRAG</span></button>
         <button class="legend-item" type="button" data-cluster="ENTITY" onclick="setClusterFilter('ENTITY')"><span class="legend-dot" style="background:#10b981;"></span><span>Knowledge</span></button>
         <button class="legend-item" type="button" data-cluster="EXEC" onclick="setClusterFilter('EXEC')"><span class="legend-dot" style="background:#f59e0b;"></span><span>Execution & DB</span></button>
-        <button class="legend-item" type="button" data-cluster="OUTPUT" onclick="setClusterFilter('OUTPUT')"><span class="legend-dot" style="background:#f43f5e;"></span><span>LLM output</span></button>
+        <button class="legend-item" type="button" data-cluster="OUTPUT" onclick="setClusterFilter('OUTPUT')"><span class="legend-dot" style="background:#f43f5e;"></span><span>Generative models</span></button>
     </div>
 </div>
 {% endblock %}
@@ -434,10 +491,12 @@
 // ==============================================================================
 
 const NODES_DATA = [
-    // 1. Ingestion & Neural Brain Cluster (Cyan)
+    // 1. Ingestion & Neural Router Cluster (Cyan)
     { id: "user_query", label: "User Query Ingestion", cluster: "BRAIN", icon: "💬", color: "#00f2fe", size: 24, x: -350, y: 0, desc: "Multimodal query capture (English & Hindi) with automatic text and voice audio tokenization.", latency: "0.1ms" },
-    { id: "intent_router", label: "PyTorch Neural Intent Router", cluster: "BRAIN", icon: "🧠", color: "#00f2fe", size: 28, x: -180, y: -40, desc: "Evaluates token representations through PyTorch NeuralIntentNet with Softmax probability and Cosine consensus in < 0.05ms.", latency: "< 0.05ms" },
-    { id: "intent_vectors", label: "Merged Intent Anchors", cluster: "BRAIN", icon: "🎯", color: "#00f2fe", size: 18, x: -220, y: -160, desc: "Mathematical intent reference vectors covering productivity, writing, study, coding, networking, system control, and core assistant actions.", latency: "0.01ms" },
+    { id: "intent_router", label: "AJAX Neural Router · ONNX/PT", cluster: "BRAIN", icon: "🧠", color: "#00f2fe", size: 30, x: -180, y: -40, desc: "Classifies 92 merged intents from the 1028-token vocabulary. Auto mode uses ONNX Runtime and falls back to the trained PyTorch checkpoint.", latency: "Runtime" },
+    { id: "intent_vectors", label: "92 Intent Classes & Vocab", cluster: "BRAIN", icon: "🎯", color: "#00f2fe", size: 19, x: -220, y: -160, desc: "Shared vocabulary and 92 output labels used by both the ONNX and PyTorch intent inference backends.", latency: "Metadata" },
+    { id: "intent_onnx", label: "ONNX Intent Runtime", cluster: "BRAIN", icon: "⚙️", color: "#22d3ee", size: 22, x: -45, y: -185, desc: "Optimized CPU inference artifact: models/ajax_neural_intent.onnx. This is the preferred auto-mode backend when available.", latency: "CPU optimized" },
+    { id: "intent_pytorch", label: "PyTorch .pt Fallback", cluster: "BRAIN", icon: "🔥", color: "#38bdf8", size: 21, x: -10, y: -75, desc: "Original trained checkpoint at models/ajax_neural_intent.pt. Used directly when PyTorch is selected or ONNX cannot load.", latency: "Fallback" },
 
     // 2. Search-Guided GraphRAG Cluster (Indigo)
     { id: "meilisearch", label: "Meilisearch Fast Filter", cluster: "GRAPHRAG", icon: "⚡", color: "#6366f1", size: 26, x: 0, y: -120, desc: "Ultra-fast inverted index lexical search. Filters noise so high-relevance document chunks enter the graph.", latency: "1.2ms" },
@@ -459,20 +518,24 @@ const NODES_DATA = [
     { id: "memory_manager", label: "Long-Term Memory Vault", cluster: "EXEC", icon: "🧠", color: "#f59e0b", size: 20, x: -220, y: 190, desc: "Stores personal facts and user preferences with semantic recall across sessions.", latency: "1.1ms" },
 
     // 5. Output & Grounding Cluster (Rose)
-    { id: "ground_truth", label: "Verified Subgraph Context", cluster: "OUTPUT", icon: "🛡️", color: "#f43f5e", size: 22, x: 260, y: 130, desc: "Extracts strictly grounded relationship triples and strips hallucinated candidate paths.", latency: "0.3ms" },
-    { id: "llm_engine", label: "Grounded LLM Generator", cluster: "OUTPUT", icon: "🤖", color: "#f43f5e", size: 28, x: 160, y: 220, desc: "Synthesizes multi-hop answers utilizing only ground truth verified triples.", latency: "Stream" },
-    { id: "stream_output", label: "SSE Streaming Response", cluster: "OUTPUT", icon: "🚀", color: "#f43f5e", size: 22, x: 30, y: 340, desc: "Delivers chunked tokens in real-time to the user's browser via Server-Sent Events.", latency: "Real-time" }
+    { id: "ground_truth", label: "Verified Subgraph Context", cluster: "OUTPUT", icon: "🛡️", color: "#f43f5e", size: 22, x: 235, y: 100, desc: "Extracts strictly grounded relationship triples and strips hallucinated candidate paths before generation.", latency: "0.3ms" },
+    { id: "llm_engine", label: "AJAX Chat Core Gateway", cluster: "OUTPUT", icon: "🤖", color: "#f43f5e", size: 28, x: 130, y: 205, desc: "Routes grounded context to the bundled AJAX Chat Core GGUF 1.7B generator for local chat and RAG answers.", latency: "Provider route" },
+    { id: "chat_core", label: "AJAX Chat Core · GGUF 1.7B", cluster: "OUTPUT", icon: "🧠", color: "#fb7185", size: 25, x: 320, y: 215, desc: "Primary local generative chat model. Quantized GGUF inference is tuned for practical CPU chat and RAG answers.", latency: "Generative" },
+    { id: "stream_output", label: "SSE Streaming Response", cluster: "OUTPUT", icon: "🚀", color: "#f43f5e", size: 22, x: 250, y: 360, desc: "Delivers generated tokens in real-time to the user's browser via Server-Sent Events.", latency: "Real-time" }
 ];
 
 const EDGES_DATA = [
     // Ingestion & Routing
     { source: "user_query", target: "intent_router", label: "TOKENIZES", style: "solid" },
     { source: "intent_router", target: "intent_vectors", label: "COSINE_MATCH", style: "dashed" },
+    { source: "intent_router", target: "intent_onnx", label: "AUTO_BACKEND", style: "solid" },
+    { source: "intent_router", target: "intent_pytorch", label: "PT_FALLBACK", style: "dashed" },
     
     // Routing branching
     { source: "intent_router", target: "direct_exec", label: "FAST_PATH (1ms)", style: "solid" },
     { source: "intent_router", target: "meilisearch", label: "RETRIEVAL_TASK", style: "solid" },
     { source: "intent_router", target: "memory_manager", label: "FACT_STORE", style: "solid" },
+    { source: "intent_router", target: "llm_engine", label: "CHAT_ROUTE", style: "solid" },
 
     // Search-Guided GraphRAG flow
     { source: "meilisearch", target: "entity_extractor", label: "FILTERED_CHUNKS", style: "solid" },
@@ -490,7 +553,8 @@ const EDGES_DATA = [
     // Graph to Grounding
     { source: "networkx_graph", target: "ground_truth", label: "SUBGRAPH_TRIPLES", style: "solid" },
     { source: "ground_truth", target: "llm_engine", label: "ZERO_HALLUCINATION", style: "solid" },
-    { source: "llm_engine", target: "stream_output", label: "STREAM_TOKENS", style: "solid" },
+    { source: "llm_engine", target: "chat_core", label: "ACTIVE_PROVIDER", style: "solid" },
+    { source: "chat_core", target: "stream_output", label: "STREAM_TOKENS", style: "solid" },
 
     // Storage links
     { source: "direct_exec", target: "memory_manager", label: "SAVES_FACTS", style: "solid" },
@@ -517,6 +581,12 @@ let activeClusterFilter = "ALL";
 let eventsBound = false;
 let animationStarted = false;
 let lastHoverId = null;
+let pointerDownNode = null;
+let pointerDownScreen = { x: 0, y: 0 };
+let pointerMoved = false;
+const NODE_DRAG_THRESHOLD = 5;
+const WORLD_LIMIT_X = 700;
+const WORLD_LIMIT_Y = 360;
 
 class GraphNode {
     constructor(data) {
@@ -748,13 +818,16 @@ function findNodeAt(worldPos) {
 }
 
 function onMouseDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
     const pos = toWorld(e.clientX, e.clientY);
     const node = findNodeAt(pos);
+    pointerDownScreen = { x: e.clientX, y: e.clientY };
+    pointerDownNode = node;
+    pointerMoved = false;
 
     if (node) {
         draggedNode = node;
-        isDragging = true;
-        selectNode(node);
+        isDragging = false;
     } else {
         isPanning = true;
         panStart = { x: e.clientX - camera.x, y: e.clientY - camera.y };
@@ -764,9 +837,20 @@ function onMouseDown(e) {
 function onMouseMove(e) {
     const pos = toWorld(e.clientX, e.clientY);
 
+    if (draggedNode && pointerDownNode) {
+        const movedDistance = Math.hypot(
+            e.clientX - pointerDownScreen.x,
+            e.clientY - pointerDownScreen.y
+        );
+        if (!pointerMoved && movedDistance >= NODE_DRAG_THRESHOLD) {
+            pointerMoved = true;
+            isDragging = true;
+        }
+    }
+
     if (isDragging && draggedNode) {
-        draggedNode.x = pos.x;
-        draggedNode.y = pos.y;
+        draggedNode.x = Math.max(-WORLD_LIMIT_X, Math.min(WORLD_LIMIT_X, pos.x));
+        draggedNode.y = Math.max(-WORLD_LIMIT_Y, Math.min(WORLD_LIMIT_Y, pos.y));
     } else if (isPanning) {
         camera.x = e.clientX - panStart.x;
         camera.y = e.clientY - panStart.y;
@@ -777,9 +861,14 @@ function onMouseMove(e) {
 }
 
 function onMouseUp() {
+    if (pointerDownNode && !pointerMoved) {
+        selectNode(pointerDownNode);
+    }
     isDragging = false;
     draggedNode = null;
     isPanning = false;
+    pointerDownNode = null;
+    pointerMoved = false;
 }
 
 function onWheel(e) {
@@ -796,6 +885,8 @@ function selectNode(node) {
         if (panel) { panel.classList.add("is-hidden"); panel.style.display = "none"; }
         return;
     }
+
+    if (!panel) return;
 
     panel.style.display = "block";
     // Small tick so transition runs
@@ -851,12 +942,14 @@ function updatePhysics() {
             const b = nodes[j];
             const dx = b.x - a.x;
             const dy = b.y - a.y;
-            const dist = Math.hypot(dx, dy) || 1;
+            const dist = Math.max(Math.hypot(dx, dy), 24);
 
             if (dist < 260) {
-                const force = (260 - dist) / dist * 0.08;
-                if (a !== draggedNode) { a.x -= dx * force; a.y -= dy * force; }
-                if (b !== draggedNode) { b.x += dx * force; b.y += dy * force; }
+                const force = Math.min(1.6, (260 - dist) * 0.012);
+                const pushX = (dx / dist) * force;
+                const pushY = (dy / dist) * force;
+                if (a !== draggedNode && a !== selectedNode) { a.x -= pushX; a.y -= pushY; }
+                if (b !== draggedNode && b !== selectedNode) { b.x += pushX; b.y += pushY; }
             }
         }
     }
@@ -865,19 +958,29 @@ function updatePhysics() {
     for (let edge of edges) {
         const dx = edge.target.x - edge.source.x;
         const dy = edge.target.y - edge.source.y;
-        const dist = Math.hypot(dx, dy) || 1;
+        const dist = Math.max(Math.hypot(dx, dy), 1);
         const ideal = 160;
-        const spring = (dist - ideal) * 0.004;
+        const spring = Math.max(-2.4, Math.min(2.4, (dist - ideal) * 0.0015));
+        const moveX = (dx / dist) * spring;
+        const moveY = (dy / dist) * spring;
 
-        if (edge.source !== draggedNode) {
-            edge.source.x += dx * spring;
-            edge.source.y += dy * spring;
+        if (edge.source !== draggedNode && edge.source !== selectedNode) {
+            edge.source.x += moveX;
+            edge.source.y += moveY;
         }
-        if (edge.target !== draggedNode) {
-            edge.target.x -= dx * spring;
-            edge.target.y -= dy * spring;
+        if (edge.target !== draggedNode && edge.target !== selectedNode) {
+            edge.target.x -= moveX;
+            edge.target.y -= moveY;
         }
     }
+
+    // Keep every node inside the drawable world. This prevents the force
+    // simulation from slowly pushing nodes permanently outside the canvas.
+    nodes.forEach(node => {
+        if (node === draggedNode || node === selectedNode) return;
+        node.x = Math.max(-WORLD_LIMIT_X, Math.min(WORLD_LIMIT_X, node.x));
+        node.y = Math.max(-WORLD_LIMIT_Y, Math.min(WORLD_LIMIT_Y, node.y));
+    });
 }
 
 function renderLoop() {
@@ -945,6 +1048,59 @@ function updateNetworkSummary() {
     });
 }
 
+async function loadBrainDiagnostics() {
+    try {
+        const [diagnosticResponse, settingsResponse] = await Promise.all([
+            window.ajaxApiFetch('/api/brain/diagnostics'),
+            window.ajaxApiFetch('/api/settings')
+        ]);
+        if (!diagnosticResponse.ok) return;
+
+        const diagnostics = await diagnosticResponse.json();
+        const settings = settingsResponse.ok ? await settingsResponse.json() : {};
+        const neural = diagnostics.neural || {};
+        const llm = diagnostics.llm || {};
+        const provider = settings.llm ? String(settings.llm.provider || '') : '';
+        const backend = String(neural.inference_backend || '').toLowerCase();
+        const backendLabel = backend === 'onnx'
+            ? 'ONNX Runtime'
+            : backend === 'pytorch'
+                ? 'PyTorch'
+                : 'Semantic fallback';
+        const intentCount = Number(neural.num_classes || neural.intents_dataset_count || 92);
+
+        const routerNode = nodes.find(node => node.id === 'intent_router');
+        if (routerNode) {
+            routerNode.label = `AJAX Neural Router · ${backendLabel}`;
+            routerNode.desc = `Classifies ${intentCount} merged intents using the active ${backendLabel} backend. ONNX is preferred in auto mode and the trained PyTorch checkpoint remains available as fallback.`;
+        }
+        const onnxNode = nodes.find(node => node.id === 'intent_onnx');
+        if (onnxNode) onnxNode.label = `ONNX Intent Runtime${neural.onnx_loaded ? ' · ACTIVE' : ''}`;
+        const pytorchNode = nodes.find(node => node.id === 'intent_pytorch');
+        if (pytorchNode) pytorchNode.label = `PyTorch .pt ${backend === 'pytorch' ? '· ACTIVE' : '· FALLBACK'}`;
+
+        const coreNode = nodes.find(node => node.id === 'chat_core');
+        if (coreNode) coreNode.label = `AJAX Chat Core · GGUF 1.7B${provider === 'ajax_gguf' || !provider ? ' · ACTIVE' : ''}`;
+
+        const selectorNode = nodes.find(node => node.id === 'llm_engine');
+        if (selectorNode) {
+            selectorNode.label = 'AJAX Chat Core Gateway';
+            selectorNode.desc = 'Routes grounded context to the bundled AJAX Chat Core GGUF 1.7B generator. The Neural Router remains active before every response.';
+        }
+
+        const neuralStatus = document.getElementById('hudNeuralStatus');
+        if (neuralStatus) neuralStatus.textContent = `${backendLabel} · ${intentCount} intents`;
+        const engineStatus = document.getElementById('summaryEngineStatus');
+        if (engineStatus) engineStatus.textContent = llm.primary_active === false ? 'FALLBACK' : 'LIVE';
+        const summaryMeta = document.getElementById('summaryClusterMeta');
+        if (summaryMeta) summaryMeta.textContent = `${backendLabel} · GGUF chat · GraphRAG`;
+
+        if (selectedNode) selectNode(selectedNode);
+    } catch (_) {
+        // Static topology remains usable when diagnostics are temporarily unavailable.
+    }
+}
+
 function updateNetworkTooltip(node, event) {
     const tooltip = document.getElementById("networkTooltip");
     if (!tooltip || !node) {
@@ -975,7 +1131,7 @@ function setClusterFilter(cluster) {
         item.classList.toggle("is-active", item.dataset.cluster === cluster);
     });
     const meta = document.getElementById("summaryClusterMeta");
-    if (meta) meta.textContent = cluster === "ALL" ? "Neural · RAG · entities · output" : `${cluster} cluster focused`;
+    if (meta) meta.textContent = cluster === "ALL" ? "Router · models · RAG · entities · output" : `${cluster} cluster focused`;
 }
 
 function zoomIn() {
@@ -1104,6 +1260,7 @@ window.addEventListener("resize", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     initNetworkGraph();
+    loadBrainDiagnostics();
 });
 </script>
 {% endblock %}

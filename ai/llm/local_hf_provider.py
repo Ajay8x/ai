@@ -5,6 +5,7 @@ Loads and runs a locally downloaded causal language model using Hugging Face tra
 
 import os
 import sys
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 from ai.llm.base import BaseLLMProvider, LLMResponse, ToolCall
 from core.logger import ajax_logger, error_logger
@@ -12,10 +13,11 @@ from core.logger import ajax_logger, error_logger
 class LocalHuggingFaceProvider(BaseLLMProvider):
     """Executes inference directly on a local PyTorch/Transformers model."""
 
-    def __init__(self, model_path: str, device: str = "auto", load_in_4bit: bool = False):
+    def __init__(self, model_path: str, device: str = "auto", load_in_4bit: bool = False, require_safetensors: bool = False):
         self.model_path = os.path.abspath(model_path)
         self.device = device
         self.load_in_4bit = load_in_4bit
+        self.require_safetensors = require_safetensors
         self.tokenizer = None
         self.model = None
         self._is_loaded = False
@@ -28,10 +30,21 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
             ajax_logger.info(f"Loading local Transformers model from: {self.model_path}")
+
+            if self.require_safetensors:
+                if not os.path.isdir(self.model_path):
+                    raise FileNotFoundError(
+                        f"Safetensors models must be a local directory: {self.model_path}"
+                    )
+                if not list(Path(self.model_path).glob("*.safetensors")):
+                    raise FileNotFoundError(
+                        f"No .safetensors weight file found in: {self.model_path}"
+                    )
             
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_path,
-                trust_remote_code=True
+                trust_remote_code=True,
+                local_files_only=True
             )
 
             use_cuda = torch.cuda.is_available() and self.device != "cpu"
@@ -39,7 +52,10 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
                 "trust_remote_code": True,
                 "torch_dtype": torch.float16 if use_cuda else torch.float32,
                 "low_cpu_mem_usage": True,
+                "local_files_only": True,
             }
+            if self.require_safetensors:
+                kwargs["use_safetensors"] = True
             if use_cuda:
                 kwargs["device_map"] = "auto"
             if self.load_in_4bit:
@@ -115,7 +131,7 @@ class LocalHuggingFaceProvider(BaseLLMProvider):
                 content=response_text,
                 tool_calls=[],
                 model=os.path.basename(self.model_path) or "ajax-local-transformer",
-                provider="ajax_local_llm",
+                provider="ajax_safetensors" if self.require_safetensors else "ajax_local_llm",
                 tokens_used=len(generated_ids[0])
             )
         except Exception as e:

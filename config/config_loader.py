@@ -26,6 +26,11 @@ PERSISTED_LLM_FIELDS = (
     "thinking_mode",
 )
 
+PERSISTED_NEURAL_FIELDS = (
+    "backend",
+    "onnx_model_path",
+)
+
 try:
     os.makedirs(DATA_DIR, exist_ok=True)
 except OSError:
@@ -71,6 +76,12 @@ class LLMConfig:
     thinking_mode: bool = os.getenv("LLM_THINKING_MODE", "false").lower() == "true"
 
 @dataclass
+class NeuralConfig:
+    """Runtime backend selection for the intent classifier."""
+    backend: str = os.getenv("NEURAL_INFERENCE_BACKEND", "auto").strip().lower()
+    onnx_model_path: str = os.getenv("ONNX_MODEL_PATH", "models/ajax_neural_intent.onnx")
+
+@dataclass
 class VoiceConfig:
     enabled: bool = os.getenv("VOICE_ENABLED", "true").lower() == "true"
     wake_word: str = os.getenv("WAKE_WORD", "ajax")
@@ -109,6 +120,7 @@ class MeiliSearchConfig:
 @dataclass
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
+    neural: NeuralConfig = field(default_factory=NeuralConfig)
     voice: VoiceConfig = field(default_factory=VoiceConfig)
     safety: SafetyConfig = field(default_factory=SafetyConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
@@ -155,6 +167,11 @@ class AppConfig:
                 for key in PERSISTED_LLM_FIELDS
                 if hasattr(self.llm, key)
             },
+            "neural": {
+                key: getattr(self.neural, key)
+                for key in PERSISTED_NEURAL_FIELDS
+                if hasattr(self.neural, key)
+            },
             "voice": asdict(self.voice),
             "safety": asdict(self.safety),
         }
@@ -196,6 +213,10 @@ class AppConfig:
                         # Never re-enable hidden chain-of-thought output from a
                         # stale settings file.
                         config.llm.thinking_mode = False
+                    if "neural" in data:
+                        for k in PERSISTED_NEURAL_FIELDS:
+                            if k in data["neural"] and hasattr(config.neural, k):
+                                setattr(config.neural, k, data["neural"][k])
                     if "voice" in data:
                         for k, v in data["voice"].items():
                             if hasattr(config.voice, k):
@@ -227,9 +248,16 @@ class AppConfig:
         # AJAX runs on its local engines only. Ignore stale or externally
         # configured cloud providers so the settings surface stays clear and
         # no cloud credential can silently become the active provider.
-        if str(config.llm.provider).strip().lower() not in {"ajax_local", "ajax_gguf"}:
+        if str(config.llm.provider).strip().lower() == "ajax_safetensors":
+            config.llm.provider = "ajax_gguf"
+            config.llm.model = "ajax-native-1.7b-q4_k"
+            config.llm.local_model_path = "models/ajax-native-1.7b-q4_k_m.gguf"
+        elif str(config.llm.provider).strip().lower() not in {"ajax_local", "ajax_gguf"}:
             config.llm.provider = "ajax_local"
             config.llm.model = "ajax-native-merged-intents"
+        if str(config.neural.backend).strip().lower() not in {"auto", "pytorch", "onnx"}:
+            config.neural.backend = "auto"
+        config.neural.backend = str(config.neural.backend).strip().lower()
         return config
 
 # Global config instance

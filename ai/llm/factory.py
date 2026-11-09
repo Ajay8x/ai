@@ -661,6 +661,24 @@ def get_llm_provider() -> BaseLLMProvider:
     # AJAX's own local engine is the default and must always win over any
     # accidentally present cloud credentials. It uses the trained intent brain
     # plus the built-in local response/code/search engines.
+    if provider_name == "ajax_gguf":
+        from ai.llm.gguf_provider import GGUFProvider
+        model_path = config.llm.local_model_path or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "models", "ajax-native-1.7b-q4_k_m.gguf"
+        )
+        if not os.path.isabs(model_path):
+            model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), model_path)
+        return GGUFProvider(model_path=model_path, n_gpu_layers=0, n_threads=config.llm.cpu_threads)
+
+    if provider_name == "ajax_safetensors":
+        base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "ajax-safetensors-model")
+        if not os.path.isabs(model_path):
+            model_path = os.path.join(base_root, model_path)
+        from ai.llm.local_hf_provider import LocalHuggingFaceProvider
+        return LocalHuggingFaceProvider(model_path=model_path, device="auto", require_safetensors=True)
+
     if provider_name in {"ajax_local", "local_fallback", "offline", "native", "custom"}:
         return LocalRuleBasedFallbackProvider()
     
@@ -703,18 +721,22 @@ def get_llm_provider() -> BaseLLMProvider:
             provider_name="openrouter"
         )
     # Optional local PyTorch / Transformers provider
-    elif provider_name in ["local_hf", "transformers"]:
+    elif provider_name in ["safetensors", "local_hf", "transformers"]:
         base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "ajax-local-model")
+        model_path = config.llm.local_model_path or os.path.join(base_root, "models", "ajax-safetensors-model")
         if not os.path.isabs(model_path):
             model_path = os.path.join(base_root, model_path)
         from ai.llm.local_hf_provider import LocalHuggingFaceProvider
-        return LocalHuggingFaceProvider(model_path=model_path, device="auto")
+        return LocalHuggingFaceProvider(
+            model_path=model_path,
+            device="auto",
+            require_safetensors=provider_name in ["ajax_safetensors", "safetensors"]
+        )
     elif provider_name == "llamafile":
         from ai.llm.llamafile_provider import LlamafileProvider
         model_path = config.llm.local_model_path or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "models", "ajax-local-model.gguf")
         return LlamafileProvider(model_path=model_path)
-    elif provider_name in ["ajax_gguf", "ajax_local_llm", "local_gguf", "gguf", "llama_cpp"]:
+    elif provider_name in ["ajax_local_llm", "local_gguf", "gguf", "llama_cpp"]:
         from ai.llm.gguf_provider import GGUFProvider
         model_path = config.llm.local_model_path or os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),

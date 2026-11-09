@@ -6,6 +6,7 @@ AJAX AI is a local-first autonomous assistant with a FastAPI web dashboard, mult
 
 - **Merged neural intent catalog:** 92 active intent classes with English, Hindi, and Hinglish examples. Overlapping labels were merged while keeping their useful training phrases.
 - **Local AI brain:** AJAX GGUF generation plus the AJAX Native PyTorch neural router. The Settings page exposes AJAX-local choices only.
+- **Local model runtime:** AJAX Chat Core uses the bundled quantized `.gguf` model. The intent classifier can use the exported `.onnx` graph through ONNX Runtime, with safe PyTorch fallback.
 - **Chat and voice:** streamed chat, session history, browser voice typing, optional speech output, and safe tool execution.
 - **RAG document questions:** upload a document from the Chat paperclip or from **Documents & RAG**, index it, and ask questions with source-grounded retrieval.
 - **System tools:** diagnostics, hardware telemetry, web search, calculations, reminders, notes, file search, and other guarded workflows.
@@ -51,6 +52,15 @@ python main.py --cli
 python main.py --voice
 python main.py --diagnostics
 ```
+
+Install optional local model runtimes when you want GGUF or ONNX support:
+
+```powershell
+python -m pip install -r requirements-optional.txt
+python training/export_intent_onnx.py
+```
+
+The ONNX graph is exported from the current `models/ajax_neural_intent.pt` checkpoint and uses the same `models/vocab_metadata.json` labels. Set `NEURAL_INFERENCE_BACKEND=auto`, `pytorch`, or `onnx` in `.env`. Chat Studio now uses **AJAX Chat Core · GGUF 1.7B** as the single local generative model, while the Neural Router remains active before every response.
 
 On Windows, double-click [`start_ajax_ai.bat`](start_ajax_ai.bat). To stop the source server, double-click [`kill_ajax_ai.bat`](kill_ajax_ai.bat).
 

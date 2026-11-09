@@ -6,3 +6,7 @@ pyttsx3>=2.90,<3.0
 sentence-transformers>=3.0,<4.0
 # Optional local CPU generative model runtime
 llama-cpp-python>=0.3.0
+# Optional ONNX intent inference and export runtime
+onnx>=1.16,<1.20
+onnxruntime>=1.18,<2.0
+protobuf>=4.25.1,<6.0

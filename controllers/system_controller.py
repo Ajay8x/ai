@@ -23,8 +23,11 @@ LOCAL_LLM_PROVIDER_PATTERN = r"^(ajax_local|ajax_gguf)$"
 class SettingsUpdateRequest(BaseModel):
     llm_provider: Optional[str] = Field(default=None, min_length=1, max_length=32, pattern=LOCAL_LLM_PROVIDER_PATTERN)
     llm_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    llm_model_path: Optional[str] = Field(default=None, min_length=1, max_length=512)
     llm_temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     llm_max_tokens: Optional[int] = Field(default=None, ge=1, le=32768)
+    neural_backend: Optional[str] = Field(default=None, min_length=1, max_length=16, pattern=r"^(auto|pytorch|onnx)$")
+    onnx_model_path: Optional[str] = Field(default=None, min_length=1, max_length=512)
     default_language: Optional[str] = None
     thinking_mode: Optional[bool] = None
 
@@ -62,6 +65,7 @@ def get_settings(current_user: Dict[str, Any] = Depends(require_authenticated_us
         "llm": {
             "provider": config.llm.provider,
             "model": config.llm.model,
+            "local_model_path": config.llm.local_model_path,
             "temperature": config.llm.temperature,
             "max_tokens": config.llm.max_tokens,
             "thinking_mode": False,
@@ -86,17 +90,32 @@ async def update_settings(req: SettingsUpdateRequest, admin: Dict[str, Any] = De
     if req.llm_model is not None:
         config.llm.model = req.llm_model
         updated.append(f"model={req.llm_model}")
+    if req.llm_model_path is not None:
+        config.llm.local_model_path = req.llm_model_path.strip()
+        updated.append("local_model_path=updated")
     if req.llm_temperature is not None:
         config.llm.temperature = float(req.llm_temperature)
         updated.append(f"temperature={req.llm_temperature}")
     if req.llm_max_tokens is not None:
         config.llm.max_tokens = int(req.llm_max_tokens)
         updated.append(f"max_tokens={req.llm_max_tokens}")
+    reload_neural = False
+    if req.neural_backend is not None:
+        config.neural.backend = req.neural_backend.strip().lower()
+        updated.append(f"neural_backend={config.neural.backend}")
+        reload_neural = True
+    if req.onnx_model_path is not None:
+        config.neural.onnx_model_path = req.onnx_model_path.strip()
+        updated.append("onnx_model_path=updated")
+        reload_neural = True
     if req.thinking_mode is not None:
         config.llm.thinking_mode = False
         updated.append("thinking_mode=false (server enforced)")
     # Persist
     config.save_to_file()
+
+    if reload_neural:
+        intent_classifier.reload_neural_backend()
     
     # Reload brain with updated settings
     llm_brain.reload()

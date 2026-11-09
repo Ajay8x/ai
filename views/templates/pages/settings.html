@@ -2,7 +2,7 @@
 
 {% block title %}AJAX AI - Settings & Preferences{% endblock %}
 {% block header_title %}System Settings & Preferences{% endblock %}
-{% block header_subtitle %}Manage LLM Providers, PyTorch Deep Neural Network, Speech Parameters, and Storage Sessions{% endblock %}
+{% block header_subtitle %}Manage local LLM formats, PyTorch/ONNX intent inference, speech, and storage sessions{% endblock %}
 
 {% block content %}
 <div class="page-title-row">
@@ -28,12 +28,18 @@
                 <option value="ajax_gguf">AJAX Local Generative Model (CPU)</option>
                 <option value="ajax_local">AJAX Native Engine (Merged Neural Brain)</option>
             </select>
-            <span style="font-size:11px; color:var(--text-dim);">Runs locally on this AJAX AI installation. No Gemini, OpenAI, Groq, DeepSeek, or OpenRouter connection is used.</span>
+            <span style="font-size:11px; color:var(--text-dim);">Runs locally on this AJAX AI installation using the bundled quantized GGUF chat model.</span>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="settingLlmModel">Local Model Name</label>
             <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. ajax-native-merged-intents or ajax-native-1.7b-q4">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="settingLlmModelPath">Local Model Path</label>
+            <input type="text" class="form-input" id="settingLlmModelPath" placeholder="models/ajax-native-1.7b-q4_k_m.gguf">
+            <span style="font-size:11px; color:var(--text-dim);">Local GGUF model file used for generative chat and RAG answers.</span>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -95,6 +101,21 @@
 
         <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:14px;" id="telemetryDevice">
             Compute Device: Multi-Threaded CPU (10 threads)
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="settingNeuralBackend">Intent Inference Backend</label>
+                <select class="form-select" id="settingNeuralBackend">
+                    <option value="auto">Auto (ONNX if available)</option>
+                    <option value="pytorch">PyTorch (.pt)</option>
+                    <option value="onnx">ONNX Runtime (.onnx)</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="settingOnnxModelPath">ONNX Model Path</label>
+                <input type="text" class="form-input" id="settingOnnxModelPath" placeholder="models/ajax_neural_intent.onnx">
+            </div>
         </div>
 
         <!-- Live Neural Playground -->
@@ -189,7 +210,8 @@
 <script>
     let settingsIsAdmin = false;
     const globalSettingsFieldIds = [
-        'settingLlmProvider', 'settingLlmModel', 'settingLlmTemp', 'settingLlmTokens'
+        'settingLlmProvider', 'settingLlmModel', 'settingLlmModelPath', 'settingLlmTemp', 'settingLlmTokens',
+        'settingNeuralBackend', 'settingOnnxModelPath'
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -237,6 +259,7 @@
             if (data.llm) {
                 document.getElementById('settingLlmProvider').value = data.llm.provider || 'ajax_local';
                 document.getElementById('settingLlmModel').value = data.llm.model || '';
+                document.getElementById('settingLlmModelPath').value = data.llm.local_model_path || '';
                 document.getElementById('settingLlmTemp').value = data.llm.temperature ?? 0.7;
                 document.getElementById('tempLabel').textContent = data.llm.temperature ?? 0.7;
                 document.getElementById('settingLlmTokens').value = data.llm.max_tokens ?? 2048;
@@ -247,6 +270,11 @@
                     document.getElementById('llmStatusBadge').textContent = statusText;
                     document.getElementById('llmStatusBadge').style.color = data.llm.brain_status.primary_active ? 'var(--accent-emerald)' : 'var(--accent-amber)';
                 }
+            }
+
+            if (data.neural) {
+                document.getElementById('settingNeuralBackend').value = data.neural.inference_backend_configured || 'auto';
+                document.getElementById('settingOnnxModelPath').value = data.neural.onnx_model_path || 'models/ajax_neural_intent.onnx';
             }
 
             // Populate Neural Telemetry
@@ -283,8 +311,11 @@
         const payload = {
             llm_provider: document.getElementById('settingLlmProvider').value,
             llm_model: document.getElementById('settingLlmModel').value,
+            llm_model_path: document.getElementById('settingLlmModelPath').value,
             llm_temperature: parseFloat(document.getElementById('settingLlmTemp').value),
-            llm_max_tokens: parseInt(document.getElementById('settingLlmTokens').value)
+            llm_max_tokens: parseInt(document.getElementById('settingLlmTokens').value),
+            neural_backend: document.getElementById('settingNeuralBackend').value,
+            onnx_model_path: document.getElementById('settingOnnxModelPath').value
         };
 
         try {
