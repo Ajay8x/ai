@@ -224,6 +224,12 @@ class AppConfig:
                         os.replace(temp_file, SETTINGS_FILE)
             except Exception as e:
                 print(f"Error loading custom settings: {e}")
+        # AJAX runs on its local engines only. Ignore stale or externally
+        # configured cloud providers so the settings surface stays clear and
+        # no cloud credential can silently become the active provider.
+        if str(config.llm.provider).strip().lower() not in {"ajax_local", "ajax_gguf"}:
+            config.llm.provider = "ajax_local"
+            config.llm.model = "ajax-native-100-intents"
         return config
 
 # Global config instance

@@ -13,11 +13,11 @@
 </div>
 
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:22px; margin-bottom: 24px;">
-    <!-- 1. LLM Brain Provider Configuration -->
+    <!-- 1. AJAX Local Brain Configuration -->
     <div class="glass-panel" style="position:relative; overflow:hidden;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <span><i class="fa-solid fa-brain" style="color:var(--accent-cyan);"></i></span><span>Multi-Tier LLM Brain</span>
+                <span><i class="fa-solid fa-brain" style="color:var(--accent-cyan);"></i></span><span>AJAX Local AI Brain</span>
             </h3>
             <span id="llmStatusBadge" class="badge" style="background:rgba(16, 185, 129, 0.15); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.3); font-size:11px; padding:3px 8px; border-radius:12px;">Active</span>
         </div>
@@ -25,20 +25,15 @@
         <div class="form-group">
             <label class="form-label" for="settingLlmProvider">Primary LLM Provider</label>
             <select class="form-select" id="settingLlmProvider" onchange="onLlmProviderChange(this.value)">
-                <option value="gemini">Google Gemini (Gemini 2.0 / 1.5 Flash - Free & Ultra-Fast)</option>
-                <option value="groq">Groq (Llama 3.3 70B - Sub-Second Cloud)</option>
-                <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                <option value="deepseek">DeepSeek (deepseek-chat / deepseek-reasoner)</option>
-                <option value="openrouter">OpenRouter (Multi-Model Cloud)</option>
                 <option value="ajax_gguf">AJAX Local Generative Model (CPU)</option>
                 <option value="ajax_local">AJAX Native Engine (Your 100-class Neural Brain)</option>
             </select>
-            <span style="font-size:11px; color:var(--text-dim);">Zero-crash auto-cascade: if primary is unreachable, cascades to secondary cloud and local engine.</span>
+            <span style="font-size:11px; color:var(--text-dim);">Runs locally on this AJAX AI installation. No Gemini, OpenAI, Groq, DeepSeek, or OpenRouter connection is used.</span>
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="settingLlmModel">Model Name</label>
-            <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. ajax-native-100-intents or gemini-2.5-flash-lite">
+            <label class="form-label" for="settingLlmModel">Local Model Name</label>
+            <input type="text" class="form-input" id="settingLlmModel" placeholder="e.g. ajax-native-100-intents or ajax-native-1.7b-q4">
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -65,28 +60,8 @@
             </label>
         </div>
 
-        <!-- Optional API Keys Accordion -->
-        <div style="margin-top:12px; padding:12px; background:rgba(0,0,0,0.25); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
-            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;"><i class="fa-solid fa-key"></i> API Key Overrides (Optional / Saved Securely)</div>
-            
-            <div class="form-group" style="margin-bottom:8px;">
-                <label class="form-label" style="font-size:11px;">Google Gemini API Key</label>
-                <input type="password" class="form-input" id="keyGemini" placeholder="AIzaSy... (leave blank to keep existing)" style="font-size:11.5px;">
-            </div>
-
-            <div class="form-group" style="margin-bottom:8px;">
-                <label class="form-label" style="font-size:11px;">Groq API Key</label>
-                <input type="password" class="form-input" id="keyGroq" placeholder="gsk_... (leave blank to keep existing)" style="font-size:11.5px;">
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label" style="font-size:11px;">OpenAI API Key</label>
-                <input type="password" class="form-input" id="keyOpenAI" placeholder="sk-... (leave blank to keep existing)" style="font-size:11.5px;">
-            </div>
-        </div>
-
         <div id="settingsAccessNotice" style="display:none; margin-top:14px; padding:9px 11px; border:1px solid rgba(245,158,11,0.35); background:rgba(245,158,11,0.08); border-radius:8px; color:#fbbf24; font-size:11.5px;">
-            <i class="fa-solid fa-lock"></i> LLM provider changes are administrator-only. You can still use language, voice, and session preferences below.
+            <i class="fa-solid fa-lock"></i> Local AI configuration changes are administrator-only. You can still use language, voice, and session preferences below.
         </div>
         <button class="btn-primary" id="saveLlmSettingsBtn" style="margin-top:16px; width:100%; justify-content:center; gap:8px;" onclick="saveLlmSettings()">
             <span><i class="fa-solid fa-floppy-disk"></i></span><span>Apply & Save LLM Configuration</span>
@@ -214,8 +189,7 @@
 <script>
     let settingsIsAdmin = false;
     const globalSettingsFieldIds = [
-        'settingLlmProvider', 'settingLlmModel', 'settingLlmTemp', 'settingLlmTokens',
-        'keyGemini', 'keyGroq', 'keyOpenAI'
+        'settingLlmProvider', 'settingLlmModel', 'settingLlmTemp', 'settingLlmTokens'
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -268,16 +242,6 @@
                 document.getElementById('settingLlmTokens').value = data.llm.max_tokens ?? 2048;
                 document.getElementById('settingThinkingMode').checked = data.llm.thinking_mode === true;
 
-                if (data.llm.gemini_key_masked) {
-                    document.getElementById('keyGemini').placeholder = data.llm.gemini_key_masked;
-                }
-                if (data.llm.groq_key_masked) {
-                    document.getElementById('keyGroq').placeholder = data.llm.groq_key_masked;
-                }
-                if (data.llm.openai_key_masked) {
-                    document.getElementById('keyOpenAI').placeholder = data.llm.openai_key_masked;
-                }
-
                 if (data.llm.brain_status) {
                     const statusText = data.llm.brain_status.primary_active ? 'Online' : 'Fallback Active';
                     document.getElementById('llmStatusBadge').textContent = statusText;
@@ -302,11 +266,6 @@
     function onLlmProviderChange(provider) {
         const modelInput = document.getElementById('settingLlmModel');
         const defaultModels = {
-            'gemini': 'gemini-2.5-flash-lite',
-            'groq': 'llama-3.3-70b-versatile',
-            'openai': 'gpt-4o-mini',
-            'deepseek': 'deepseek-chat',
-            'openrouter': 'meta-llama/llama-3.3-70b-instruct',
             'ajax_gguf': 'ajax-native-1.7b-q4',
             'ajax_local': 'ajax-native-100-intents'
         };
@@ -327,15 +286,6 @@
             llm_temperature: parseFloat(document.getElementById('settingLlmTemp').value),
             llm_max_tokens: parseInt(document.getElementById('settingLlmTokens').value)
         };
-
-        const geminiKey = document.getElementById('keyGemini').value.trim();
-        if (geminiKey) payload.gemini_api_key = geminiKey;
-
-        const groqKey = document.getElementById('keyGroq').value.trim();
-        if (groqKey) payload.groq_api_key = groqKey;
-
-        const openaiKey = document.getElementById('keyOpenAI').value.trim();
-        if (openaiKey) payload.openai_api_key = openaiKey;
 
         try {
             const res = await fetch('/api/settings', {

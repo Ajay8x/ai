@@ -738,7 +738,8 @@
         "what is ai",
         "today's whether",
         "what is time",
-        "explain how graphrag works with an ascii diagram"
+        "explain how graphrag works with an ascii diagram",
+        "what in mango  mango"
       ],
       "tool": "get_system_time"
     },
@@ -853,7 +854,9 @@
         "what is mobile",
         "what is pen",
         "what is mango",
-        "inversion of mobile"
+        "inversion of mobile",
+        "what is rdx boom",
+        "what is darkweb"
       ],
       "tool": "search_wikipedia"
     },

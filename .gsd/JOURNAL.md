@@ -18,3 +18,10 @@ Settings validation:
 - `python -m unittest tests.test_ajax.TestAJAXCore.test_request_router tests.test_ajax.TestAJAXCore.test_streaming_router -v` → 2 tests ran, all `OK`.
 - `python -m compileall -q controllers/system_controller.py tests/test_settings.py` → completed successfully.
 - Live local health check after restart → `{"status":"healthy","database_ready":true}`.
+
+AJAX-only settings cleanup:
+
+- `python -m unittest tests.test_settings -v` → 3 tests ran, all `OK`; external provider values are rejected and external key fields are absent from the settings page/API payload.
+- `python -m unittest tests.test_chat_rag_upload tests.test_ajax.TestAJAXCore.test_request_router tests.test_ajax.TestAJAXCore.test_streaming_router -v` → 6 tests ran, all `OK`.
+- `python -m compileall -q controllers/system_controller.py config/config_loader.py` → completed successfully.
+- Runtime configuration check → `provider: ajax_gguf`, `model: ajax-native-1.7b-q4`; both are AJAX-local options.

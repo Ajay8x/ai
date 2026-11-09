@@ -18,17 +18,13 @@ from training.auto_retrainer import auto_training_manager
 from controllers.auth_controller import require_authenticated_user, require_admin
 
 system_router = APIRouter(prefix="/api", tags=["System, Settings & Neural Diagnostics"])
+LOCAL_LLM_PROVIDER_PATTERN = r"^(ajax_local|ajax_gguf)$"
 
 class SettingsUpdateRequest(BaseModel):
-    llm_provider: Optional[str] = Field(default=None, min_length=1, max_length=32)
+    llm_provider: Optional[str] = Field(default=None, min_length=1, max_length=32, pattern=LOCAL_LLM_PROVIDER_PATTERN)
     llm_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
     llm_temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     llm_max_tokens: Optional[int] = Field(default=None, ge=1, le=32768)
-    gemini_api_key: Optional[str] = None
-    groq_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    deepseek_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None
     default_language: Optional[str] = None
     thinking_mode: Optional[bool] = None
 
@@ -59,15 +55,8 @@ async def get_recent_logs(admin: Dict[str, Any] = Depends(require_admin)):
 @system_router.get("/settings")
 def get_settings(current_user: Dict[str, Any] = Depends(require_authenticated_user)):
     """Retrieve safe, non-secret settings for the authenticated settings page."""
-    is_admin = current_user.get("role") == "admin"
     neural_diag = intent_classifier.get_diagnostics()
     brain_status = llm_brain.get_status()
-    
-    # Mask API keys for safety
-    def mask_key(k: str) -> str:
-        if not k:
-            return ""
-        return k[:4] + "••••••••" + k[-4:] if len(k) > 8 else "••••••••"
 
     return {
         "llm": {
@@ -75,14 +64,6 @@ def get_settings(current_user: Dict[str, Any] = Depends(require_authenticated_us
             "model": config.llm.model,
             "temperature": config.llm.temperature,
             "max_tokens": config.llm.max_tokens,
-            "has_gemini_key": is_admin and bool(config.llm.gemini_api_key),
-            "gemini_key_masked": mask_key(config.llm.gemini_api_key) if is_admin else "",
-            "has_groq_key": is_admin and bool(config.llm.groq_api_key),
-            "groq_key_masked": mask_key(config.llm.groq_api_key) if is_admin else "",
-            "has_openai_key": is_admin and bool(config.llm.api_key),
-            "openai_key_masked": mask_key(config.llm.api_key) if is_admin else "",
-            "has_deepseek_key": is_admin and bool(config.llm.deepseek_api_key),
-            "has_openrouter_key": is_admin and bool(config.llm.openrouter_api_key),
             "thinking_mode": False,
             "brain_status": brain_status
         },
@@ -114,15 +95,6 @@ async def update_settings(req: SettingsUpdateRequest, admin: Dict[str, Any] = De
     if req.thinking_mode is not None:
         config.llm.thinking_mode = False
         updated.append("thinking_mode=false (server enforced)")
-    if req.gemini_api_key is not None and req.gemini_api_key.strip():
-        config.llm.gemini_api_key = req.gemini_api_key.strip()
-        updated.append("gemini_api_key")
-    if req.groq_api_key is not None and req.groq_api_key.strip():
-        config.llm.groq_api_key = req.groq_api_key.strip()
-        updated.append("groq_api_key")
-    if req.openai_api_key is not None and req.openai_api_key.strip():
-        config.llm.api_key = req.openai_api_key.strip()
-        updated.append("openai_api_key")
     # Persist
     config.save_to_file()
     
