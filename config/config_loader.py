@@ -57,7 +57,7 @@ if not os.path.exists(os.path.join(BASE_DIR, ".env")) and os.path.exists(os.path
 @dataclass
 class LLMConfig:
     provider: str = os.getenv("DEFAULT_LLM_PROVIDER", "ajax_local")
-    model: str = os.getenv("LLM_MODEL", "ajax-native-100-intents")
+    model: str = os.getenv("LLM_MODEL", "ajax-native-merged-intents")
     temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("LLM_MAX_TOKENS", "2048"))
     cpu_threads: int = int(os.getenv("CPU_THREADS", "12"))
@@ -192,7 +192,7 @@ class AppConfig:
                         # native engine. No Ollama model is started anymore.
                         if str(config.llm.provider).strip().lower() in {"ollama", "qwen3.5:4b"}:
                             config.llm.provider = "ajax_local"
-                            config.llm.model = "ajax-native-100-intents"
+                            config.llm.model = "ajax-native-merged-intents"
                         # Never re-enable hidden chain-of-thought output from a
                         # stale settings file.
                         config.llm.thinking_mode = False
@@ -229,7 +229,7 @@ class AppConfig:
         # no cloud credential can silently become the active provider.
         if str(config.llm.provider).strip().lower() not in {"ajax_local", "ajax_gguf"}:
             config.llm.provider = "ajax_local"
-            config.llm.model = "ajax-native-100-intents"
+            config.llm.model = "ajax-native-merged-intents"
         return config
 
 # Global config instance

@@ -621,7 +621,7 @@
             <p>Jab bhi model train hota hai (via <code>training/gpu_train.py</code> ya <code>training/train.py</code>), sara processed dataset aur learned neural weights niche diye gaye specific locations par automatically persist ho jate hain:</p>
             <ul>
                 <li><strong>1. PyTorch Tensor Weights:</strong> <code>models/ajax_neural_intent.pt</code> (~374 KB) file me neural network ke 3-layer parameters (weights and biases) binary form me save hote hain.</li>
-                <li><strong>2. Vocabulary & Label Dictionary:</strong> <code>models/vocab_metadata.json</code> me sabhi 946 unique tokens aur 100 intent labels ka index save hota hai.</li>
+                <li><strong>2. Vocabulary & Label Dictionary:</strong> <code>models/vocab_metadata.json</code> me active vocabulary aur merged intent labels ka index save hota hai.</li>
                 <li><strong>3. Canonical Triggers:</strong> <code>data/intents.json</code> (~55 KB) me human-readable trigger patterns update hote hain.</li>
                 <li><strong>4. Continuous Learning Store:</strong> Chat ke doran user dwara approve kiye gaye live interaction samples <strong>MongoDB Atlas</strong> ke <code>training_examples</code> collection (ya fallback <code>data/ajax.db</code> SQLite) me hamesha ke liye save rehte hain.</li>
                 <li><strong>5. Runtime Execution:</strong> Server boot hote hi <code>ai/neural/intent_classifier.py</code> in dono files ko RAM me load kar leta hai taaki user queries bina kisi delay ke <0.05ms me classify ho sakein!</li>
@@ -693,7 +693,7 @@
                                 <span class="pipe-node-badge">Schemas</span>
                             </div>
                             <div class="pipe-node-path">data/intents.json</div>
-                            <div class="pipe-node-desc">Core dictionary containing 100 intent definitions and thousands of sample sentences.</div>
+                            <div class="pipe-node-desc">Core dictionary containing the merged intent definitions and thousands of sample sentences.</div>
                             <div class="pipe-node-meta">
                                 <span id="nodePatternsCount">~55 KB</span>
                                 <span>JSON Dataset</span>
@@ -780,7 +780,7 @@
                                 <span class="pipe-node-badge" style="background:rgba(52,211,153,0.2); color:#34d399;">INDEX</span>
                             </div>
                             <div class="pipe-node-path">models/vocab_metadata.json</div>
-                            <div class="pipe-node-desc"><strong>Token & Label Index:</strong> 946 unique words ka index mapping aur 100 class names yahan save hote hain.</div>
+                            <div class="pipe-node-desc"><strong>Token & Label Index:</strong> Active vocabulary aur merged class names yahan save hote hain.</div>
                             <div class="pipe-node-meta">
                                 <span>Size: 13.0 KB</span>
                                 <span>json.dump(...)</span>
@@ -846,7 +846,7 @@
                             <div class="pipe-node-desc">User message aate hi intent classify kar ke turant correct Tool ya LLM ko forward karta hai.</div>
                             <div class="pipe-node-meta">
                                 <span>Latency: 0.04ms</span>
-                                <span>100 Intent Map</span>
+                                <span>Merged Intent Map</span>
                             </div>
                         </div>
 
@@ -895,7 +895,7 @@
 torch.save(model.state_dict(), "models/ajax_neural_intent.pt")
 
 # 2. Loading Weights in Runtime Memory (ai/neural/intent_classifier.py):
-model = NeuralIntentNet(vocab_size=946, hidden_dim=128, num_classes=100)
+model = NeuralIntentNet(vocab_size=active_vocab, hidden_dim=128, num_classes=active_intents)
 model.load_state_dict(torch.load("models/ajax_neural_intent.pt", map_location=device))
 model.eval()</div>
         </div>
@@ -969,7 +969,7 @@ model.eval()`
         title: "Vocabulary & Label Index (vocab_metadata.json)",
         path: "models/vocab_metadata.json",
         format: "JSON UTF-8 Key-Value Index",
-        size: "(946 Tokens & 100 Intent Classes)",
+        size: "(Active Vocabulary & Merged Intent Classes)",
         role: "User ke input sentence ko numbers me convert karne ke liye word-to-index mapping aur output number ko intent name (e.g. PLAY_YOUTUBE, TIME) me convert karne ka metadata.",
         code: `# 1. SAVING: training/gpu_train.py (line 153)
 with open("models/vocab_metadata.json", "w", encoding="utf-8") as f:
@@ -991,7 +991,7 @@ with open("models/vocab_metadata.json", "r", encoding="utf-8") as f:
         path: "data/intents.json",
         format: "JSON Structured Corpus",
         size: "55.76 KB (Hundreds of Utterance Patterns)",
-        role: "AJAX ke sabhi 100 intents ka human-readable training dataset jisme user queries, variations, aur response templates save hote hain.",
+        role: "AJAX ke merged intents ka human-readable training dataset jisme user queries, variations, aur response templates save hote hain.",
         code: `# SAVING: training/train.py (line 126)
 with open("data/intents.json", "w", encoding="utf-8") as f:
     json.dump({"intents": list(intents_map.values())}, f, indent=2)`
@@ -1058,7 +1058,7 @@ criterion = nn.CrossEntropyLoss()
         path: "ai/neural/intent_classifier.py (NeuralIntentNet)",
         format: "PyTorch nn.Module (MLP)",
         size: "3 Linear Layers, ReLU, Dropout",
-        role: "Deep Neural Network jo bag-of-words token vector ko 100 intent classes ke probability distribution me map karta hai.",
+        role: "Deep Neural Network jo bag-of-words token vector ko active merged intent classes ke probability distribution me map karta hai.",
         code: `class NeuralIntentNet(nn.Module):
     def __init__(self, vocab_size, hidden_dim, num_classes):
         super().__init__()
@@ -1074,7 +1074,7 @@ criterion = nn.CrossEntropyLoss()
         format: "Validation Suite",
         size: "Cross-Validation Matrix",
         role: "Training ke baad zero-shot evaluation run karta hai to ensure 100% intent accuracy.",
-        code: `run_evaluation() checks precision, recall, and F1 across all 100 classes.`
+        code: `run_evaluation() checks precision, recall, and F1 across all active merged classes.`
     },
     "runtime_classifier": {
         title: "Runtime In-Memory Neural Classifier",

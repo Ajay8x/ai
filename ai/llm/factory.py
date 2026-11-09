@@ -465,7 +465,7 @@ class LocalRuleBasedFallbackProvider(BaseLLMProvider):
     5. Live DuckDuckGo and Wikipedia web search integration.
     """
     provider_name = "ajax_local"
-    model = "ajax-native-100-intents"
+    model = "ajax-native-merged-intents"
 
     def generate(
         self,

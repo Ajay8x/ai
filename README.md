@@ -8,7 +8,7 @@ AJAX AI is a modular, high-performance personal AI assistant built in Python. It
 
 ## ✨ Key Capabilities
 
-1. **🧠 Multi-Provider AI Brain**: AJAX Native Engine with the trained 100-class neural brain, plus optional OpenAI, Groq, DeepSeek, and OpenRouter providers with zero-crash local fallbacks.
+1. **🧠 Multi-Provider AI Brain**: AJAX Native Engine with the trained merged neural intent catalog, plus optional OpenAI, Groq, DeepSeek, and OpenRouter providers with zero-crash local fallbacks.
 2. **🎯 Neural Intent Engine**: 40+ default intents with Hindi, English, and Hinglish semantic understanding and confidence scoring.
 3. **🎙️ Unified Voice Pipeline**: Wake word detection ("AJAX", "Jarvis"), VAD noise calibration, Google STT, and thread-safe interruptible TTS.
 4. **💾 Multi-Tier Memory Engine**: Short-term session buffer, long-term SQLite persistent facts, episodic task logs, and built-in privacy filtering.

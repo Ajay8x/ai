@@ -16,7 +16,8 @@ class TestSettings(unittest.TestCase):
     def test_authenticated_settings_report_runtime_neural_counts(self):
         payload = get_settings({"id": "user-123", "role": "user"})
 
-        self.assertEqual(payload["neural"]["num_classes"], 100)
+        self.assertEqual(payload["neural"]["num_classes"], payload["neural"]["intents_dataset_count"])
+        self.assertEqual(payload["neural"]["num_classes"], 92)
         self.assertEqual(payload["llm"]["thinking_mode"], False)
         self.assertNotIn("gemini_key_masked", payload["llm"])
 
@@ -24,8 +25,8 @@ class TestSettings(unittest.TestCase):
         project_root = Path(__file__).resolve().parents[1]
         page = (project_root / "views" / "templates" / "pages" / "settings.html").read_text(encoding="utf-8")
 
-        self.assertIn("id=\"telemetryClasses\">100 Classes", page)
-        self.assertIn("id=\"telemetryVocab\">1020 Words", page)
+        self.assertIn("id=\"telemetryClasses\">Loading...", page)
+        self.assertIn("id=\"telemetryVocab\">Loading...", page)
         self.assertIn("data.llm.provider || 'ajax_local'", page)
         self.assertIn("settingsIsAdmin", page)
         self.assertNotIn('value="gemini"', page)

@@ -687,7 +687,8 @@
         "pc status check karo",
         "battery health",
         "battery",
-        "cpu batao mera"
+        "cpu batao mera",
+        "what is the current system health and hardware diagnostics?"
       ],
       "tool": "get_system_status"
     },
@@ -856,7 +857,8 @@
         "what is mango",
         "inversion of mobile",
         "what is rdx boom",
-        "what is darkweb"
+        "what is darkweb",
+        "mobile phone ka invention kisane kiya tha"
       ],
       "tool": "search_wikipedia"
     },
@@ -1447,7 +1449,8 @@
         "today wether",
         "total city in uttar pradesh",
         "today",
-        "define gravity in simple words"
+        "define gravity in simple words",
+        "uttar pradesh weather"
       ],
       "tool": "get_weather"
     },

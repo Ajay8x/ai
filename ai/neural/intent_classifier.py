@@ -16,7 +16,7 @@ import time
 from typing import Dict, Any, List, Optional, Tuple
 
 from core.logger import ajax_logger
-from ai.neural.dataset_loader import load_intent_dataset
+from ai.neural.dataset_loader import canonical_intent_name, load_intent_dataset
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -311,6 +311,129 @@ class IntentClassifier:
         text_clean = text.lower().strip()
         tokens = tokenize(text_clean)
 
+        # ----------------- GUARD 0: SPECIALIZED BOUNDARIES ----------------- #
+        # These checks must run before broad math/code/application matching so
+        # a clear specialist request is not swallowed by a generic intent.
+        if re.search(r'\b(qr|qr\s+code|scannable\s+code)\b', text_clean):
+            return {
+                "intent": "QR_CODE",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if (
+            re.search(r'\b(html|css|stylesheet|web\s+page|web\s+layout)\b', text_clean)
+            and re.search(r'\b(help|style|fix|layout|design|code|explain)\b', text_clean)
+        ):
+            return {
+                "intent": "HTML_CSS_HELP",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if (
+            (
+                re.search(r'\b(unit\s+tests?|test\s+cases?|automated\s+tests?|pytest|jest|unittest)\b', text_clean)
+                or (
+                    re.search(r'\btests?\b', text_clean)
+                    and re.search(r'\b(code|function|program|script)\b', text_clean)
+                )
+            )
+            and re.search(r'\b(write|generate|create|make)\b', text_clean)
+        ):
+            return {
+                "intent": "TEST_GENERATION",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(age|how\s+old|date\s+of\s+birth|dob)\b', text_clean):
+            return {
+                "intent": "AGE_CALCULATION",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(bmi|body\s+mass\s+index)\b', text_clean):
+            return {
+                "intent": "BMI_CALCULATION",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(tip|gratuity|service\s+charge)\b', text_clean):
+            return {
+                "intent": "TIP_CALCULATION",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(test|check|verify|run)\b', text_clean) and re.search(
+            r'\b(internet|network|connectivity|connection)\b', text_clean
+        ):
+            return {
+                "intent": "NETWORK_TEST",
+                "confidence": 0.99,
+                "tool": None,
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(r'\b(open|launch|visit|go\s+to|kholo)\b', text_clean) and re.search(
+            r'(https?://|www\.|\bwebsite\b|\bsite\b|youtube|github|chatgpt|instagram|facebook|google|twitter|reddit)',
+            text_clean
+        ) and not re.search(r'\b(app|application|software)\b', text_clean):
+            return {
+                "intent": "OPEN_WEBSITE",
+                "confidence": 0.99,
+                "tool": "open_website",
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
+        if re.search(
+            r'\b(what\s+do\s+you\s+remember|what\s+is\s+stored|show\s+(?:me\s+)?(?:my\s+)?memories|'
+            r'recall\s+(?:my\s+)?(?:saved\s+)?(?:memory|memories|facts|notes)|saved\s+(?:facts|notes|memories))\b',
+            text_clean
+        ) and not re.search(r'\b(remember|save|store)\s+(?:that|this|my)\b', text_clean):
+            return {
+                "intent": "MEMORY_RECALL",
+                "confidence": 0.99,
+                "tool": "recall_memory",
+                "entities": {"query": text_clean},
+                "predefined_response": None,
+                "neural_engine": "deterministic_guard",
+                "inference_time_ms": round((time.perf_counter() - start_t) * 1000, 3)
+            }
+
         # ----------------- GUARD 1: ARITHMETIC / MATH ----------------- #
         is_explicit_math = bool(
             re.match(r'^(\s*calculate\s+)?(\d+(\.\d+)?\s*[\+\-\*\/\%\^xX÷]\s*\d+(\.\d+)?(\s*[\+\-\*\/\%\^xX÷]\s*\d+(\.\d+)?)*|\d+(\.\d+)?\s*%\s*(of|ka\s*)?\d+(\.\d+)?|\d+(\.\d+)?\s*(ka|of)\s*\d+(\.\d+)?\s*%|sqrt\(\d+(\.\d+)?\))\s*$', text_clean)
@@ -471,7 +594,7 @@ class IntentClassifier:
         cos_intent, cos_conf, cos_tool, cos_resp = self._cosine_predict(text_clean, tokens)
 
         # ----------------- TIER 4: ENSEMBLE FUSION ----------------- #
-        final_intent = cos_intent
+        final_intent = canonical_intent_name(cos_intent)
         final_conf = cos_conf
         final_tool = cos_tool or INTENT_TOOL_MAP.get(cos_intent)
         final_resp = cos_resp
@@ -480,29 +603,29 @@ class IntentClassifier:
         if neural_intent:
             if neural_intent == cos_intent:
                 # Both models agree: high confidence reinforcement!
-                final_intent = neural_intent
+                final_intent = canonical_intent_name(neural_intent)
                 final_conf = min(1.0, max(neural_conf, cos_conf) + 0.05)
                 engine_used = "neural_ensemble_consensus"
             elif neural_conf >= 0.88 and cos_conf < 0.70:
                 # Deep neural model is distinctly confident
-                final_intent = neural_intent
+                final_intent = canonical_intent_name(neural_intent)
                 final_conf = neural_conf
                 final_tool = INTENT_TOOL_MAP.get(neural_intent)
                 engine_used = "pytorch_deep_learning"
             elif cos_conf >= 0.90:
                 # Direct pattern string hit
-                final_intent = cos_intent
+                final_intent = canonical_intent_name(cos_intent)
                 final_conf = cos_conf
                 engine_used = "semantic_cosine_exact"
             else:
                 # Blend with weight
                 if neural_conf > cos_conf:
-                    final_intent = neural_intent
+                    final_intent = canonical_intent_name(neural_intent)
                     final_conf = round(neural_conf * 0.7 + cos_conf * 0.3, 2)
                     final_tool = INTENT_TOOL_MAP.get(neural_intent)
                     engine_used = "pytorch_deep_learning"
                 else:
-                    final_intent = cos_intent
+                    final_intent = canonical_intent_name(cos_intent)
                     final_conf = round(cos_conf * 0.7 + neural_conf * 0.3, 2)
                     engine_used = "semantic_cosine"
 
