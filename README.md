@@ -103,6 +103,11 @@ python training/train.py
 
 The current trained metadata contains 92 class labels and 1,028 vocabulary entries. The packaged executable has also been validated with `--diagnostics` and reports a healthy intent engine, database, and tools subsystem.
 
+
+
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/ajay8x/ai?utm_source=readme&utm_medium=badge)
+
+
 ## Project layout
 
 ```text
@@ -119,7 +124,14 @@ Ai full 3.0/
 ├── tests/                      # Automated regression tests
 ├── build_ajax_ai.bat           # Build portable Windows folder
 ├── start_ajax_ai.bat           # Start source installation
-└── kill_ajax_ai.bat            # Stop source or scoped AJAX process
+└── kill_ajax_ai.bat            # Stop source
+
+
+
+
+
+ or scoped AJAX process
 ```
 
 For deployment notes, see [`README-DOCKER.md`](README-DOCKER.md) and [`README-K8S.md`](README-K8S.md).
+
